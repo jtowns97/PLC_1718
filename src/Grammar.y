@@ -8,18 +8,14 @@ import Data.List
 %tokentype { Token } 
 %error { parseError }
 %token 
-    let { TokenLet _} 
-    in  { TokenIn _} 
-    int { TokenInt _ $$ } 
+    MARKER { TokenMarker _} 
+    CONJ  { TokenConj _} 
+    RELATION { TokenRel _} 
     var { TokenVar _ $$ } 
     '=' { TokenEq _} 
-    '+' { TokenPlus _} 
-    '-' { TokenMinus _} 
-    '*' { TokenTimes _} 
-    '/' { TokenDiv _} 
     '(' { TokenLParen _} 
     ')' { TokenRParen _} 
-    '^' { TokenExpon _ }
+
 
 %right in 
 %left '+' '-' 
@@ -27,7 +23,9 @@ import Data.List
 %left '^'
 %left NEG 
 %% 
-Exp : let var '=' Exp in Exp { Let $2 $4 $6 } 
+Query : var CONJ var { Conj $1 $3 }
+    | QUANT var RELATION var var {Quant}
+Exp : [var] MARKER Query { Run $1 $3 } 
     | Exp '+' Exp            { Plus $1 $3 } 
     | Exp '-' Exp            { Minus $1 $3 } 
     | Exp '*' Exp            { Times $1 $3 } 

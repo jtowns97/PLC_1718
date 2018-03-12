@@ -1,0 +1,4 @@
+a1 b22 y y3 ssttrriinngg E T F
+
+|\- TEST TEST ETSTSTTSTSS
+x1 x2 x3 |- x1 ^ x2 ^ x3 = x3

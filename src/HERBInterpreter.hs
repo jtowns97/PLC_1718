@@ -28,9 +28,21 @@ ____________________________________________________________
 -}
 
 -- All expressions available within language.
-data Phi = Conjunction Phi Phi
+data Phi = Phi Marker Phi
+    | Conjunction Phi Phi
+    | Relation Variables
     | Variable Int
-    | Exisitential Variable Phi
+    | Exisitential Variables Phi
+    | Equate Phi Phi
+    | LSub Phi Phi
+    | RSub Phi Phi
+    | Bool
+    | Phi Marker Phi
+    | 
+    deriving Show
+
+data Variables = Variable Variables
+    | Variable
     deriving Show
 
 -- All commands available within language.

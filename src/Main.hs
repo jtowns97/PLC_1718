@@ -6,10 +6,10 @@ module Main where
 
     main :: IO()
     main = do
-            string <- readFile "ExampleQueries.txt"
+            string <- readFile "ConjQueries.txt"
             print (alexScanTokens string) 
-            let absT = ( (parseCalc. alexScanTokens) string )
-            print absT
+            --let absT = ( (parseCalc. alexScanTokens) string )
+            --print absT
 
 {-
 tokenPosn :: Token -> String

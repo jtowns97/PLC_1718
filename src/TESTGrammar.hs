@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -w #-}
 module TESTGrammar where 
-    import TESTTokens
+import TESTTokens
 import qualified Data.Array as Happy_Data_Array
 import qualified Data.Bits as Bits
 import Control.Applicative(Applicative(..))

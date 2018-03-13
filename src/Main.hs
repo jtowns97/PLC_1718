@@ -1,8 +1,8 @@
 module Main where
     import System.IO
     import Control.Monad
-    import TESTGrammar
-    import TESTTokens
+    import HERBGrammar
+    import HERBTokens
 
     main :: IO()
     main = do

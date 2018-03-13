@@ -20,7 +20,7 @@ import HERBTokens
     '|\-'     { TokenEntailment _ }          
     ','       { TokenComma _ }       
     var       { TokenVar _ $$ }  
-    pred      { TokenPredicate _ $$ }            
+    rel      { TokenRelation _ $$ }            
 
 %left '|\-'
 %left '.'
@@ -28,42 +28,40 @@ import HERBTokens
 %left '^' '=' '<C' '>C' 
 %% 
 
-Exp : Variables '|\-' LExp                 { EntailL $1 $3 }
+Exp : Variables '|\-' Query                 { EntailL $1 $3 }
     | Variables '|\-' Existential          { EntailE $1 $3 }
-	| Variables '|\-' Existential '.' LExp { EntailB $1 $3 $5 }
+	| Variables '|\-' Existential '.' Query { EntailB $1 $3 $5 }
 	
 Existential : E '(' Variables ')'          { ExistentialV $3 }
-            | E var                        { ExistentialS $2 }
 	
 Variables : Variables ',' Variables        { Comma $1 $3 }
           | var                            { Var $1}
 		  
-LExp : LExp '^' LExp                       { Conjunction $1 $3}
-     | pred '(' Variables ')'              { Predicate $1 $3 }
-	 | LExp '=' LExp                       { Equality $1 $3 }
-	 | LExp '<C' LExp                      { LSub $1 $3 }
-	 | LExp '>C' LExp                      { RSub $1 $3 }
+Query : Query '^' Query                       { Conjunction $1 $3}
+     | rel '(' Variables ')'              { Predicate $1 $3 }
+	 | Query '=' Query                       { Equality $1 $3 }
+	 | Query '<C' Query                      { LSub $1 $3 }
+	 | Query '>C' Query                      { RSub $1 $3 }
 	 | T                                   { Bool True }
 	 | F                                   { Bool False }
     
 { 
 parseError :: [Token] -> a
 parseError _ = error "Parse error" 
-data Exp = EntailL Variables LExp
+data Exp = EntailL Variables Query
          | EntailE Variables Existential
-		 | EntailB Variables Existential LExp
+		 | EntailB Variables Existential Query
          deriving Show
 data Variables = Comma Variables Variables
                | Var String
                deriving Show
-data LExp = Conjunction LExp LExp
+data Query = Conjunction Query Query
           | Predicate String Variables
-          | Equality LExp LExp
-          | LSub LExp LExp
-          | RSub LExp LExp
+          | Equality Query Query
+          | LSub Query Query
+          | RSub Query Query
           | Bool Bool
           deriving Show
 data Existential = ExistentialV Variables
-                 | ExistentialS String
                  deriving Show		  
 } 

@@ -22,11 +22,11 @@ tokens :-
     '.'                { \p s -> TokenLinkLogic p}
     T                   { \p s -> TokenBool p}
     F                   { \p s -> TokenBool p}
-    pred                { \p s -> TokenPredicate p s}
+    rel                { \p s -> TokenRelation p s}
     $alpha [$alpha $digit \_ \’]*   { \p s -> TokenVar p s }  -- Char then Number, ie Valid = [x1,y22,b33,ddd] Invalid = [1z,2]
 
 
-    --TODO: TokenPredicate, TokenRelation,  Verify correctness
+    --TODO: TokenRelation, TokenRelation,  Verify correctness
 { 
 
 
@@ -47,7 +47,7 @@ data Token =
     TokenBool AlexPosn              |
     TokenLinkLogic AlexPosn         |
     TokenComma AlexPosn             |
-    TokenPredicate AlexPosn String  |
+    TokenRelation AlexPosn String  |
     TokenEntailment AlexPosn      
     deriving (Eq,Show) 
 
@@ -64,6 +64,7 @@ tokenPosn (TokenLinkLogic p ) = p
 tokenPosn (TokenEquality p ) = p
 tokenPosn (TokenExistential p ) = p
 tokenPosn (TokenMarker p ) = p
+tokenPosn (TokenRelation p s) = p
 
 
 

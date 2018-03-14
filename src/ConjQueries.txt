@@ -1,34 +1,40 @@
 --As seen in spec, problem sheets:
-x1helo, x2 , x3, x4 |- A(x1,x2) ^ B(x3,x4)
-x1, x2, x3 |- A(x1,x2) ^ B(x2,x3)
-x1, x2 |- P(x1) ^ Q(x2) ^ x1 = x2
-x1 |- (z) E.(R(x1,z))
-x1, x2 |- (z)E.(A(x1,z)) ^ B(z, x2)
+
+1, 2, 3, 4 |- A (1,2) ^ B(3,4)
+
+1, 2, 3 |- A(1,2) ^ B(2,3)
+
+1, 2 |- P(1) ^ Q(2) ^ 1 = 2
+
+1 |- (z)E.(R(1,z))
+
+1, 2 |- (z)E.(A(1,z)) ^ B(z, 2)
+
 
 --Predicted problems:
 
 --CC...C:
-x1, x2, x3 |- x1 ^ x2 ^ x3 
+1, 2, 3 |- 1 ^ 2 ^ 3 
 
 --CE
-x1, x2, x3 |- x1 ^ x2 ^ Q(x3) = x2
+1, 2, 3 |- 1 ^ 2 ^ Q(3) = 2
 
 --EE
-x1, x2, x3 |- x1 = x2 = x3
-x1, x2, x3 |- P(x1) = Q(x2) = R(x3)
+1, 2, 3 |- 1 = 2 = 3
+1, 2, 3 |- P(1) = Q(2) = R(3)
 
 --Q[Q..]
-x1, x2 |- (y)E.((z)E.( R(x1,z) ) ^ Q(x2) )
-x1, x2 |- (y)E.( Q(x2) ^ (z)E.( R(x1,z) ) )
+1, 2 |- (y)E.((z)E.( R(1,z) ) ^ Q(2) )
+1, 2 |- (y)E.( Q(2) ^ (z)E.( R(1,z) ) )
 
 --QE
-x1 |- (w)E.( S(w,x1) ) = x1
+1 |- (w)E.( S(w,1) ) = 1
 
 --QE not sure if allowed, maybe just return Nothing?
-x1 |- (w)E.( S(x1) ) = x1
+1 |- (w)E.( S(1) ) = 1
 
 --QV
-x1 |- (z)E.( R(x1,z,x1) )
+1 |- (z)E.( R(1,z,1) )
 
 --String equality
-x1 |- P(x1) = Thomas
+1 |- P(1) = "Thomas"

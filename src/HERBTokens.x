@@ -26,8 +26,8 @@ tokens :-
     \;
     True                                { \p s -> TokenBool p}
     False                               { \p s -> TokenBool p}
-    $alphaCap '\(' [\_]* '\)'           { \p s -> TokenRelation p s} -- Relation defined as any capital letter followed by an open bracket
-    $alpha [$alpha $digit \_ \’]*       { \p s -> TokenVar p s }  -- Char then Number, ie Valid = [x1,y22,b33,ddd]- Invalid = [1z,2]
+    $alphaCap '\('           { \p s -> TokenRelation p s} -- Relation defined as any capital letter followed by an open bracket
+    $alpha $digit [$digit]*       { \p s -> TokenVar p s }  -- Char then Number, ie Valid = [x1,y22,b33,ddd]- Invalid = [1z,2]
 { 
 
 

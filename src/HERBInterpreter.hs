@@ -4,6 +4,7 @@ import System.Environment
 import Control.Monad
 import HERBGrammar
 import HERBTokens
+import Text.ParserCombinators.Parsec
     
 -- Left hand side of algebra (variables or arguments)
 -- VARIABLES TREE
@@ -78,7 +79,7 @@ varToInt (x:xs) = read xs
 
 toString :: Bool -> String
 toString bool = if bool then "True" else "False"
-
+{-
 -- Read input from command line with IO monad.
 main :: String -> IO()
 main = do
@@ -91,4 +92,59 @@ main = do
     print "... tree parsed."
 
 --getVarLocation                       
-    
+-} 
+
+
+
+
+{-----------------------------------------JAMES FROM HERE ON-----------------------------------------------}
+
+
+ 
+
+
+
+{-=============================== CSV HANDLING ==============================-}
+--A source: http://book.realworldhaskell.org/read/using-parsec.html
+
+csvFile = endBy line eol
+line = sepBy cell (char ',')
+cell = many (noneOf ",\n")
+eol = char '\n'
+
+parseCSV :: String -> Either ParseError [[String]]
+parseCSV input = parse csvFile "(unknown)" input
+
+--extractCSVCol fileContents specifiedCol; returns (ColumnNumber, [all, instances, of, specified, column])
+extractCSVCol :: [[String]] -> Int -> (Int, [String])
+extractCSVCol [] _ = []
+extractCSVCol (x:xs) ind = (ind, extractCSVCol' x ind 1 : extractCSVCol xs ind)
+
+--Auxilliary function, basically a safe version of !!
+extractCSVCol' :: [String] -> Int -> Int -> String
+extractCSVCol' [] _ _ = []
+extractCSVCol' (x:xs) goal current | goal == current = x
+                                   | goal /= current = extractCSVCol' xs goal (current+1)
+
+--Return number of columns
+countCSVCol :: [[String]] -> Int
+countCSVCol (x:xs) = length x
+
+--Collate columns into one data structure
+gatherCSVdata :: [[String]] -> Int -> [(Int, [String])]
+gatherCSVdata inp count | count > colNum = []
+                        | count <= colNum = extractCSVCol inp count : gatherCSVdata inp (count+1)
+                        where
+                            colNum = countCSVCol inp
+
+{-
+
+Currently not working due to Either error
+
+--Iterate through columns of CSV file, ensuring all data is collected. Throw error for empty file
+getCSV :: [[String]] -> Either IO() a [(Int, [String])]
+getCSV inp | inp == [] = Left( hPutStrLn stderr "Error: Missing CSV data" )
+           | otherwise = Right( gatherCSVdata inp 1 )  
+-}
+
+                                   

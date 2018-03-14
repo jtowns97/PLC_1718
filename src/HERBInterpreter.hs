@@ -8,7 +8,7 @@ import HERBTokens
 -- Left hand side of algebra (variables or arguments)
 -- VARIABLES TREE
 data VarTree = CommaNode (VarTree) (VarTree)
-    | VarNode (String)
+    | VarNode (String) (String) 
     deriving Show
 
 -- Right hand side of algebra (query or request)
@@ -52,22 +52,21 @@ type Location = Int
 --type Map = [(Int, Value)]
 type Stack = [Int]
 
---evaluateParseTree :: ParseTree -> [String]
---evaluateParseTree 
+evaluateParseTree :: ParseTree -> [String]
+evaluateParseTree (Marker var op) = [evaluateVar var] ++ [evaluateOp op]
+evaluateParseTree (Marker var exisit) = [evaluateVar var] ++ [evaluateExisit exisit]
+evaluateParseTree (Marker var exisit op) = [evaluateVar var] ++ [evaluateExisit exisit] ++ [evaluateOp op]
 
-
---evaluateCom ::
+evaluateExisit :: ExisitTree -> [String]
+evaluateExisit (ExisitVar var op) = evaluateVar var ++ evaluateOp op
 
 evaluateOp :: (OpTree) -> [String]
 evaluateOp (ConjunctionNode left right) = evaluateOp left ++ evaluateOp right
 evaluateOp (RelationNode string variables) = [string] ++ evaluateVar variables ++ [")"]
 evaluateOp (EquateNode left right) = ["("] ++ evaluateOp left ++ ["="] ++ evaluateOp right ++ [")"]
---evaluateOp (ExNodeisitTree string) = -- TODO:
---evaluateOp (ExisitTree var op) = -- TODO:
 evaluateOp (LSubNode left right) = evaluateOp left ++ evaluateOp right
 evaluateOp (RSubNode left right) = evaluateOp left ++ evaluateOp right
 evaluateOp (BoolNode f) = [toString f]
-
 
 evaluateVar :: (VarTree) -> [String]
 evaluateVar (CommaNode a b) = evaluateVar a ++ evaluateVar b
@@ -80,7 +79,7 @@ toString :: Bool -> String
 toString bool = if bool then "True" else "False"
 
 -- Read input from command line with IO monad.
-main :: String -> IO()
+main :: IO()
 main = do
     filePath <- getArgs -- Take file path from command line.
     contents <- readFile (head filePath) -- read file

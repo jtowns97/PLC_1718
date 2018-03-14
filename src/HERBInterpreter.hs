@@ -138,7 +138,7 @@ gatherCSVdata inp count | count > colNum = []
 
 {-
 
-Currently not working due to Either error
+Currently not working due to Either error wrt IO()
 
 --Iterate through columns of CSV file, ensuring all data is collected. Throw error for empty file
 getCSV :: [[String]] -> Either IO() a [(Int, [String])]

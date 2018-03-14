@@ -8,9 +8,12 @@ import Text.ParserCombinators.Parsec
     
 -- Left hand side of algebra (variables or arguments)
 -- VARIABLES TREE
-data VarTree = CommaNode (VarTree) (VarTree)
-    | VarNode (String) (String) 
+data VarTree = CommaNode (VarNode) (VarTree) --Added to force tree structure to right recurse
+    | VarNode
     deriving Show
+
+--NB: Added to make traversing tree easier, ie easily access the data stored at these locations.
+data VarNode = VarLeaf (String) (String) --1st string = location, 2nd = actual data
 
 -- Right hand side of algebra (query or request)
 -- OPERATORS TREE
@@ -98,11 +101,37 @@ main = do
 
 {-----------------------------------------JAMES FROM HERE ON-----------------------------------------------}
 
+{-=============================== OPERATOR CHECKING FUNCTIONS  ==============================-}
+{-
 
- 
+checkExistential:: 
+checkConjunction ::
+
+verifyFreeVars ::
+checkOutputSequence ::
+checkSubset :: ??? is this needed ? Dont think we use subsets.
+assignVarColToTable ::
+checkTableName ::
 
 
+-}
+--NB: Could be done with a stack. ie traverse to lowest branch, recurse back up, pushing nodes until root reached. Or a Q
+getLowestVarBranch :: VarTree -> [(String,String),
+CommaNode ( var ) ( remainingTree ) | 
 
+--NB: Should this be VarTree or String as output? --COME BACK HERE n 
+varTreeToOrdList :: VarTree -> [(Int, VarNode)] --Int represents ORDER (NB: this is why I decided to add VarNode)
+varTreeToOrdList (CommaNode (nextVar) (remainingTree)) = ()
+
+checkEquality :: OpTree -> Bool
+checkEquality EquateNode l r    | l == r = True
+                                | otherwise = False
+
+
+checkRelation :: OpTree -> Bool
+checkRelation RelationNode tbl (x:xs) | 
+
+                            
 {-=============================== CSV HANDLING ==============================-}
 --A source: http://book.realworldhaskell.org/read/using-parsec.html
 

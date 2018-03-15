@@ -33,10 +33,11 @@ data ExisitTree = ExisitVar (VarTree) (OpTree)
 
 -- All expressions available within language.
 -- PARSE TREE
-data ParseTree = Marker (VarTree) (OpTree)
-    | MarkerNested (VarTree) (ExisitTree)
-    | MarkerExtended (VarTree) (ExisitTree) (OpTree)
+data ParseTree = Marker ([(Int, VarNode)]) (OpTree)
+    | MarkerNested ([(Int, VarNode)]) (ExisitTree)
+    | MarkerExtended ([(Int, VarNode)]) (ExisitTree) (OpTree)
     deriving Show
+  --  (1,2,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
 
 -- All commands available within language.
 -- COMMAND TREE
@@ -103,33 +104,47 @@ main = do
 
 {-=============================== OPERATOR CHECKING FUNCTIONS  ==============================-}
 {-
+methodToMaybeCreateAST ::
 
-checkExistential:: 
-checkConjunction ::
-
-verifyFreeVars ::
-checkOutputSequence ::
+checkExistential:: soomething -> Bool
+checkConjunction :: something -> Bool
+x1,x2 |- P(x1) ^ Q(x2)
+verifyFreeVars :: --check that all free vars are assigned to >= 1 tables/relations
+checkOutputSequence :: --potentially not necessary
 checkSubset :: ??? is this needed ? Dont think we use subsets.
-assignVarColToTable ::
+ ::
 checkTableName ::
+treeToStack :: -- R -> L , DFS
+--methodToGetDataFromActualCSVFile :: IO () -> String
+
+
+
 
 
 -}
---NB: Could be done with a stack. ie traverse to lowest branch, recurse back up, pushing nodes until root reached. Or a Q
-getLowestVarBranch :: VarTree -> [(String,String),
-CommaNode ( var ) ( remainingTree ) | 
 
---NB: Should this be VarTree or String as output? --COME BACK HERE n 
-varTreeToOrdList :: VarTree -> [(Int, VarNode)] --Int represents ORDER (NB: this is why I decided to add VarNode)
-varTreeToOrdList (CommaNode (nextVar) (remainingTree)) = ()
+{-
+data indexedVars =  | vars indexedVars : (varTuple) : []
+                    | (varTuple)
+                    
+data varTuple = tup (Int, VarNode)
+-}
+varTreeToList :: VarTree -> [(VarNode)] --Int represents ORDER (NB: this is why I decided to add VarNode)
+varTreeToList (VarLeaf (loc) (dat))  = (VarLeaf (loc) (dat)) : []
+varTreeToList (CommaNode (nextVar) (remainingTree)) = (varTreeToList nextVar) : varTreeToList remainingTree
+
+toIndexedList :: [(VarNode)] -> [(Int, VarNode)]
+toIndexedList [] = []
+toIndexedList lst = zip [1..] lst
 
 checkEquality :: OpTree -> Bool
 checkEquality EquateNode l r    | l == r = True
                                 | otherwise = False
 
 
-checkRelation :: OpTree -> Bool
-checkRelation RelationNode tbl (x:xs) | 
+
+--checkRelation :: OpTree -> Bool
+--checkRelation RelationNode tbl (x:xs) | 
 
                             
 {-=============================== CSV HANDLING ==============================-}

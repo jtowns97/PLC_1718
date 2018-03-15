@@ -9,11 +9,10 @@ import Text.ParserCombinators.Parsec
 -- Left hand side of algebra (variables or arguments)
 -- VARIABLES TREE
 data VarTree = CommaNode (VarNode) (VarTree) --Added to force tree structure to right recurse
-    | VarNode
+    | VarNode (String) (String) -- VarNode location actualData
     deriving Show
 
 --NB: Added to make traversing tree easier, ie easily access the data stored at these locations.
-data VarNode = VarLeaf (String) (String) --1st string = location, 2nd = actual data
 
 -- Right hand side of algebra (query or request)
 -- OPERATORS TREE
@@ -33,9 +32,9 @@ data ExisitTree = ExisitVar (VarTree) (OpTree)
 
 -- All expressions available within language.
 -- PARSE TREE
-data ParseTree = Marker ([(Int, VarNode)]) (OpTree)
-    | MarkerNested ([(Int, VarNode)]) (ExisitTree)
-    | MarkerExtended ([(Int, VarNode)]) (ExisitTree) (OpTree)
+data ParseTree = Marker ([(Int, VarTree)]) (OpTree)
+    | MarkerNested ([(Int, VarTree)]) (ExisitTree)
+    | MarkerExtended ([(Int, VarTree)]) (ExisitTree) (OpTree)
     deriving Show
   --  (1,2,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
 
@@ -129,17 +128,18 @@ data indexedVars =  | vars indexedVars : (varTuple) : []
                     
 data varTuple = tup (Int, VarNode)
 -}
-varTreeToList :: VarTree -> [(VarNode)] --Int represents ORDER (NB: this is why I decided to add VarNode)
-varTreeToList (VarLeaf (loc) (dat))  = (VarLeaf (loc) (dat)) : []
-varTreeToList (CommaNode (nextVar) (remainingTree)) = (varTreeToList nextVar) : varTreeToList remainingTree
+--COnvert VarTree to list of nodes in tree
+varTreeToList :: VarTree -> [(VarTree)] --Int represents ORDER (NB: this is why I decided to add VarNode)
+varTreeToList ( node )  = (node) : []
+varTreeToList (CommaNode (nextVar) (remainingTree)) = nextVar : varTreeToList remainingTree
 
-toIndexedList :: [(VarNode)] -> [(Int, VarNode)]
+toIndexedList :: [(VarTree)] -> [(Int, VarTree)]
 toIndexedList [] = []
 toIndexedList lst = zip [1..] lst
 
 checkEquality :: OpTree -> Bool
-checkEquality EquateNode l r    | l == r = True
-                                | otherwise = False
+checkEquality (EquateNode (l) (r))  | l == r = True
+                                    | otherwise = False
 
 
 
@@ -160,8 +160,9 @@ parseCSV input = parse csvFile "(unknown)" input
 
 --extractCSVCol fileContents specifiedCol; returns (ColumnNumber, [all, instances, of, specified, column])
 extractCSVCol :: [[String]] -> Int -> (Int, [String])
-extractCSVCol [] _ = []
-extractCSVCol (x:xs) ind = (ind, extractCSVCol' x ind 1 : extractCSVCol xs ind)
+extractCSVCol [] _ = [-1, [] ] --Add error here
+extractCSVCol (x:xs) ind = (ind, extractCSVCol' x ind 1) ++ extractCSVCol xs ind
+
 
 --Auxilliary function, basically a safe version of !!
 extractCSVCol' :: [String] -> Int -> Int -> String

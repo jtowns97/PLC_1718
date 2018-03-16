@@ -24,7 +24,6 @@ data OpTree = ConjunctionNode (OpTree) (OpTree)
     | LSubNode (OpTree) (OpTree)
     | RSubNode (OpTree) (OpTree)
     | BoolNode (Bool)
-    | VarOp (VarTree)
     | VarTree
     deriving Show
 
@@ -59,9 +58,17 @@ toString bool = if bool then "True" else "False"
 -- Read input from command line with IO monad.
 main :: IO()
 main = do
+    tableA <- readFile "A.csv"
+    tableB <- readFile "B.csv"
     filePath <- getArgs -- Take file path from command line.
-    contents <- readFile (head filePath) -- read file
-    let string = parseCalc (alexScanTokens contents) -- build parse tree from the contents.
+    file <- readFile (head filePath) -- read file
+    let content = head (splitOn "\n" file)
+    let alex = alexScanTokens (content)
+    let happy = parseCalc (alex)
+    output <- evaluate(happy)
+
+    mapM_ putStrLn (c)
+
 
     --TEST: showing parse tree.
     putStrLn ("ParseTree: " ++ show(string))
@@ -202,6 +209,9 @@ outputCross xs ys = xs : ys
 
 stringToVarNode :: String -> String -> String -> VarNode
 stringToVarNode loc data name = VarNode (loc) (data) (name)
+
+evaluateE :: ExisitTree -> Bool
+evaluateE varTree opTree | (varTreeToList (varTree))
 
 
 

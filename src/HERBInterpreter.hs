@@ -9,7 +9,7 @@ import Text.ParserCombinators.Parsec
 -- Left hand side of algebra (variables or arguments)
 -- VARIABLES TREE
 data VarTree = CommaNode (VarNode) (VarTree) --Added to force tree structure to right recurse
-    | (VarNode)  -- VarNode location actualData
+    | SingleNode (VarNode)  -- VarNode location actualData
     deriving Show
     
 data VarNode = Vari (String) (String) -- loc dat
@@ -39,18 +39,7 @@ data ParseTree = Marker (OrderedVars) (OpTree)
     deriving Show
   --  (1,2,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
 
--- All commands available within language.
--- COMMAND TREE
-data ComTree = Assign String ParseTree
-    | Seq ComTree ComTree -- sequence commands together so that a parser can parse long sequences.
-    | If ParseTree ComTree
-    | IfElse ParseTree ComTree ComTree
-    | While ParseTree ComTree
-    | Declare Int ParseTree ComTree
-    | Print ParseTree
-    | List ParseTree
-    | Place Int ParseTree
-    deriving Show
+
 
 -- Memory and location storage for interpreter.
 type Location = Int
@@ -113,27 +102,37 @@ data varTuple = tup (Int, VarNode)
 -}
 --COnvert VarTree to list of nodes in tree
 varTreeToList :: VarTree -> [(VarNode)] --Int represents ORDER (NB: this is why I decided to add VarNode)
-varTreeToList ( node )  = (treeToNode (node)  : []
+varTreeToList (SingleNode (node) )  = (treeToNode (SingleNode (node)))  : []
 varTreeToList (CommaNode (nextVar) (remainingTree)) = nextVar : varTreeToList remainingTree
 
 --Converts VarTree with one node associated with it to a VarNode; ***TODO: Test this function I have no idea if this works ***
 treeToNode :: VarTree -> VarNode
-treeToNode (Vari (loc) (dat)) = Vari (loc) (dat)
-treeToNode (Comma (node) (remainingTree)) = parseError --Unsure of error notation or if this will work but throw an error here (***TODO***)
+treeToNode (SingleNode (Vari (loc) (dat))) = Vari (loc) (dat)
+treeToNode (CommaNode (node) (remainingTree)) = parseError --Unsure of error notation or if this will work but throw an error here (***TODO***)
 
 toIndexedList :: [(VarTree)] -> [(Int, VarNode)]
 toIndexedList [] = []
-toIndexedList lst = zip [1..] lst
+toIndexedList lst = zip [1..] treeToNode( lst )
+                    
 
+-- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
 checkEquality :: OpTree -> Bool
 checkEquality (EquateNode (l) (r))  | l == r = True
                                     | otherwise = False
 
+--Compares the data currently asigned to 2 different VarNodes. If they are the same, return true, else false.
+-- *** TODO *** maybe implement type error here?
+equateNodes :: VarNode -> VarNode -> Bool
+equateNodes (Vari (locA) (datA)) (Vari (locB) (datB))   | datA == datB = True
+                                                        | datA /= datB = False
 
-
+-- *** TODO *** ALSO REALLY IMPORTANT, see spec problem 2, (1 2 3 |- A(x1,x2)^B(x2,x3) we gotta have an equality check for both x2's
+-- ALSO another point, does the order of the output matter? Spec says ordered lex'ally but idk if that means a specific order or just however its implemented
 --checkRelation :: OpTree -> Bool
 --checkRelation RelationNode tbl (x:xs) | 
 
+
+-- *** TODO *** : Non bounded var w/ Exis
                             
 {-=============================== CSV HANDLING ==============================-}
 --A source: http://book.realworldhaskell.org/read/using-parsec.html
@@ -148,7 +147,7 @@ parseCSV input = parse csvFile "(unknown)" input
 
 --extractCSVCol fileContents specifiedCol; returns (ColumnNumber, [all, instances, of, specified, column])
 extractCSVCol :: [[String]] -> Int -> (Int, [String])
-extractCSVCol [] _ = [-1, [] ] --Add error here
+extractCSVCol [] _ = (-1, []) --Add error here
 extractCSVCol (x:xs) ind = (ind, extractCSVCol' x ind 1) ++ extractCSVCol xs ind
 
 
@@ -207,4 +206,24 @@ evaluateVar :: (VarTree) -> [String]
 evaluateVar (CommaNode a b) = evaluateVar a ++ evaluateVar b
 evaluateVar (VarNode s) = [s]
 
+
+
+
+
+
+
+
+
+-- All commands available within language.
+-- COMMAND TREE
+data ComTree = Assign String ParseTree
+    | Seq ComTree ComTree -- sequence commands together so that a parser can parse long sequences.
+    | If ParseTree ComTree
+    | IfElse ParseTree ComTree ComTree
+    | While ParseTree ComTree
+    | Declare Int ParseTree ComTree
+    | Print ParseTree
+    | List ParseTree
+    | Place Int ParseTree
+    deriving Show
 -}

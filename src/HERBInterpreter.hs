@@ -9,10 +9,11 @@ import Text.ParserCombinators.Parsec
 -- Left hand side of algebra (variables or arguments)
 -- VARIABLES TREE
 data VarTree = CommaNode (VarNode) (VarTree) --Added to force tree structure to right recurse
-    | VarNode (String) (String) -- VarNode location actualData
+    | (VarNode)  -- VarNode location actualData
     deriving Show
-
---NB: Added to make traversing tree easier, ie easily access the data stored at these locations.
+    
+data VarNode = Vari (String) (String) -- loc dat
+    deriving Show
 
 -- Right hand side of algebra (query or request)
 -- OPERATORS TREE
@@ -32,9 +33,9 @@ data ExisitTree = ExisitVar (VarTree) (OpTree)
 
 -- All expressions available within language.
 -- PARSE TREE
-data ParseTree = Marker ([(Int, VarTree)]) (OpTree)
-    | MarkerNested ([(Int, VarTree)]) (ExisitTree)
-    | MarkerExtended ([(Int, VarTree)]) (ExisitTree) (OpTree)
+data ParseTree = Marker (OrderedVars) (OpTree)
+    | MarkerNested (OrderedVars) (ExisitTree)
+    | MarkerExtended (OrderedVars) (ExisitTree) (OpTree)
     deriving Show
   --  (1,2,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
 
@@ -55,26 +56,8 @@ data ComTree = Assign String ParseTree
 type Location = Int
 --type Map = [(Int, Value)]
 type Stack = [Int]
+newtype OrderedVars = IndVars [(Int, [VarNode])] deriving Show --To make tree readability easier, ***TODO*** test
 
-evaluateParseTree :: ParseTree -> [String]
-evaluateParseTree (Marker var op) = [evaluateVar var] ++ [evaluateOp op]
-evaluateParseTree (Marker var exisit) = [evaluateVar var] ++ [evaluateExisit exisit]
-evaluateParseTree (Marker var exisit op) = [evaluateVar var] ++ [evaluateExisit exisit] ++ [evaluateOp op]
-
-evaluateExisit :: ExisitTree -> [String]
-evaluateExisit (ExisitVar var op) = evaluateVar var ++ evaluateOp op
-
-evaluateOp :: (OpTree) -> [String]
-evaluateOp (ConjunctionNode left right) = evaluateOp left ++ evaluateOp right
-evaluateOp (RelationNode string variables) = [string] ++ evaluateVar variables ++ [")"]
-evaluateOp (EquateNode left right) = ["("] ++ evaluateOp left ++ ["="] ++ evaluateOp right ++ [")"]
-evaluateOp (LSubNode left right) = evaluateOp left ++ evaluateOp right
-evaluateOp (RSubNode left right) = evaluateOp left ++ evaluateOp right
-evaluateOp (BoolNode f) = [toString f]
-
-evaluateVar :: (VarTree) -> [String]
-evaluateVar (CommaNode a b) = evaluateVar a ++ evaluateVar b
-evaluateVar (VarNode s) = [s]
 
 varToInt :: [Char] -> Int
 varToInt (x:xs) = read xs
@@ -129,11 +112,16 @@ data indexedVars =  | vars indexedVars : (varTuple) : []
 data varTuple = tup (Int, VarNode)
 -}
 --COnvert VarTree to list of nodes in tree
-varTreeToList :: VarTree -> [(VarTree)] --Int represents ORDER (NB: this is why I decided to add VarNode)
-varTreeToList ( node )  = (node) : []
+varTreeToList :: VarTree -> [(VarNode)] --Int represents ORDER (NB: this is why I decided to add VarNode)
+varTreeToList ( node )  = (treeToNode (node)  : []
 varTreeToList (CommaNode (nextVar) (remainingTree)) = nextVar : varTreeToList remainingTree
 
-toIndexedList :: [(VarTree)] -> [(Int, VarTree)]
+--Converts VarTree with one node associated with it to a VarNode; ***TODO: Test this function I have no idea if this works ***
+treeToNode :: VarTree -> VarNode
+treeToNode (Vari (loc) (dat)) = Vari (loc) (dat)
+treeToNode (Comma (node) (remainingTree)) = parseError --Unsure of error notation or if this will work but throw an error here (***TODO***)
+
+toIndexedList :: [(VarTree)] -> [(Int, VarNode)]
 toIndexedList [] = []
 toIndexedList lst = zip [1..] lst
 
@@ -192,3 +180,31 @@ getCSV inp | inp == [] = Left( hPutStrLn stderr "Error: Missing CSV data" )
 -}
 
                                    
+
+
+
+{-================================================     Probably not gonna use:      ======================================== -}
+
+{-
+
+evaluateParseTree :: ParseTree -> [String]
+evaluateParseTree (Marker var op) = [evaluateVar var] ++ [evaluateOp op]
+evaluateParseTree (Marker var exisit) = [evaluateVar var] ++ [evaluateExisit exisit]
+evaluateParseTree (Marker var exisit op) = [evaluateVar var] ++ [evaluateExisit exisit] ++ [evaluateOp op]
+
+evaluateExisit :: ExisitTree -> [String]
+evaluateExisit (ExisitVar var op) = evaluateVar var ++ evaluateOp op
+
+evaluateOp :: (OpTree) -> [String]
+evaluateOp (ConjunctionNode left right) = evaluateOp left ++ evaluateOp right
+evaluateOp (RelationNode string variables) = [string] ++ evaluateVar variables ++ [")"]
+evaluateOp (EquateNode left right) = ["("] ++ evaluateOp left ++ ["="] ++ evaluateOp right ++ [")"]
+evaluateOp (LSubNode left right) = evaluateOp left ++ evaluateOp right
+evaluateOp (RSubNode left right) = evaluateOp left ++ evaluateOp right
+evaluateOp (BoolNode f) = [toString f]
+
+evaluateVar :: (VarTree) -> [String]
+evaluateVar (CommaNode a b) = evaluateVar a ++ evaluateVar b
+evaluateVar (VarNode s) = [s]
+
+-}

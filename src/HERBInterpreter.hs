@@ -37,7 +37,7 @@ data ParseTree = Marker (OrderedVars) (OpTree)
     | MarkerNested (OrderedVars) (ExisitTree)
     | MarkerExtended (OrderedVars) (ExisitTree) (OpTree)
     deriving Show
-  --  (1,2,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
+  --  (1,10,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
 
 
 
@@ -94,12 +94,10 @@ treeToStack :: -- R -> L , DFS
 
 -}
 
-{-
-data indexedVars =  | vars indexedVars : (varTuple) : []
-                    | (varTuple)
-                    
-data varTuple = tup (Int, VarNode)
--}
+--evaluate :: ParseTree -> [([VarNode]),([VarNode])]
+
+--updateNodeValue 
+
 --COnvert VarTree to list of nodes in tree
 varTreeToList :: VarTree -> [(VarNode)] --Int represents ORDER (NB: this is why I decided to add VarNode)
 varTreeToList (SingleNode (node) )  = (treeToNode (SingleNode (node)))  : []
@@ -108,11 +106,10 @@ varTreeToList (CommaNode (nextVar) (remainingTree)) = nextVar : varTreeToList re
 --Converts VarTree with one node associated with it to a VarNode; ***TODO: Test this function I have no idea if this works ***
 treeToNode :: VarTree -> VarNode
 treeToNode (SingleNode (Vari (loc) (dat))) = Vari (loc) (dat)
-treeToNode (CommaNode (node) (remainingTree)) = parseError --Unsure of error notation or if this will work but throw an error here (***TODO***)
+--treeToNode (CommaNode (node) (remainingTree)) = parseError --Unsure of error notation or if this will work but throw an error here (***TODO***)
 
-toIndexedList :: [(VarTree)] -> [(Int, VarNode)]
-toIndexedList [] = []
-toIndexedList lst = zip [1..] treeToNode( lst )
+toIndexedList :: (VarTree) -> [(Int, VarNode)]
+toIndexedList lst = zip [1..] varTreeToList( lst )
                     
 
 -- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr

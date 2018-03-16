@@ -12,7 +12,7 @@ data VarTree = CommaNode (VarNode) (VarTree) --Added to force tree structure to 
     | SingleNode (VarNode)  -- VarNode location actualData
     deriving Show
     
-data VarNode = Vari (String) (String) -- loc dat
+data VarNode = Vari (String) (String) (String) -- loc dat name
     deriving Show
 
 -- Right hand side of algebra (query or request)
@@ -23,7 +23,7 @@ data OpTree = ConjunctionNode (OpTree) (OpTree)
     | LSubNode (OpTree) (OpTree)
     | RSubNode (OpTree) (OpTree)
     | BoolNode (Bool)
-    | VarTree
+    | VarOp (VarTree)
     deriving Show
 
 -- Seperate exisitential operator.
@@ -78,7 +78,6 @@ main = do
 methodToMaybeCreateAST ::
 
 checkExistential:: soomething -> Bool
-checkConjunction :: something -> Bool
 x1,x2 |- P(x1) ^ Q(x2)
 verifyFreeVars :: --check that all free vars are assigned to >= 1 tables/relations
 checkOutputSequence :: --potentially not necessary
@@ -93,10 +92,62 @@ treeToStack :: -- R -> L , DFS
 
 
 -}
+{-=============================== TREE HANDLING & TRAVERSAL ==============================-}
 
---evaluate :: ParseTree -> [([VarNode]),([VarNode])]
+evaluate :: OpTree -> [VarNode] -> (Bool, [VarNode])--evaluate opTree freeVarList
+evaluate (EquateNode (l) (r)) freeVars =( ( checkEquality (EquateNode (l) (r)) ), freeVars )
+evaluate (RelationNode (loc) (varTr)) freeVars = checkRelation ( (RelationNode (loc) (varTr)) freeVars )
+evaluate (ConjunctionNode (l) (r)) freeVars = checkConjunction ( (ConjunctionNode (l) (r)) freeVars )
+--evaluate (VarOp tree) freeVars = assignVars ((varTreeToList (tree)) freeVars)
 
+
+
+-- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
+checkEquality :: OpTree -> Bool
+checkEquality (EquateNode (l) (r))  = equateNodes l r
+
+--Compares the data currently asigned to 2 different VarNodes. If they are the same, return true, else false.
+-- *** TODO *** maybe implement type error here?
+equateNodes :: VarNode -> VarNode -> Bool
+equateNodes (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | datA == datB = True
+                                                                        | datA /= datB = False
+
+-- *** TODO *** ALSO REALLY IMPORTANT, see spec problem 2, (1 2 3 |- A(x1,x2)^B(x2,x3) we gotta have an equality check for both x2's
+-- ALSO another point, does the order of the output matter? Spec says ordered lex'ally but idk if that means a specific order or just however its implemented
+checkRelation :: OpTree -> [VarNode] -> (Bool, [VarNode])
+--heckRelation (RelationNode (tblNme) (vList)) freeVars | 
+
+assignFreeVars :: OpTree -> [VarNode] -> [VarNode]
+assignFreeVars (RelationNode (tblNme) (vList)) = 
+
+--checkConjunction :: OpTree -> [VarNode] -> (Bool, [VarNode])
+
+compareNodeNameLoc :: VarNode -> VarNode -> Bool
+compareNodeNameLoc (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))    | (nameA == nameB) && (locA /= locB) = True
+                                                                                | (nameA /= nameB) = False
+
+
+
+
+-- *** TODO *** : Non bounded var w/ Exis
+
+
+
+--Below for indexed var list:
 --updateNodeValue 
+--copyNodeValue
+--compareNodeNameLoc
+--addRepeatVar
+--fillVarTree
+--updateNodeName
+
+-- Count all instances of all Relation. 
+countOpTreeRelations :: OpTree  -> Int
+countOpTreeRelations (RelationNode (str) (vars)) = 1
+countOpTreeRelations (ConjunctionNode (l) (r)) = (countOpTreeRelations l + countOpTreeRelations r)
+countOpTreeRelations op = 0
+
+
 
 --COnvert VarTree to list of nodes in tree
 varTreeToList :: VarTree -> [(VarNode)] --Int represents ORDER (NB: this is why I decided to add VarNode)
@@ -105,31 +156,14 @@ varTreeToList (CommaNode (nextVar) (remainingTree)) = nextVar : varTreeToList re
 
 --Converts VarTree with one node associated with it to a VarNode; ***TODO: Test this function I have no idea if this works ***
 treeToNode :: VarTree -> VarNode
-treeToNode (SingleNode (Vari (loc) (dat))) = Vari (loc) (dat)
+treeToNode (SingleNode (Vari (loc) (dat) (name))) = Vari (loc) (dat) (name)
 --treeToNode (CommaNode (node) (remainingTree)) = parseError --Unsure of error notation or if this will work but throw an error here (***TODO***)
 
 toIndexedList :: (VarTree) -> [(Int, VarNode)]
-toIndexedList lst = zip [1..] varTreeToList( lst )
+toIndexedList lst = zip [1..] (varTreeToList( lst ))
                     
 
--- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
-checkEquality :: OpTree -> Bool
-checkEquality (EquateNode (l) (r))  | l == r = True
-                                    | otherwise = False
 
---Compares the data currently asigned to 2 different VarNodes. If they are the same, return true, else false.
--- *** TODO *** maybe implement type error here?
-equateNodes :: VarNode -> VarNode -> Bool
-equateNodes (Vari (locA) (datA)) (Vari (locB) (datB))   | datA == datB = True
-                                                        | datA /= datB = False
-
--- *** TODO *** ALSO REALLY IMPORTANT, see spec problem 2, (1 2 3 |- A(x1,x2)^B(x2,x3) we gotta have an equality check for both x2's
--- ALSO another point, does the order of the output matter? Spec says ordered lex'ally but idk if that means a specific order or just however its implemented
---checkRelation :: OpTree -> Bool
---checkRelation RelationNode tbl (x:xs) | 
-
-
--- *** TODO *** : Non bounded var w/ Exis
                             
 {-=============================== CSV HANDLING ==============================-}
 --A source: http://book.realworldhaskell.org/read/using-parsec.html

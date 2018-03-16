@@ -5,7 +5,6 @@ import Control.Monad
 import HERBGrammar
 import HERBTokens
 import Text.ParserCombinators.Parsec
-import Data.List
     
 -- Left hand side of algebra (variables or arguments)
 -- VARIABLES TREE
@@ -24,7 +23,7 @@ data OpTree = ConjunctionNode (OpTree) (OpTree)
     | LSubNode (OpTree) (OpTree)
     | RSubNode (OpTree) (OpTree)
     | BoolNode (Bool)
-    | VarTree
+    | VarOp (VarTree)
     deriving Show
 
 -- Seperate exisitential operator.
@@ -58,17 +57,9 @@ toString bool = if bool then "True" else "False"
 -- Read input from command line with IO monad.
 main :: IO()
 main = do
-    tableA <- readFile "A.csv"
-    tableB <- readFile "B.csv"
     filePath <- getArgs -- Take file path from command line.
-    file <- readFile (head filePath) -- read file
-    let content = head (splitOn "\n" file)
-    let alex = alexScanTokens (content)
-    let happy = parseCalc (alex)
-    output <- evaluate(happy)
-
-    mapM_ putStrLn (c)
-
+    contents <- readFile (head filePath) -- read file
+    let string = parseCalc (alexScanTokens contents) -- build parse tree from the contents.
 
     --TEST: showing parse tree.
     putStrLn ("ParseTree: " ++ show(string))
@@ -87,11 +78,10 @@ main = do
 methodToMaybeCreateAST ::
 
 checkExistential:: soomething -> Bool
-checkConjunction :: something -> Bool
 x1,x2 |- P(x1) ^ Q(x2)
 verifyFreeVars :: --check that all free vars are assigned to >= 1 tables/relations
 checkOutputSequence :: --potentially not necessary
-checkSubset :: ??? is this needed ? Dont think we use subsets.  
+checkSubset :: ??? is this needed ? Dont think we use subsets.
  ::
 checkTableName ::
 treeToStack :: -- R -> L , DFS
@@ -102,10 +92,14 @@ treeToStack :: -- R -> L , DFS
 
 
 -}
+{-=============================== TREE HANDLING & TRAVERSAL ==============================-}
 
---evaluate :: ParseTree -> [([VarNode]),([VarNode])]
+evaluate :: OpTree -> [VarNode] -> (Bool, [VarNode])--evaluate opTree freeVarList
+evaluate (EquateNode (l) (r)) freeVars =( ( checkEquality (EquateNode (l) (r)) ), freeVars )
+evaluate (RelationNode (loc) (varTr)) freeVars = checkRelation ( (RelationNode (loc) (varTr)) freeVars )
+evaluate (ConjunctionNode (l) (r)) freeVars = checkConjunction ( (ConjunctionNode (l) (r)) freeVars )
+--evaluate (VarOp tree) freeVars = assignVars ((varTreeToList (tree)) freeVars)
 
-<<<<<<< HEAD
 
 
 -- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
@@ -191,35 +185,20 @@ compareNodeNameLoc (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))    
 
 
 --Below for indexed var list:
-
-{-========================================================================================-}
-=======
->>>>>>> 841ea7bd43fc01c52838da979b9b3c85bb024142
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
--{-=============================== TREE HANDLING & TRAVERSAL ==============================-}
-
-evaluate :: OpTree -> [VarNode] -> (Bool, [VarNode])--evaluate opTree freeVarList
-evaluate (EquateNode (l) (r)) freeVars =( ( checkEquality (EquateNode (l) (r)) ), freeVars )
-evaluate (RelationNode (loc) (varTr)) freeVars = checkRelation ( (RelationNode (loc) (varTr)) freeVars )
-evaluate (ConjunctionNode (l) (r)) freeVars = checkConjunction ( (ConjunctionNode (l) (r)) freeVars )
---evaluate (VarOp tree) freeVars = assignVars ((varTreeToList (tree)) freeVars)
-
-
 --updateNodeValue 
+--copyNodeValue
+--compareNodeNameLoc
+--addRepeatVar
+--fillVarTree
+--updateNodeName
+
+-- Count all instances of all Relation. 
+countOpTreeRelations :: OpTree  -> Int
+countOpTreeRelations (RelationNode (str) (vars)) = 1
+countOpTreeRelations (ConjunctionNode (l) (r)) = (countOpTreeRelations l + countOpTreeRelations r)
+countOpTreeRelations op = 0
+
+
 
 --COnvert VarTree to list of nodes in tree
 varTreeToList :: VarTree -> [(VarNode)] --Int represents ORDER (NB: this is why I decided to add VarNode)
@@ -232,27 +211,10 @@ treeToNode (SingleNode (Vari (loc) (dat) (name))) = Vari (loc) (dat) (name)
 --treeToNode (CommaNode (node) (remainingTree)) = parseError --Unsure of error notation or if this will work but throw an error here (***TODO***)
 
 toIndexedList :: (VarTree) -> [(Int, VarNode)]
-toIndexedList lst = zip [1..] varTreeToList( lst )
+toIndexedList lst = zip [1..] (varTreeToList( lst ))
                     
 
--- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
-checkEquality :: OpTree -> Bool
-checkEquality (EquateNode (l) (r))  | l == r = True
-                                    | otherwise = False
 
---Compares the data currently asigned to 2 different VarNodes. If they are the same, return true, else false.
--- *** TODO *** maybe implement type error here?
-equateNodes :: VarNode -> VarNode -> Bool
-equateNodes (Vari (locA) (datA)) (Vari (locB) (datB))   | datA == datB = True
-                                                        | datA /= datB = False
-
--- *** TODO *** ALSO REALLY IMPORTANT, see spec problem 2, (1 2 3 |- A(x1,x2)^B(x2,x3) we gotta have an equality check for both x2's
--- ALSO another point, does the order of the output matter? Spec says ordered lex'ally but idk if that means a specific order or just however its implemented
---checkRelation :: OpTree -> Bool
---checkRelation RelationNode tbl (x:xs) | 
-
-
--- *** TODO *** : Non bounded var w/ Exis
                             
 {-=============================== CSV HANDLING ==============================-}
 --A source: http://book.realworldhaskell.org/read/using-parsec.html
@@ -261,15 +223,6 @@ csvFile = endBy line eol
 line = sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
-
-crossProduct :: [[String]] -> [[String]] -> [([String],[String])
-crossProduct xs ys = [(x,y) | x <- (transpose xs), y <- (transpose ys)] -- input columns, transpose will change to rows
-
-outputCross :: [([String],[String])] -> [[String]]
-outputCross xs ys = xs : ys
-
-stringToVarNode :: String -> String -> String -> VarNode
-stringToVarNode loc data name = VarNode (loc) (data) (name)
 
 parseCSV :: String -> Either ParseError [[String]]
 parseCSV input = parse csvFile "(unknown)" input
@@ -306,26 +259,8 @@ getCSV :: [[String]] -> Either IO() a [(Int, [String])]
 getCSV inp | inp == [] = Left( hPutStrLn stderr "Error: Missing CSV data" )
            | otherwise = Right( gatherCSVdata inp 1 )  
 -}
-----------------------------------------------------------------------------------------------------------------
-------------------------------------------------- ELLIOTT ------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
 
-crossProduct :: [[String]] -> [[String]] -> [([String],[String])
-crossProduct xs ys = [(x,y) | x <- (transpose xs), y <- (transpose ys)] -- input columns, transpose will change to rows
-
-outputCross :: [([String],[String])] -> [[String]]
-outputCross xs ys = xs : ys
-
-stringToVarNode :: String -> String -> String -> VarNode
-stringToVarNode loc data name = VarNode (loc) (data) (name)
-
-evaluateE :: ExisitTree -> Bool
-evaluateE varTree opTree | (varTreeToList (varTree))
+                                   
 
 
 

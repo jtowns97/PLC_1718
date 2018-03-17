@@ -24,7 +24,7 @@ data OpTree = ConjunctionNode (OpTree) (OpTree)
     | LSubNode (OpTree) (OpTree)
     | RSubNode (OpTree) (OpTree)
     | BoolNode (Bool)
-    | VarTree
+    | VarOp (VarTree)
     deriving Show
 
 -- Seperate exisitential operator.
@@ -124,12 +124,13 @@ checkRelation :: OpTree -> [String] -> (Bool, [VarNode])
 checkRelation (RelationNode (tblNme) (vTree)) thisRow | 
 
 
-assignRelation :: OpTree -> [String] -> OpTree
-assignRelation (RelationNode (tbl) (vTree)) (x:xs) = 
+assignRelation :: OpTree -> [String] -> OpTree --Will only assign if not signed before. If loc already exists then....what??
+assignRelation (RelationNode (tbl) (vTree)) (x:xs)  | isTreeAssigned (vTree) == False = assignVarTreeLoc (vTree) (tbl)
+                                                    | otherwise = (RelationNode (tbl) (vTree)) --check node equality here
 
-liftRelationNodesOut :: [OpTree] -> [OpTree]
-liftRelationNodesOut (RelationNode (tbl) (vTree)) = 
-liftRelationNodesOut  _ = 
+liftRelationNodesOut :: [OpTree] -> [OpTree] --Creates list of single node OpTree's 
+liftRelationNodesOut ((RelationNode (tbl) (vTree)):xs) = (RelationNode (tbl) (vTree) ) : liftRelationNodesOut xs 
+liftRelationNodesOut  (_:xs) = liftRelationNodesOut xs : []
 
 assignVarTreeLoc :: VarTree -> [String] -> VarTree
 assignVarTreeLoc (SingleNode (Vari (loc) (dat) (name))) (x:xs) = (SingleNode (Vari (x) (dat) (name)))
@@ -138,6 +139,10 @@ assignVarTreeLoc (CommaNode (Vari (loc) (dat) (name)) (remTree)) (x:xs) = (Comma
 assignAssignment :: OpTree -> String -> OpTree
 assignAssignment (RelationNode (ass) (vTree) ) newAss = (RelationNode (newAss) (vTree))
 
+
+isTreeAssigned :: VarTree -> Bool
+isTreeAssigned (SingleNode vNode) = isNodeAssigned vNode
+isTreeAssigned (CommaNode vNode remTree) = isNodeAssinged vNode && isTreeAssigned remTree 
 
 isNodeAssigned :: VarNode -> Bool
 isNodeAssigned (Vari (loc) (dat) (name))    | loc == "*"  = False-- Represents unassiged null value 
@@ -148,8 +153,8 @@ isNodeAssigned (Vari (loc) (dat) (name))    | loc == "*"  = False-- Represents u
 assignVarNodeVal :: VarNode -> String -> VarNode
 assignVarNodeVal (Vari (loc) (dat) (name)) newDat = (Vari (loc) (newDat) (name))
 
-doesRelationExist :: 
-extractAllTableNames :: OpTree -> [String] --In order of traversal
+--doesRelationExist :: 
+--extractAllTableNames :: OpTree -> [String] --In order of traversal
 
 extractRelNodeLocation :: OpTree -> String
 extractRelNodeLocation (RelationNode (thisLoc) (vTree)) = thisLoc
@@ -216,10 +221,11 @@ compareNodeNameLoc (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))    
 
 -{-=============================== TREE HANDLING & TRAVERSAL ==============================-}
 
-evaluate :: OpTree -> [VarNode] -> (Bool, [VarNode])--evaluate opTree freeVarList
+evaluate :: OpTree -> [String] -> (Bool, [VarNode])--evaluate opTree freeVarList
 evaluate (EquateNode (l) (r)) freeVars =( ( checkEquality (EquateNode (l) (r)) ), freeVars )
 evaluate (RelationNode (loc) (varTr)) freeVars = checkRelation ( (RelationNode (loc) (varTr)) freeVars )
 evaluate (ConjunctionNode (l) (r)) freeVars = checkConjunction ( (ConjunctionNode (l) (r)) freeVars )
+evaluate (VarTree ) varRow = 
 --evaluate (VarOp tree) freeVars = assignVars ((varTreeToList (tree)) freeVars)
 
 

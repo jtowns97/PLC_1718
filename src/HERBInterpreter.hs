@@ -127,6 +127,10 @@ checkRelation (RelationNode (tblNme) (vTree)) thisRow |
 assignRelation :: OpTree -> [String] -> OpTree
 assignRelation (RelationNode (tbl) (vTree)) (x:xs) = 
 
+liftRelationNodesOut :: [OpTree] -> [OpTree]
+liftRelationNodesOut (RelationNode (tbl) (vTree)) = 
+liftRelationNodesOut  _ = 
+
 assignVarTreeLoc :: VarTree -> [String] -> VarTree
 assignVarTreeLoc (SingleNode (Vari (loc) (dat) (name))) (x:xs) = (SingleNode (Vari (x) (dat) (name)))
 assignVarTreeLoc (CommaNode (Vari (loc) (dat) (name)) (remTree)) (x:xs) = (CommaNode (Vari (x) (dat) (name)) (assignVarTreeLoc (remTree)))

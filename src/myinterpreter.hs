@@ -6,6 +6,7 @@ import HERBGrammar
 import HERBTokens
 import Text.ParserCombinators.Parsec
 import Data.List
+import Data.List.Split
 import Data.Typeable
 import Data.Maybe
 import Data.Ord
@@ -70,23 +71,29 @@ main :: IO()
 main = do 
     a <- getArgs
     b <- readFile (head a)
-    let content = head (splitAt "\n" b)
+    let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
     let happy = parseCalc (alex)
 
-    tree <- buildParseTree (happy)
-    stack <- traverseDF(tree)
-    tableNames <- extractTableNames (liftRelationNodesOut(stack))
-    tableData <- crossProductMulti(buildTables (tableNames))
-    answer <- executeHERB (stack) (tableData)
+    tree <- liftM(buildParseTree (happy))
+    stack <- liftM(traverseDF(tree))
+    tableNames <- liftM(extractTableNames (liftRelationNodesOut(stack)))
+    tableData <- liftM(crossProductMulti(buildTables (tableNames)))
+    answer <- liftM(executeHERB (stack) (tableData))
     prettyPrint (answer) -- answer contains all false rows as well as true. Just output true.
+
+{-==============================================================================-}
+{-============================== LIFTING TO MONADS =============================-}
+{-==============================================================================-}
+
+liftBPT :: ParseTree -> IO ParseTree
 
 {-==============================================================================-}
 {-=============================== CSV EXTRACTION ===============================-}
 {-==============================================================================-}
 
-csvFile = endBy line eol
-line = sepBy cell (char ',')
+csvFile = Text.ParserCombinators.Parsec.endBy line eol
+line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
 
@@ -179,6 +186,9 @@ isNodeAssigned (Vari (loc) (dat) (name))    | loc == "*"  = False-- Represents u
 {-==============================================================================-}
 {-=============================== TREE TRAVERSAL ===============================-}
 {-==============================================================================-}
+
+liftTraversal :: [a] -> IO a
+liftTraversal [a] = liftM [a]
 
 traverseDF :: ParseTree -> [a]
 traverseDF (EmptyPT) = []

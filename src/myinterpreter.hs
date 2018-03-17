@@ -75,18 +75,21 @@ main = do
     let alex = alexScanTokens (content)
     let happy = parseCalc (alex)
 
-    tree <- liftM(buildParseTree (happy))
-    stack <- liftM(traverseDF(tree))
-    tableNames <- liftM(extractTableNames (liftRelationNodesOut(stack)))
-    tableData <- liftM(crossProductMulti(buildTables (tableNames)))
-    answer <- liftM(executeHERB (stack) (tableData))
+    tree <- liftBPT(happy)
+    stack <- traverseDF(tree)
+    tableNames <- extractTableNames (liftRelationNodesOut(stack))
+    tableData <- crossProductMulti(buildTables (tableNames))
+    answer <- executeHERB (stack) (tableData)
     prettyPrint (answer) -- answer contains all false rows as well as true. Just output true.
 
 {-==============================================================================-}
 {-============================== LIFTING TO MONADS =============================-}
 {-==============================================================================-}
 
---liftBPT :: ParseTree -> IO ParseTree
+liftBPT :: Exp -> IO ParseTree
+liftBPT exp = liftM (buildParseTree (exp))
+
+liftTraverseDF :: 
 
 {-==============================================================================-}
 {-================================= BUILDING ===================================-}
@@ -98,7 +101,7 @@ buildParseTree Eval vars exis = MarkerNested (traverseDFVar(buildVarTree(vars)))
 buildParseTree EvalExisExt vars exis quer = MarkerExtended (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (buildOpTree(quer))
 
 buildVarTree :: Variables -> VarTree
-buildVarTree Var strName = SingleNode (Vari ("*") ("*") (strName))
+buildVarTree VarSingle strName = SingleNode (Vari ("*") ("*") (strName))
 buildVarTree Comma (VarSingle (nextStrName)) remVars = CommaNode (Vari ("*") ("*") (nextStrName)) (buildVarTree remVars)
 
 
@@ -113,7 +116,7 @@ buildOpTree Relation tblN varis = RelationNode (tblN) (assignVarTreeLoc (buildVa
 --Below (TODO) add type checker for querA/B, checking its a VarTree
 buildOpTree Equality querA querB = EquateNode (buildVarTree(querA)) (buildVarTree(querB))
 buildOpTree V varis = VarOp (buildVarTree(varis))
-buildOpTree _ = EmptyOT (Nothing)
+buildOpTree _ = EmptyOT (Data.Maybe.Nothing)
 {-==============================================================================-}
 {-=============================== CSV EXTRACTION ===============================-}
 {-==============================================================================-}

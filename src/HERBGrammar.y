@@ -27,15 +27,15 @@ import HERBTokens
 %% 
 
 Exp : Variables "|-" Query                              { Evaluate $1 $3 }
-	
+	| Variables "|-" Existential                        { Eval $1 $3}
+    | Variables "|-" Existential Query                  { EvalExisExt $1 $3 $4}
 Existential :  "(" Variables ")" "E." "(" Query ")"     { ExistentialSingle $2 $6 }
     | "(" Variables ")" "E." "(" Existential  ")"       { ExistentialNested $2 $6 }
-	| "(" Variables ")" "E." "(" Existential  ")" Query { ExistentialExtended $2 $6 $8}
 
-Variables : String "," Variables                     { Comma $1 $3 }
-    | Variables                                          { VarSingle $1}
+Variables : Variables "," Variables                     { Comma $1 $3 }
+    | var                                               { VarSingle $1}
 
-                                
+
 
 Query : Query "^" Query                                 { Conjunction $1 $3}
     | rel "(" Variables ")"                             { Relation $1 $3 }
@@ -54,10 +54,10 @@ data Exp = Evaluate Variables Query
     | EvalExisExt Variables Existential Query
     deriving Show
 
-
-data Variables = Comma String Variables
+data Variables = Comma Variables Variables
     | VarSingle String
     deriving Show
+
 data Query = Conjunction Query Query
     | Relation String Variables
     | Equality Query Query
@@ -66,6 +66,7 @@ data Query = Conjunction Query Query
     | Bool Bool
     | V Variables
     deriving Show
+
 data Existential = ExistentialSingle Variables Query
     | ExistentialNested Variables Existential
     deriving Show		  

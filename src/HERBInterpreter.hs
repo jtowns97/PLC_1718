@@ -246,7 +246,7 @@ assignFreeLocs' (CommaNode (Vari (locNext) (datNext) (nameNext) ) (remTree)) ( (
 
 evaluateParseTree :: ParseTree a -> [String] -> (Bool, [VarNode])
 evaluateParseTree (Marker ordVars oTree)
-evaluateParseTree (MarkerExis eTree )
+evaluateParseTree (MarkerNested eTree )
 
 <<<<<<< HEAD
 evaluate :: OpTree -> [String] -> (Bool, [VarNode])--evaluate opTree freeVarList

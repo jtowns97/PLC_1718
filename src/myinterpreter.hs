@@ -75,21 +75,34 @@ main = do
     let alex = alexScanTokens (content)
     let happy = parseCalc (alex)
 
-    tree <- liftBPT(happy)
-    stack <- traverseDF(tree)
-    tableNames <- extractTableNames (liftRelationNodesOut(stack))
-    tableData <- crossProductMulti(buildTables (tableNames))
-    answer <- executeHERB (stack) (tableData)
-    prettyPrint (answer) -- answer contains all false rows as well as true. Just output true.
+    tree <- liftBuildParseTree(happy)
+    stack <- liftTraverseDF(tree)
+    tableNames <- liftExtractTableNames(stack)
+    tableData <- liftCrossProductMulti(tableNames)
+    answer <- liftExecuteHERB (stack) (tableData)
+    liftPrettyPrint (answer) -- answer contains all false rows as well as true. Just output true.
 
 {-==============================================================================-}
 {-============================== LIFTING TO MONADS =============================-}
 {-==============================================================================-}
 
-liftBPT :: Exp -> IO ParseTree
-liftBPT exp = liftM (buildParseTree (exp))
+liftBuildParseTree :: Exp -> IO ParseTree
+liftBuildParseTree exp = liftM (buildParseTree (exp))
 
-liftTraverseDF :: 
+liftTraverseDF :: ParseTree -> IO [a]
+liftTraverseDF tree = liftM(traverseDF(tree))
+
+liftExtractTableNames :: [a] -> IO String
+liftExtractTableNames stack = liftM(extractTableNames(liftRelationNodesOut(stack)))
+
+liftCrossProductMulti :: String -> IO Table
+liftCrossProductMulti tableNames = liftM(crossProductMulti(buildTables(tableNames)))
+
+liftExecuteHERB :: [a] -> Table -> IO String
+liftExecuteHERB stack tableData = liftM(executeHERB (stack) (tableData))
+
+liftPrettyPrint :: String -> IO String
+liftPrettyPrint answer = liftM2(prettyPrint (answer))
 
 {-==============================================================================-}
 {-================================= BUILDING ===================================-}
@@ -117,6 +130,7 @@ buildOpTree Relation tblN varis = RelationNode (tblN) (assignVarTreeLoc (buildVa
 buildOpTree Equality querA querB = EquateNode (buildVarTree(querA)) (buildVarTree(querB))
 buildOpTree V varis = VarOp (buildVarTree(varis))
 buildOpTree _ = EmptyOT (Data.Maybe.Nothing)
+
 {-==============================================================================-}
 {-=============================== CSV EXTRACTION ===============================-}
 {-==============================================================================-}
@@ -203,6 +217,13 @@ equateNodesName :: VarNode -> VarNode -> Bool
 equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | nameA == nameB = True
                                                                             | nameA /= nameB = False
 
+isTreeAssigned :: VarTree -> Bool
+isTreeAssigned (SingleNode vNode) = isNodeAssigned vNode
+isTreeAssigned (CommaNode vNode remTree) = isNodeAssinged vNode && isTreeAssigned remTree 
+
+isNodeAssigned :: VarNode -> Bool
+isNodeAssigned (Vari (loc) (dat) (name))    | loc == "*"  = False-- Represents unassiged null value 
+                                            | otherwise = True
 
 isTreeAssigned :: VarTree -> Bool
 isTreeAssigned (SingleNode vNode) = isNodeAssigned vNode
@@ -211,6 +232,15 @@ isTreeAssigned (CommaNode vNode remTree) = isNodeAssinged vNode && isTreeAssigne
 isNodeAssigned :: VarNode -> Bool
 isNodeAssigned (Vari (loc) (dat) (name))    | loc == "*"  = False-- Represents unassiged null value 
                                             | otherwise = True
+
+
+extractTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodesOut, possibly needs to be reverse
+extractTableNames [] = []
+extractTableNames ( (RelationNode (tbl) (vTree)) :xs) = (tbl) : extractTableNames xs
+
+liftRelationNodesOut :: [OpTree] -> [OpTree] --Creates list of single node OpTree's 
+liftRelationNodesOut ((RelationNode (tbl) (vTree)):xs) = (RelationNode (tbl) (vTree) ) : liftRelationNodesOut xs 
+liftRelationNodesOut  (_:xs) = liftRelationNodesOut xs : []
                                             
 {-==============================================================================-}
 {-=============================== TREE TRAVERSAL ===============================-}
@@ -247,9 +277,6 @@ traverseDFVar (CommaNode (nextVar) (remainingTree)) = nextVar : traverseDFVar re
 treeToNode :: VarTree -> VarNode
 treeToNode (SingleNode (Vari (loc) (dat) (name))) = Vari (loc) (dat) (name)
 treeToNode (CommaNode (node) (remainingTree)) = error "Variable tree contains multiple nodes. Cannot convert to single node."--Unsure of error notation or if this will work but throw an error here (***TODO***)
-
-toIndexedList :: (VarTree) -> [(Int, VarNode)]
-toIndexedList lst = zip [1..] traverseDFVar(lst)
 
 -- Blindly assumes OpTree contains a VarTree containing only one VarNode.
 convertOpToVarNode :: OpTree -> VarNode

@@ -86,8 +86,34 @@ main = do
 {-============================== LIFTING TO MONADS =============================-}
 {-==============================================================================-}
 
-liftBPT :: ParseTree -> IO ParseTree
+--liftBPT :: ParseTree -> IO ParseTree
 
+{-==============================================================================-}
+{-================================= BUILDING ===================================-}
+{-==============================================================================-}
+
+buildParseTree :: Exp -> ParseTree
+buildParseTree (Evaluate (vars) (query)) = Marker (traverseDFVar(buildVarTree(vars))) (buildOpTree(query))
+buildParseTree Eval vars exis = MarkerNested (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis))
+buildParseTree EvalExisExt vars exis quer = MarkerExtended (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (buildOpTree(quer))
+
+buildVarTree :: Variables -> VarTree
+buildVarTree Var strName = SingleNode (Vari ("*") ("*") (strName))
+buildVarTree Comma (VarSingle (nextStrName)) remVars = CommaNode (Vari ("*") ("*") (nextStrName)) (buildVarTree remVars)
+
+
+buildExisTree :: Existential -> ExistTree 
+buildExisTree ExistentialSingle (vars) (quer) = ExistVar (buildVarTree(vars)) (buildOpTree (quer))
+buildExisTree ExistentialNested (vars) (exisNest) = ExistNest (buildVarTree(vars)) (buildExisTree (exisNest))
+
+
+buildOpTree :: Query -> OpTree 
+buildOpTree Conjunction querA querB = ConjunctionNode (buildOpTree querA) (buildOpTree querB)
+buildOpTree Relation tblN varis = RelationNode (tblN) (assignVarTreeLoc (buildVarTree varis) (tblN) )
+--Below (TODO) add type checker for querA/B, checking its a VarTree
+buildOpTree Equality querA querB = EquateNode (buildVarTree(querA)) (buildVarTree(querB))
+buildOpTree V varis = VarOp (buildVarTree(varis))
+buildOpTree _ = EmptyOT (Nothing)
 {-==============================================================================-}
 {-=============================== CSV EXTRACTION ===============================-}
 {-==============================================================================-}

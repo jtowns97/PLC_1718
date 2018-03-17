@@ -1,82 +1,153 @@
-module HERBInterpreter where
-import System.IO
-import System.Environment
-import Control.Monad
-import HERBGrammar
-import HERBTokens
-import Text.ParserCombinators.Parsec
-import Data.List
-import Data.Typeable
+-- module HERBInterpreter where
+-- import System.IO
+-- import System.Environment
+-- import Control.Monad
+-- import HERBGrammar
+-- import HERBTokens
+-- import Text.ParserCombinators.Parsec
+-- import Data.List
+-- import Data.Typeable
 
-{-=============================== DATA STRUCTURES ==============================-}
+-- {-=============================== DATA STRUCTURES ==============================-}
 
--- Left hand side of algebra (variables or arguments)
--- VARIABLES TREE
-data VarTree = CommaNode (VarNode) (VarTree) --Added to force tree structure to right recurse
-    | SingleNode (VarNode)  -- VarNode location actualData
-    | EmptyVT (EmptyTree)
-    deriving Show
+-- -- Left hand side of algebra (variables or arguments)
+-- -- VARIABLES TREE
+-- data VarTree = CommaNode (VarNode) (VarTree) --Added to force tree structure to right recurse
+--     | SingleNode (VarNode)  -- VarNode location actualData
+--     | EmptyVT (EmptyTree)
+--     deriving Show
     
-data VarNode = Vari (String) (String) (String) -- loc dat name
-    deriving Show
+-- data VarNode = Vari (String) (String) (String) -- loc dat name
+--     deriving Show
 
--- Right hand side of algebra (query or request)
--- OPERATORS TREE
-data OpTree = ConjunctionNode (OpTree) (OpTree)
-    | RelationNode (String) (VarTree) -- String is Table name.
-    | EquateNode (OpTree) (OpTree)
-    | LSubNode (OpTree) (OpTree)
-    | RSubNode (OpTree) (OpTree)
-    | BoolNode (Bool)
-    | VarOp (VarTree)
-    | EmptyOT (EmptyTree)
-    deriving Show
+-- -- Right hand side of algebra (query or request)
+-- -- OPERATORS TREE
+-- data OpTree = ConjunctionNode (OpTree) (OpTree)
+--     | RelationNode (String) (VarTree) -- String is Table name.
+--     | EquateNode (OpTree) (OpTree)
+--     | LSubNode (OpTree) (OpTree)
+--     | RSubNode (OpTree) (OpTree)
+--     | BoolNode (Bool)
+--     | VarOp (VarTree)
+--     | EmptyOT (EmptyTree)
+--     deriving Show
 
--- Seperate exisitential operator.
--- EXISITENTIAL TREE ***TODO** add case for nested eTree
-data ExisitTree = ExisitVar (VarTree) (OpTree) 
-    | EmptyET (EmptyTree)
-    deriving Show
+-- -- Seperate exisitential operator.
+-- -- EXISITENTIAL TREE ***TODO** add case for nested eTree
+-- data ExisitTree = ExisitVar (VarTree) (OpTree) 
+--     | EmptyET (EmptyTree)
+--     deriving Show
 
--- All expressions available within language.
--- PARSE TREE
-data ParseTree = Marker (OrderedVars) (OpTree)
-    | MarkerNested (OrderedVars) (ExisitTree)
-    | MarkerExtended (OrderedVars) (ExisitTree) (OpTree)
-    | EmptyPT (EmptyTree)
-    deriving Show
-  --  (1,10,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
+-- -- All expressions available within language.
+-- -- PARSE TREE
+-- data ParseTree = Marker (OrderedVars) (OpTree)
+--     | MarkerNested (OrderedVars) (ExisitTree)
+--     | MarkerExtended (OrderedVars) (ExisitTree) (OpTree)
+--     | EmptyPT (EmptyTree)
+--     deriving Show
+--   --  (1,10,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
 
-data EmptyTree = Nothing
-    deriving Show
+-- data EmptyTree = Nothing
+--     deriving Show
 
-newtype OrderedVars = IndVars [(Int, [VarNode])] deriving Show --To make tree readability easier, ***TODO*** test
+-- type Cell = String
+--     deriving Show
 
+-- type Column = [Cell]
+--     deriving Show
 
-varToInt :: [Char] -> Int
-varToInt (x:xs) = read xs
+-- type Row = [Cell]
+--     deriving Show
 
-toString :: Bool -> String
-toString bool = if bool then "True" else "False"
+-- type Table = [Columns] | [Rows] | [[Cell]]
+--     deriving Show
 
--- Read input from command line with IO monad.
-main :: IO()
-main = do
-    filePath <- getArgs -- Take our language command.
-    file <- readFile (head filePath) -- read file
-    content <- parseCSV (file) -- Builds parseTree.
-    let alex = alexScanTokens (content)
-    let happy = parseCalc (alex)
-    --output <- (happy))
-
-    --mapM_ putStrLn (c)
+-- newtype OrderedVars = IndVars [(Int, [VarNode])] deriving Show --To make tree readability easier, ***TODO*** test
 
 
-    --TEST: showing parse tree.
-    putStrLn ("ParseTree: " ++ show(string))
-    print "... tree parsed."
+-- varToInt :: [Char] -> Int
+-- varToInt (x:xs) = read xs
 
---getVarLocation                       
+-- toString :: Bool -> String
+-- toString bool = if bool then "True" else "False"
+
+-- -- Read input from command line with IO monad.
+-- main = do 
+--     a <- getArgs
+--     b <- readFile (head a)
+--     let content = head (splitAt "\n" b)
+--     let alex = alexScanTokens (content)
+--     let happy = parseCalc (alex)
+
+--     tree <- buildParseTree (happy)
+--     stack <- traverseDF(tree)
+--     tableNames <- extractTableNames (liftRelationNodesOut(stack))
+--     tableData <- crossProduct(buildTables (tableNames))
+--     answer <- executeHERB (stack) (tableData)
+--     prettyPrint (answer) -- answer contains all false rows as well as true. Just output true.
+    
+-- readContents :: String -> IO [[String]]
+-- readContents filepath = do
+--  contents <- readFile filepath
+--  let lines = chunksOf 1 (splitOn "\n" contents)
+--  return lines
+
+--getVarLocation      
+
+executeHERB :: [a] -> Table -> [(Bool, Row)]
+executeHERB parseTree [] = []
+executeHERB parseTree (t:ts) = actuallyExecute(assignVariables(t)) : executeHERB(ts) 
+{-=============================== CSV HANDLING ==============================-}
+--A source: http://book.realworldhaskell.org/read/using-parsec.html
+
+-- csvFile = endBy line eol
+-- line = sepBy cell (char ',')
+-- cell = many (noneOf ",\n")
+-- eol = char '\n'
+
+-- parseCSV :: String -> [[String]]
+-- parseCSV input = parse csvFile "(unknown)" input
+
+-- --extractCSVCol fileContents specifiedCol; returns (ColumnNumber, [all, instances, of, specified, column])
+-- extractCSVCol :: [[String]] -> Int -> (Int, Column)
+-- extractCSVCol [] _ = (-1, []) --Add error here
+-- extractCSVCol (x:xs) ind = (ind, getNthEl x ind 1) ++ extractCSVCol xs ind
+
+
+-- --Auxilliary function, basically a safe version of !!
+-- getNthEl :: [a] -> Int -> Int -> a
+-- getNthEl [] _ _ = []
+-- getNthEl (x:xs) goal current | goal == current = x
+--                                    | goal /= current = getNthEl xs goal (current+1)
+
+-- --Return number of columns
+-- countCSVCol :: [Column] -> Int
+-- countCSVCol (x:xs) = length x
+
+-- --Collate columns into one data structure
+-- gatherCSVdata :: [Column] -> Int -> [(Int, [Column])]
+-- gatherCSVdata inp count | count > colNum = []
+--                         | count <= colNum = extractCSVCol inp count : gatherCSVdata inp (count+1)
+--                         where
+--                             colNum = countCSVCol inp
+
+-- crossProduct :: [Column] -> [Column] -> Table
+-- crossProduct xs ys = crossProduct' [(x,y) | x <- (transpose xs), y <- (transpose ys)] -- input columns, transpose will change to rows
+
+-- -- crossProduct' :: [(Column,Column)] -> Table
+-- crossProduct' xs ys = xs : ys
+
+{-
+
+Currently not working due to Either error wrt IO()
+
+--Iterate through columns of CSV file, ensuring all data is collected. Throw error for empty file
+getCSV :: [[String]] -> Either IO() a [(Int, [String])]
+getCSV inp | inp == [] = Left( hPutStrLn stderr "Error: Missing CSV data" )
+           | otherwise = Right( gatherCSVdata inp 1 )  
+-}
+
+
 
 {-=============================== OPERATOR CHECKING FUNCTIONS  ==============================-}
 {-
@@ -113,6 +184,7 @@ extractTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodes
 extractTableNames [] = []
 extractTableNames ( (RelationNode (tbl) (vTree)) :xs) = (tbl) : extractTableNames xs
 
+
 extractRelNodeLocation :: OpTree -> String
 extractRelNodeLocation (RelationNode (thisLoc) (vTree)) = thisLoc
 
@@ -138,7 +210,7 @@ assignVarNodeVal (Vari (loc) (dat) (name)) newDat = (Vari (loc) (newDat) (name))
 
 {-=============================== TREE HANDLING & TRAVERSAL ==============================-}
 
---TRAVERSAL--
+-- --TRAVERSAL--
 traverseDF :: ParseTree -> [a]
 traverseDF (EmptyPT) = []
 traverseDF (Marker list op) = Marker : traverseDF list : traverseDF op
@@ -161,22 +233,12 @@ traverseDFEx (ExisitVar var op) = traverseDFVar var : traverseDFOp op
 traverseDFVar :: VarTree -> [VarNode] --Int represents ORDER (NB: this is why I decided to add VarNode)
 traverseDFVar (SingleNode (node) )  = (treeToNode (SingleNode (node)))  : []
 traverseDFVar (CommaNode (nextVar) (remainingTree)) = nextVar : traverseDFVar remainingTree
-
-
+ 
 
 --updateNodeValue 
 
 --Converts VarTree with one node associated with it to a VarNode; ***TODO: Test this function I have no idea if this works ***
-treeToNode :: VarTree -> VarNode
-treeToNode (SingleNode (Vari (loc) (dat) (name))) = Vari (loc) (dat) (name)
-treeToNode (CommaNode (node) (remainingTree)) = error "Variable tree contains multiple nodes. Cannot convert to single node."--Unsure of error notation or if this will work but throw an error here (***TODO***)
 
-toIndexedList :: (VarTree) -> [(Int, VarNode)]
-toIndexedList lst = zip [1..] traverseDFVar(lst)
-
--- Blindly assumes OpTree contains a VarTree containing only one VarNode.
-convertOpToVarNode :: OpTree -> VarNode
-convertOpToVarNode VarOp (varTree) = treeToNode (varTree)
 
 -- *** TODO *** ALSO REALLY IMPORTANT, see spec problem 2, (1 2 3 |- A(x1,x2)^B(x2,x3) we gotta have an equality check for both x2's
 -- ALSO another point, does the order of the output matter? Spec says ordered lex'ally but idk if that means a specific order or just however its implemented
@@ -187,9 +249,9 @@ convertOpToVarNode VarOp (varTree) = treeToNode (varTree)
 
 {-=============================== MAIN EVALUATION ==============================-}
 
-evaluateParseTree :: ParseTree a -> [String] -> (Bool, [VarNode])
-evaluateParseTree (Marker ordVars oTree)
-evaluateParseTree (MarkerExis eTree )
+-- evaluateParseTree :: ParseTree a -> [String] -> (Bool, [VarNode])
+-- evaluateParseTree (Marker ordVars oTree)
+-- evaluateParseTree (MarkerExis eTree )
 
 evaluate :: OpTree -> [String] -> (Bool, [VarNode])--evaluate opTree freeVarList
 evaluate (EquateNode (l) (r)) freeVars =( ( checkEquality (EquateNode (l) (r)) ), freeVars )
@@ -198,6 +260,9 @@ evaluate (ConjunctionNode (l) (r)) freeVars = checkConjunction ( (ConjunctionNod
 --evaluate (VarTree ) varRow = 
 --evaluate (VarOp tree) freeVars = assignVars ((traverseDFVar (tree)) freeVars)
 evaluate _ freeVars = (True, [(Vari ("loc") ("dat") ("col"))])
+
+-- evaluateE :: ExisitTree -> Bool
+-- evaluateE varTree opTree | (traverseDFVar (varTree)) --TODO
 
 -- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
 checkEquality :: OpTree -> Bool
@@ -211,6 +276,12 @@ equateNodes :: VarNode -> VarNode -> Bool
 equateNodes (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | datA == datB = True
                                                                         | datA /= datB = False
 
+equateNodesName :: VarNode -> VarNode -> Bool
+equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | nameA == nameB = True
+                                                                        | nameA /= nameB = False
+
+equateNodeNameMulti :: VarNode -> [VarNode] -> Bool
+equateNodeNameMulti var (v:vs) = 
 isTreeAssigned :: VarTree -> Bool
 isTreeAssigned (SingleNode vNode) = isNodeAssigned vNode
 isTreeAssigned (CommaNode vNode remTree) = isNodeAssinged vNode && isTreeAssigned remTree 
@@ -218,59 +289,6 @@ isTreeAssigned (CommaNode vNode remTree) = isNodeAssinged vNode && isTreeAssigne
 isNodeAssigned :: VarNode -> Bool
 isNodeAssigned (Vari (loc) (dat) (name))    | loc == "*"  = False-- Represents unassiged null value 
                                             | otherwise = True
-                                                                        
-{-=============================== CSV HANDLING ==============================-}
---A source: http://book.realworldhaskell.org/read/using-parsec.html
-
-csvFile = endBy line eol
-line = sepBy cell (char ',')
-cell = many (noneOf ",\n")
-eol = char '\n'
-
-parseCSV :: String -> Either ParseError [[String]]
-parseCSV input = parse csvFile "(unknown)" input
-
---extractCSVCol fileContents specifiedCol; returns (ColumnNumber, [all, instances, of, specified, column])
-extractCSVCol :: [[String]] -> Int -> (Int, [String])
-extractCSVCol [] _ = (-1, []) --Add error here
-extractCSVCol (x:xs) ind = (ind, getNthEl x ind 1) ++ extractCSVCol xs ind
-
-
---Auxilliary function, basically a safe version of !!
-getNthEl :: [a] -> Int -> Int -> a
-getNthEl [] _ _ = []
-getNthEl (x:xs) goal current | goal == current = x
-                                   | goal /= current = getNthEl xs goal (current+1)
-
---Return number of columns
-countCSVCol :: [[String]] -> Int
-countCSVCol (x:xs) = length x
-
---Collate columns into one data structure
-gatherCSVdata :: [[String]] -> Int -> [(Int, [String])]
-gatherCSVdata inp count | count > colNum = []
-                        | count <= colNum = extractCSVCol inp count : gatherCSVdata inp (count+1)
-                        where
-                            colNum = countCSVCol inp
-
-crossProduct :: [[String]] -> [[String]] -> [[String]]
-crossProduct xs ys = crossProduct' [(x,y) | x <- (transpose xs), y <- (transpose ys)] -- input columns, transpose will change to rows
-
-crossProduct' :: [([String],[String])] -> [[String]]
-crossProduct' xs ys = xs : ys
-
-{-
-
-Currently not working due to Either error wrt IO()
-
---Iterate through columns of CSV file, ensuring all data is collected. Throw error for empty file
-getCSV :: [[String]] -> Either IO() a [(Int, [String])]
-getCSV inp | inp == [] = Left( hPutStrLn stderr "Error: Missing CSV data" )
-           | otherwise = Right( gatherCSVdata inp 1 )  
--}
-
--- evaluateE :: ExisitTree -> Bool
--- evaluateE varTree opTree | (traverseDFVar (varTree)) --TODO
 
 {-=============================== ERROR HANDLING ==============================-}
 

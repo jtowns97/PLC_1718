@@ -24,9 +24,6 @@ data VarTree = CommaNode (VarNode) (VarTree) --Added to force tree structure to 
 data VarNode = Vari (String) (String) (String) -- loc dat name
     deriving Show
 
-type OrderedVars = IndVars [(Int, VarNode)] 
-    deriving Show --To make tree readability easier
-
 -- Right hand side of algebra (query or request)
 -- OPERATORS TREE
 data OpTree = ConjunctionNode (OpTree) (OpTree)
@@ -47,9 +44,9 @@ data ExistTree = ExistVar (VarTree) (OpTree)
 
 -- All expressions available within language.
 -- PARSE TREE
-data ParseTree = Marker (OrderedVars) (OpTree)
-    | MarkerNested (OrderedVars) (ExistTree)
-    | MarkerExtended (OrderedVars) (ExistTree) (OpTree)
+data ParseTree = Marker ([VarNode]) (OpTree)
+    | MarkerNested ([VarNode]) (ExistTree)
+    | MarkerExtended ([VarNode]) (ExistTree) (OpTree)
     | EmptyPT (EmptyTree)
     deriving Show
   --  (1,10,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
@@ -58,17 +55,13 @@ data EmptyTree = Nothing
     deriving Show
 
 type Cell = String
-    deriving Show
 
-type Column = [Cell]
-    deriving Show
+type Col = [Cell]
 
 type Row = [Cell]
-    deriving Show
 
-type Table = [Columns] | [Rows] | [[Cell]]
-    deriving Show
-
+type Table = [Col]
+type TableRows = [Row]
 
 {-==============================================================================-}
 {-===================================== MAIN ===================================-}
@@ -98,7 +91,7 @@ cell = many (noneOf ",\n")
 eol = char '\n'
 
 buildTables :: [String] -> [Table] 
-buildTables (x:xs) | (buildTable (x ++ ".csv")) : buildTables (xs)
+buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
 
 buildTable :: String -> Table
 buildTable tableName = parseCSV(readFile tableName)
@@ -110,33 +103,33 @@ parseCSV input = parse csvFile "(unknown)" input
 {-============================== TABLE OPERATIONS ==============================-}
 {-==============================================================================-}
 
-countColumns :: [Column] -> Int
-countColumns input = countColumnsFromRows (transpose input)
+countCols :: [Col] -> Int
+countCols input = countColsFromRows (transpose input)
 
-countColumnsFromRows :: [Row] -> Int
-countColumnsFromRows (x:xs) = length x
+countColsFromRows :: [Row] -> Int
+countColsFromRows (x:xs) = length x
 
 countRows :: [Row] -> Int
-countRows input = countRowsFromColumns (transpose input)
+countRows input = countRowsFromCols (transpose input)
 
-countRowsFromColumns :: [Column] -> Int
-countRowsFromColumns (x:xs) = length x
+countRowsFromCols :: [Col] -> Int
+countRowsFromCols (x:xs) = length x
 
-getNthEl :: [a] -> Int -> Int -> a
+getNthEl :: [Col] -> Int -> Int -> Col
 getNthEl [] _ _ = []
 getNthEl (x:xs) goal current | goal == current = x
                              | goal /= current = getNthEl xs goal (current+1)
 
 crossProductMulti :: [Table] -> Table
 crossProductMulti [] = []
-crossProductMulti (x:y:xs) = crossProductMulti([crossProductTwo (x) (y)) : xs)
+crossProductMulti (x:y:xs) = crossProductMulti([crossProductTwo (x) (y)] : xs)
 
--- input columns, transpose will change to rows
-crossProductTwo :: [Column] -> [Column] -> Table
+-- input Cols, transpose will change to rows
+crossProductTwo :: [Col] -> [Col] -> Table
 crossProductTwo [] [] = []
 crossProduct xs ys = crossProduct' [(x,y) | x <- (transpose xs), y <- (transpose ys)] 
 
-crossProduct' :: [(Column,Column)] -> Table
+crossProduct' :: [(Col,Col)] -> Table
 crossProduct' xs ys = xs : ys
 
 orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]]
@@ -144,8 +137,8 @@ orderOutput (o:os) (list) = orderOutput' o (list) : orderOutput os (list)
 
 --              LHS ORDER      filterTrueOutput            TRUE ROWS
 orderOutput' :: VarNode -> [[VarNode]] -> [VarNode]
-orderOutput o [] = []
-orderOutput o (t:ts) = orderOutput'' (o) (t) : orderOutput' (o) (ts)
+orderOutput' o [] = []
+orderOutput' o (t:ts) = orderOutput'' (o) (t) : orderOutput' (o) (ts)
 
 orderOutput'' :: VarNode -> [VarNode] -> [VarNode]
 orderOutput'' v (w:ws) | equateNodeNames v w == True = w : orderOutput'' v ws
@@ -196,7 +189,7 @@ traverseDF (Marker list exisit op) = Marker : traverseDF list : traverseDF exisi
 traverseDFOp :: OpTree -> [a]
 traverseDFOp (EmptyOT) = []
 traverseDFOp (ConjunctionNode left right) = traverseDFOp left : traverseDFOp right
-traverseDFOp (RelationNode string variables) = string ++ "(" : traverseDFVar : ")"
+traverseDFOp (RelationNode string variables) = traverseDFVar
 traverseDFOp (EquateNode left right) = traverseDFOp left : traverseDFOp right
 traverseDFOp (LSubNode left right) = traverseDFOp left : traverseDFOp right
 traverseDFOp (RSubNode left right) = traverseDFOp left : traverseDFOp right

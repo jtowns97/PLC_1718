@@ -86,10 +86,10 @@ main = do
 {-============================== LIFTING TO MONADS =============================-}
 {-==============================================================================-}
 
-liftBPT :: Exp -> IO ParseTree
-liftBPT exp = liftM (buildParseTree (exp))
+--liftBPT :: Exp -> IO ParseTree
+--liftBPT exp = liftM (buildParseTree (exp))
 
-liftTraverseDF :: 
+--liftTraverseDF :: 
 
 {-==============================================================================-}
 {-================================= BUILDING ===================================-}
@@ -235,7 +235,7 @@ traverseDFOp (RSubNode left right) = traverseDFOp left : traverseDFOp right
 traverseDFOp (BoolNode f) = toString f
     
 traverseDFEx :: ExistTree -> [a]
-traverseDFEx (EmptyET) = []
+traverseDFEx (EmptyET e) = []
 traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
 
 traverseDFVar :: VarTree -> [VarNode] --Int represents ORDER (NB: this is why I decided to add VarNode)
@@ -248,11 +248,11 @@ treeToNode :: VarTree -> VarNode
 treeToNode (SingleNode (Vari (loc) (dat) (name))) = Vari (loc) (dat) (name)
 treeToNode (CommaNode (node) (remainingTree)) = error "Variable tree contains multiple nodes. Cannot convert to single node."--Unsure of error notation or if this will work but throw an error here (***TODO***)
 
-toIndexedList :: (VarTree) -> [(Int, VarNode)]
-toIndexedList lst = zip [1..] traverseDFVar(lst)
+--toIndexedList :: (VarTree) -> [(Int, VarNode)]
+--toIndexedList lst = zip [1..] traverseDFVar(lst)
 
 -- Blindly assumes OpTree contains a VarTree containing only one VarNode.
 convertOpToVarNode :: OpTree -> VarNode
-convertOpToVarNode VarOp (varTree) = treeToNode (varTree)
+convertOpToVarNode (VarOp (vTree)) = treeToNode (vTree)
 
 

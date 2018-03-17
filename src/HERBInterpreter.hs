@@ -249,9 +249,9 @@ traverseDFVar (CommaNode (nextVar) (remainingTree)) = nextVar : traverseDFVar re
 
 {-=============================== MAIN EVALUATION ==============================-}
 
--- evaluateParseTree :: ParseTree a -> [String] -> (Bool, [VarNode])
--- evaluateParseTree (Marker ordVars oTree)
--- evaluateParseTree (MarkerExis eTree )
+evaluateParseTree :: ParseTree a -> [String] -> (Bool, [VarNode])
+evaluateParseTree (Marker ordVars oTree)
+evaluateParseTree (MarkerNested eTree )
 
 evaluate :: OpTree -> [String] -> (Bool, [VarNode])--evaluate opTree freeVarList
 evaluate (EquateNode (l) (r)) freeVars =( ( checkEquality (EquateNode (l) (r)) ), freeVars )

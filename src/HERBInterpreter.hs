@@ -105,9 +105,6 @@ treeToStack :: -- R -> L , DFS
 
 --evaluate :: ParseTree -> [([VarNode]),([VarNode])]
 
-<<<<<<< HEAD
-
-
 -- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
 checkEquality :: OpTree -> Bool
 checkEquality (EquateNode (l) (r)) = equateNodes l r
@@ -126,10 +123,6 @@ checkRelation (RelationNode (tblNme) (vTree)) thisRow |
 
 assignRelation :: OpTree -> [String] -> OpTree
 assignRelation (RelationNode (tbl) (vTree)) (x:xs) = 
-
-liftRelationNodesOut :: [OpTree] -> [OpTree]
-liftRelationNodesOut (RelationNode (tbl) (vTree)) = 
-liftRelationNodesOut  _ = 
 
 assignVarTreeLoc :: VarTree -> [String] -> VarTree
 assignVarTreeLoc (SingleNode (Vari (loc) (dat) (name))) (x:xs) = (SingleNode (Vari (x) (dat) (name)))
@@ -197,8 +190,6 @@ compareNodeNameLoc (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))    
 --Below for indexed var list:
 
 {-========================================================================================-}
-=======
->>>>>>> 841ea7bd43fc01c52838da979b9b3c85bb024142
 
 
 
@@ -331,7 +322,23 @@ stringToVarNode loc data name = VarNode (loc) (data) (name)
 evaluateE :: ExisitTree -> Bool
 evaluateE varTree opTree | (varTreeToList (varTree))
 
+traverseDFS 🇦🇪 ParseTree a -> [a]
+traverseDFS Empty = []
+traverseDFS (Marker list op) = Marker : traverseDFS list : traverseDFS op
+traverseDFS (Marker list exisit) = Marker : traverseDFS list : traverseDFS exisit
+traverseDFS (Marker list exisit op) = Marker : traverseDFS list : traverseDFS exisit : traverseDFS op
 
+traverseDFSOp OpTree a -> [a]
+traverseDFSOp Empty = []
+traverseDFSOp (ConjunctionNode left right) = traverseDFSOp left : traverseDFSOp right
+traverseDFSOp (RelationNode string variables) = string ++ "(" : traverseDFSVar : ")"
+traverseDFSOp (EquateNode left right) = traverseDFSOp left : traverseDFSOp right
+traverseDFSOp (LSubNode left right) = traverseDFSOp left : traverseDFSOp right
+traverseDFSOp (RSubNode left right) = traverseDFSOp left : traverseDFSOp right
+traverseDFSOp (BoolNode f) = toString f
+    
+traverseDFSEx ExisitTree a -> [a]
+traverseDFSEx (ExisitVar var op) = traverseDFSVar var : traverseDFSOp op
 
 {-================================================     Probably not gonna use:      ======================================== -}
 

@@ -22,8 +22,7 @@ import HERBTokens
     ","      { TokenComma _ }
                
 
-%left "|-" "E." "," "^" "<C" ">C" 
-%right "="
+%left "|-" "E." "," "^" "<C" ">C" "="
 %% 
 
 Exp : Variables "|-" Query                              { Evaluate $1 $3 }
@@ -32,8 +31,8 @@ Existential :  "(" Variables ")" "E." "(" Query ")"     { ExistentialSingle $2 $
     | "(" Variables ")" "E." "(" Existential  ")"       { ExistentialNested $2 $6 }
 	| "(" Variables ")" "E." "(" Existential  ")" Query { ExistentialExtended $2 $6 $8}
 
-Variables : Variable "," Variables                     { Comma $1 $3 }
-    | Variable                                          { VarSingle $1}
+Variables : Variables "," Variables                     { Comma $1 $3 }
+    | var                                               { Var $1}
 
 Query : Query "^" Query                                 { Conjunction $1 $3}
     | rel "(" Variables ")"                             { Relation $1 $3 }
@@ -51,14 +50,16 @@ data Exp = Evaluate Variables Query
     | Eval Variables Existential
     | EvalExisExt Variables Existential Query
     deriving Show
+<<<<<<< HEAD
 
 
 data Variables = Comma Variable Variables
     | Variable
+=======
+data Variables = Comma Variables Variables
+    | Var String
+>>>>>>> 0640f2708850776ce08ef07106beb8f2573e8e48
     deriving Show
-data Variable = VarSingle String
-    deriving Show
-
 data Query = Conjunction Query Query
     | Relation String Variables
     | Equality Query Query

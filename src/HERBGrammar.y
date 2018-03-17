@@ -47,9 +47,18 @@ parseError :: [Token] -> a
 parseError _ = error "Parse error"
 
 data Exp = Evaluate Variables Query
+    | Eval Variables Existential
+    | EvalExisExt Variables Existential Query
     deriving Show
+<<<<<<< HEAD
+
+
+data Variables = Comma Variable Variables
+    | Variable
+=======
 data Variables = Comma Variables Variables
     | Var String
+>>>>>>> 0640f2708850776ce08ef07106beb8f2573e8e48
     deriving Show
 data Query = Conjunction Query Query
     | Relation String Variables
@@ -57,9 +66,9 @@ data Query = Conjunction Query Query
     | LSub Query Query
     | RSub Query Query
     | Bool Bool
+    | V Variables
     deriving Show
 data Existential = ExistentialSingle Variables Query
     | ExistentialNested Variables Existential
-    | ExistentialExtended Variables Existential Query
     deriving Show		  
 } 

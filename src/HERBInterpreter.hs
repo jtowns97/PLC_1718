@@ -318,7 +318,7 @@ buildParseTree Eval vars exis = MarkerNested (traverseDFVar(buildVarTree(vars)))
 buildParseTree EvalExisExt vars exis quer = MarkerExtended (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (buildOpTree(quer))
 
 buildVarTree :: Variables -> VarTree
-buildVarTree Var strName = SingleNode (Vari ("*") ("*") (strName))
+buildVarTree VarSingle strName = SingleNode (Vari ("*") ("*") (strName))
 buildVarTree Comma (VarSingle (nextStrName)) remVars = CommaNode (Vari ("*") ("*") (nextStrName)) (buildVarTree remVars)
 
 

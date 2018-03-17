@@ -8,6 +8,8 @@ import Text.ParserCombinators.Parsec
 import Data.List
 import Data.Typeable
 
+{-=============================== DATA STRUCTURES ==============================-}
+
 -- Left hand side of algebra (variables or arguments)
 -- VARIABLES TREE
 data VarTree = CommaNode (VarNode) (VarTree) --Added to force tree structure to right recurse
@@ -27,10 +29,7 @@ data OpTree = ConjunctionNode (OpTree) (OpTree)
     | RSubNode (OpTree) (OpTree)
     | BoolNode (Bool)
     | VarOp (VarTree)
-=======
-    | VarOp VarTree
     | EmptyOT (EmptyTree)
->>>>>>> d8734f21bf1fe6327f69bed22a939f523bc4cb9d
     deriving Show
 
 -- Seperate exisitential operator.
@@ -51,11 +50,6 @@ data ParseTree = Marker (OrderedVars) (OpTree)
 data EmptyTree = Nothing
     deriving Show
 
-
--- Memory and location storage for interpreter.
-type Location = Int
---type Map = [(Int, Value)]
-type Stack = [Int]
 newtype OrderedVars = IndVars [(Int, [VarNode])] deriving Show --To make tree readability easier, ***TODO*** test
 
 
@@ -68,12 +62,9 @@ toString bool = if bool then "True" else "False"
 -- Read input from command line with IO monad.
 main :: IO()
 main = do
-    --FILE TO MAKE A LIST OF TABLES.
-    tableA <- readFile "A.csv"
-    tableB <- readFile "B.csv"
-    filePath <- getArgs -- Take file path from command line.
+    filePath <- getArgs -- Take our language command.
     file <- readFile (head filePath) -- read file
-    content <- (splitOn "\n" file)
+    content <- parseCSV (file) -- Builds parseTree.
     let alex = alexScanTokens (content)
     let happy = parseCalc (alex)
     --output <- (happy))
@@ -87,12 +78,6 @@ main = do
 
 --getVarLocation                       
 
-
-
-
-
-{-----------------------------------------JAMES FROM HERE ON-----------------------------------------------}
-
 {-=============================== OPERATOR CHECKING FUNCTIONS  ==============================-}
 {-
 methodToMaybeCreateAST ::
@@ -105,34 +90,16 @@ checkOutputSequence :: --potentially not necessary
 checkSubset :: ??? is this needed ? Dont think we use subsets.  
  ::
 checkTableName ::
-treeToStack :: -- R -> L , DFS
+treeToStack :: -- R -> L , DF
 --methodToGetDataFromActualCSVFile :: IO () -> String
 
-
-
-
-
 -}
-
-
--- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
-checkEquality :: OpTree -> Bool
-checkEquality (EquateNode (l) (r)) = equateNodes left right
-    where   left = convertOpToVarNode (l)
-            right = convertOpToVarNode (r)
-
---Compares the data currently asigned to 2 different VarNodes. If they are the same, return true, else false.
--- *** TODO *** maybe implement type error here?
-equateNodes :: VarNode -> VarNode -> Bool
-equateNodes (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | datA == datB = True
-                                                                        | datA /= datB = False
 
 -- *** TODO *** ALSO REALLY IMPORTANT, see spec problem 2, (1 2 3 |- A(x1,x2)^B(x2,x3) we gotta have an equality check for both x2's
 -- ALSO another point, does the order of the output matter? Spec says ordered lex'ally but idk if that means a specific order or just however its implemented
 -- checkRelation :: OpTree -> [String] -> (Bool, [VarNode])
 -- checkRelation (RelationNode (tblNme) (vTree)) thisRow | 
 
-<<<<<<< HEAD
 assignRelation :: OpTree -> [String] -> OpTree --Will only assign if not signed before. If loc already exists then....what??
 assignRelation (RelationNode (tbl) (vTree)) (x:xs)  | isTreeAssigned (vTree) == False = assignVarTreeLoc (vTree) (tbl)
                                                     | otherwise = (RelationNode (tbl) (vTree)) --check node equality here
@@ -146,9 +113,11 @@ extractTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodes
 extractTableNames [] = []
 extractTableNames ( (RelationNode (tbl) (vTree)) :xs) = (tbl) : extractTableNames xs
 
+extractRelNodeLocation :: OpTree -> String
+extractRelNodeLocation (RelationNode (thisLoc) (vTree)) = thisLoc
+
 -- assignRelation :: OpTree -> [String] -> OpTree
 -- assignRelation (RelationNode (tbl) (vTree)) (x:xs) = 
->>>>>>> d8734f21bf1fe6327f69bed22a939f523bc4cb9d
 
 assignVarTreeLoc :: VarTree -> [String] -> VarTree
 assignVarTreeLoc (SingleNode (Vari (loc) (dat) (name))) (x:xs) = (SingleNode (Vari (x) (dat) (name)))
@@ -157,6 +126,90 @@ assignVarTreeLoc (CommaNode (Vari (loc) (dat) (name)) (remTree)) (x:xs) = (Comma
 assignAssignment :: OpTree -> String -> OpTree
 assignAssignment (RelationNode (ass) (vTree) ) newAss = (RelationNode (newAss) (vTree))
 
+assignVarNodeVal :: VarNode -> String -> VarNode
+assignVarNodeVal (Vari (loc) (dat) (name)) newDat = (Vari (loc) (newDat) (name))
+
+
+--doesRelationExist :: 
+
+-- *** TODO *** : Non bounded var w/ Exis
+
+--Below for indexed var list:
+
+{-=============================== TREE HANDLING & TRAVERSAL ==============================-}
+
+--TRAVERSAL--
+traverseDF :: ParseTree -> [a]
+traverseDF (EmptyPT) = []
+traverseDF (Marker list op) = Marker : traverseDF list : traverseDF op
+traverseDF (Marker list exisit) = Marker : traverseDF list : traverseDF exisit
+traverseDF (Marker list exisit op) = Marker : traverseDF list : traverseDF exisit : traverseDF op
+
+traverseDFOp :: OpTree -> [a]
+traverseDFOp (EmptyOT) = []
+traverseDFOp (ConjunctionNode left right) = traverseDFOp left : traverseDFOp right
+traverseDFOp (RelationNode string variables) = string ++ "(" : traverseDFVar : ")"
+traverseDFOp (EquateNode left right) = traverseDFOp left : traverseDFOp right
+traverseDFOp (LSubNode left right) = traverseDFOp left : traverseDFOp right
+traverseDFOp (RSubNode left right) = traverseDFOp left : traverseDFOp right
+traverseDFOp (BoolNode f) = toString f
+    
+traverseDFEx :: ExisitTree -> [a]
+traverseDFEx (EmptyET) = []
+traverseDFEx (ExisitVar var op) = traverseDFVar var : traverseDFOp op
+
+traverseDFVar :: VarTree -> [VarNode] --Int represents ORDER (NB: this is why I decided to add VarNode)
+traverseDFVar (SingleNode (node) )  = (treeToNode (SingleNode (node)))  : []
+traverseDFVar (CommaNode (nextVar) (remainingTree)) = nextVar : traverseDFVar remainingTree
+
+
+
+--updateNodeValue 
+
+--Converts VarTree with one node associated with it to a VarNode; ***TODO: Test this function I have no idea if this works ***
+treeToNode :: VarTree -> VarNode
+treeToNode (SingleNode (Vari (loc) (dat) (name))) = Vari (loc) (dat) (name)
+treeToNode (CommaNode (node) (remainingTree)) = error "Variable tree contains multiple nodes. Cannot convert to single node."--Unsure of error notation or if this will work but throw an error here (***TODO***)
+
+toIndexedList :: (VarTree) -> [(Int, VarNode)]
+toIndexedList lst = zip [1..] traverseDFVar(lst)
+
+-- Blindly assumes OpTree contains a VarTree containing only one VarNode.
+convertOpToVarNode :: OpTree -> VarNode
+convertOpToVarNode VarOp (varTree) = treeToNode (varTree)
+
+-- *** TODO *** ALSO REALLY IMPORTANT, see spec problem 2, (1 2 3 |- A(x1,x2)^B(x2,x3) we gotta have an equality check for both x2's
+-- ALSO another point, does the order of the output matter? Spec says ordered lex'ally but idk if that means a specific order or just however its implemented
+--checkRelation :: OpTree -> Bool
+--checkRelation RelationNode tbl (x:xs) | 
+
+-- *** TODO *** : Non bounded var w/ Exis
+
+{-=============================== MAIN EVALUATION ==============================-}
+
+evaluateParseTree :: ParseTree a -> [String] -> (Bool, [VarNode])
+evaluateParseTree (Marker ordVars oTree)
+evaluateParseTree (MarkerNested eTree )
+
+evaluate :: OpTree -> [String] -> (Bool, [VarNode])--evaluate opTree freeVarList
+evaluate (EquateNode (l) (r)) freeVars =( ( checkEquality (EquateNode (l) (r)) ), freeVars )
+evaluate (RelationNode (loc) (varTr)) freeVars = checkRelation ( (RelationNode (loc) (varTr)) freeVars )
+evaluate (ConjunctionNode (l) (r)) freeVars = checkConjunction ( (ConjunctionNode (l) (r)) freeVars )
+--evaluate (VarTree ) varRow = 
+--evaluate (VarOp tree) freeVars = assignVars ((traverseDFVar (tree)) freeVars)
+evaluate _ freeVars = (True, [(Vari ("loc") ("dat") ("col"))])
+
+-- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
+checkEquality :: OpTree -> Bool
+checkEquality (EquateNode (l) (r)) = equateNodes left right
+    where   left = convertOpToVarNode (l)
+            right = convertOpToVarNode (r)
+
+--Compares the data currently asigned to 2 different VarNodes. If they are the same, return true, else false.
+-- *** TODO *** maybe implement type error here?
+equateNodes :: VarNode -> VarNode -> Bool
+equateNodes (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | datA == datB = True
+                                                                        | datA /= datB = False
 
 isTreeAssigned :: VarTree -> Bool
 isTreeAssigned (SingleNode vNode) = isNodeAssigned vNode
@@ -165,140 +218,7 @@ isTreeAssigned (CommaNode vNode remTree) = isNodeAssinged vNode && isTreeAssigne
 isNodeAssigned :: VarNode -> Bool
 isNodeAssigned (Vari (loc) (dat) (name))    | loc == "*"  = False-- Represents unassiged null value 
                                             | otherwise = True
-
-
-
-assignVarNodeVal :: VarNode -> String -> VarNode
-assignVarNodeVal (Vari (loc) (dat) (name)) newDat = (Vari (loc) (newDat) (name))
-
-<<<<<<< HEAD
---doesRelationExist :: 
---extractAllTableNames :: OpTree -> [String] --In order of traversal
-=======
--- doesRelationExist :: 
-
-
--- extractAllTableNames :: OpTree -> [String] --In order of traversal
->>>>>>> d8734f21bf1fe6327f69bed22a939f523bc4cb9d
-
-extractRelNodeLocation :: OpTree -> String
-extractRelNodeLocation (RelationNode (thisLoc) (vTree)) = thisLoc
-
-
-
-{-=========================== Probably wont use this ======================================-}
-{-
-assignFreeLocs :: OpTree -> [VarNode] -> [VarNode]
-assignFreeLocs (RelationNode (thisLoc) (vTree)) ((Vari (locA) (datA) (nameA)):xs) =  (Vari (thisLoc) (datA) (nameA) ) : assignFreeLocs' vTree xs thisLoc
-
-assignFreeLocs' :: VarTree -> [VarNode] -> String -> [VarNode]
-assignFreeLocs' (SingleNode (Vari (locA) (datA) (nameA) ))  ( (Vari (locB) (datB) (nameB) ) :xs) tblName = (Vari (tblName) (datB) (nameA)) : xs : []
-assignFreeLocs' (CommaNode (Vari (locNext) (datNext) (nameNext) ) (remTree)) ( (Vari (locB) (datB) (nameB) ) :xs) tblName = (Vari (tblName) (datB) (nameNext)) : assignFreeLocs' remTree xs tblName
--}
--- doesNameExistInVar :: [VarNode] -> String -> Maybe VarNode
--- doesNameExistInVar [] targString = EmptyTree
--- doesNameExistInVar ((Vari (loc) (dat) (name)):xs) targString    | name == targString = (Vari (loc) (dat) (name))
---                                                                 | name /= targString = doesNameExistInVar xs 
-
--- findAllVarsMatchingName :: [VarNode] -> String -> Maybe [VarNode]
--- findAllVarsMatchingGame [] str = []
--- findAllVarsMatchingName ((Vari (loc) (dat) (name)) : xs) str    | name == str = (Vari (loc) (dat) (name)) :  findAllVarsMatchingName xs str
---                                                                 | name /= str = findAllVarsMatchingName xs str
-
-
-
-
---if name is identical and loc is different, check equality
-
-
---checkConjunction :: OpTree -> [VarNode] -> (Bool, [VarNode])
-
--- compareNodeNameLoc :: VarNode -> VarNode -> Bool
--- compareNodeNameLoc (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))    | (nameA == nameB) && (locA /= locB) = True
---                                                                                 | (nameA /= nameB) = False
-
-
-
-
--- *** TODO *** : Non bounded var w/ Exis
-
-
-
---Below for indexed var list:
-
-{-========================================================================================-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{-=============================== TREE HANDLING & TRAVERSAL ==============================-}
-
-evaluateParseTree :: ParseTree a -> [String] -> (Bool, [VarNode])
-evaluateParseTree (Marker ordVars oTree)
-evaluateParseTree (MarkerNested eTree )
-
-<<<<<<< HEAD
-evaluate :: OpTree -> [String] -> (Bool, [VarNode])--evaluate opTree freeVarList
-evaluate (EquateNode (l) (r)) freeVars =( ( checkEquality (EquateNode (l) (r)) ), freeVars )
-evaluate (RelationNode (loc) (varTr)) freeVars = checkRelation ( (RelationNode (loc) (varTr)) freeVars )
-evaluate (ConjunctionNode (l) (r)) freeVars = checkConjunction ( (ConjunctionNode (l) (r)) freeVars )
---evaluate (VarTree ) varRow = 
---evaluate (VarOp tree) freeVars = assignVars ((varTreeToList (tree)) freeVars)
-=======
--- evaluate :: OpTree -> [VarNode] -> (Bool, [VarNode])--evaluate opTree freeVarList
--- evaluate (EquateNode (l) (r)) freeVars =( ( checkEquality (EquateNode (l) (r)) ), freeVars )
--- evaluate (RelationNode (loc) (varTr)) freeVars = checkRelation ( (RelationNode (loc) (varTr)) freeVars )
--- evaluate (ConjunctionNode (l) (r)) freeVars = checkConjunction ( (ConjunctionNode (l) (r)) freeVars )
--- evaluate (VarOp tree) freeVars = assignVars ((varTreeToList (tree)) freeVars)
->>>>>>> d8734f21bf1fe6327f69bed22a939f523bc4cb9d
-
-
---updateNodeValue 
-
---COnvert VarTree to list of nodes in tree
--- varTreeToList :: VarTree -> [(VarNode)] --Int represents ORDER (NB: this is why I decided to add VarNode)
--- varTreeToList (SingleNode (node) )  = (treeToNode (SingleNode (node)))  : []
--- varTreeToList (CommaNode (nextVar) (remainingTree)) = nextVar : varTreeToList remainingTree
-
---Converts VarTree with one node associated with it to a VarNode; ***TODO: Test this function I have no idea if this works ***
--- treeToNode :: VarTree -> VarNode
--- treeToNode (SingleNode (Vari (loc) (dat) (name))) = Vari (loc) (dat) (name)
--- --treeToNode (CommaNode (node) (remainingTree)) = parseError --Unsure of error notation or if this will work but throw an error here (***TODO***)
-
--- toIndexedList :: (VarTree) -> [(Int, VarNode)]
--- toIndexedList lst = zip [1..] varTreeToList( lst )
-                    
-
--- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
--- checkEquality :: OpTree -> Bool
--- checkEquality (EquateNode (l) (r))  | l == r = True
---                                     | otherwise = False
-
---Compares the data currently asigned to 2 different VarNodes. If they are the same, return true, else false.
--- *** TODO *** maybe implement type error here?
--- equateNodes :: VarNode -> VarNode -> Bool
--- equateNodes (Vari (locA) (datA)) (Vari (locB) (datB))   | datA == datB = True
---          `                                               | datA /= datB = False
-
--- *** TODO *** ALSO REALLY IMPORTANT, see spec problem 2, (1 2 3 |- A(x1,x2)^B(x2,x3) we gotta have an equality check for both x2's
--- ALSO another point, does the order of the output matter? Spec says ordered lex'ally but idk if that means a specific order or just however its implemented
---checkRelation :: OpTree -> Bool
---checkRelation RelationNode tbl (x:xs) | 
-
-
--- *** TODO *** : Non bounded var w/ Exis
-                            
+                                                                        
 {-=============================== CSV HANDLING ==============================-}
 --A source: http://book.realworldhaskell.org/read/using-parsec.html
 
@@ -313,14 +233,14 @@ parseCSV input = parse csvFile "(unknown)" input
 --extractCSVCol fileContents specifiedCol; returns (ColumnNumber, [all, instances, of, specified, column])
 extractCSVCol :: [[String]] -> Int -> (Int, [String])
 extractCSVCol [] _ = (-1, []) --Add error here
-extractCSVCol (x:xs) ind = (ind, extractCSVCol' x ind 1) ++ extractCSVCol xs ind
+extractCSVCol (x:xs) ind = (ind, getNthEl x ind 1) ++ extractCSVCol xs ind
 
 
 --Auxilliary function, basically a safe version of !!
-extractCSVCol' :: [String] -> Int -> Int -> String
-extractCSVCol' [] _ _ = []
-extractCSVCol' (x:xs) goal current | goal == current = x
-                                   | goal /= current = extractCSVCol' xs goal (current+1)
+getNthEl :: [a] -> Int -> Int -> a
+getNthEl [] _ _ = []
+getNthEl (x:xs) goal current | goal == current = x
+                                   | goal /= current = getNthEl xs goal (current+1)
 
 --Return number of columns
 countCSVCol :: [[String]] -> Int
@@ -333,6 +253,12 @@ gatherCSVdata inp count | count > colNum = []
                         where
                             colNum = countCSVCol inp
 
+crossProduct :: [[String]] -> [[String]] -> [[String]]
+crossProduct xs ys = crossProduct' [(x,y) | x <- (transpose xs), y <- (transpose ys)] -- input columns, transpose will change to rows
+
+crossProduct' :: [([String],[String])] -> [[String]]
+crossProduct' xs ys = xs : ys
+
 {-
 
 Currently not working due to Either error wrt IO()
@@ -342,45 +268,11 @@ getCSV :: [[String]] -> Either IO() a [(Int, [String])]
 getCSV inp | inp == [] = Left( hPutStrLn stderr "Error: Missing CSV data" )
            | otherwise = Right( gatherCSVdata inp 1 )  
 -}
-----------------------------------------------------------------------------------------------------------------
-------------------------------------------------- ELLIOTT ------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-
-crossProduct :: [[String]] -> [[String]] -> [([String],[String])]
-crossProduct xs ys = [(x,y) | x <- (transpose xs), y <- (transpose ys)] -- input columns, transpose will change to rows
-
-outputCross :: [([String],[String])] -> [[String]]
-outputCross xs ys = xs : ys
-
-stringToVarNode :: String -> String -> String -> VarNode
-stringToVarNode loc dat name = VarNode (loc) (dat) (name)
 
 -- evaluateE :: ExisitTree -> Bool
--- evaluateE varTree opTree | (varTreeToList (varTree)) --TODO
+-- evaluateE varTree opTree | (traverseDFVar (varTree)) --TODO
 
-traverseDFS :: ParseTree -> [a]
-traverseDFS (EmptyPT) = []
-traverseDFS (Marker list op) = Marker : traverseDFS list : traverseDFS op
-traverseDFS (Marker list exisit) = Marker : traverseDFS list : traverseDFS exisit
-traverseDFS (Marker list exisit op) = Marker : traverseDFS list : traverseDFS exisit : traverseDFS op
-
-traverseDFSOp :: OpTree -> [a]
-traverseDFSOp EmptyOT = []
-traverseDFSOp (ConjunctionNode left right) = traverseDFSOp left : traverseDFSOp right
-traverseDFSOp (RelationNode string variables) = string ++ "(" : traverseDFSVar : ")"
-traverseDFSOp (EquateNode left right) = traverseDFSOp left : traverseDFSOp right
-traverseDFSOp (LSubNode left right) = traverseDFSOp left : traverseDFSOp right
-traverseDFSOp (RSubNode left right) = traverseDFSOp left : traverseDFSOp right
-traverseDFSOp (BoolNode f) = toString f
-    
-traverseDFSEx :: ExisitTree -> [a]
-traverseDFSEx (EmptyET) = []
-traverseDFSEx (ExisitVar var op) = traverseDFSVar var : traverseDFSOp op
+{-=============================== ERROR HANDLING ==============================-}
 
 isInteger :: (Typeable a) => a -> Bool
 isInteger n = typeOf n == typeOf 1
@@ -391,52 +283,32 @@ isString n = typeOf n == typeOf "HERB"
 isChar :: (Typeable a) => a -> Bool
 isChar n = typeOf n == typeOf 'c'
 
--- Blindly assumes OpTree contains a VarTree containing only one VarNode.
-convertOpToVarNode :: OpTree -> VarNode
-convertOpToVarNode VarOp (varTree) = treeToNode (varTree)
+
 
 {-================================================     Probably not gonna use:      ======================================== -}
 
-{-
+-- assignFreeLocs :: OpTree -> [VarNode] -> [VarNode]
+-- assignFreeLocs (RelationNode (thisLoc) (vTree)) ((Vari (locA) (datA) (nameA)):xs) =  (Vari (thisLoc) (datA) (nameA) ) : assignFreeLocs' vTree xs thisLoc
 
-evaluateParseTree :: ParseTree -> [String]
-evaluateParseTree (Marker var op) = [evaluateVar var] ++ [evaluateOp op]
-evaluateParseTree (Marker var exisit) = [evaluateVar var] ++ [evaluateExisit exisit]
-evaluateParseTree (Marker var exisit op) = [evaluateVar var] ++ [evaluateExisit exisit] ++ [evaluateOp op]
+-- assignFreeLocs' :: VarTree -> [VarNode] -> String -> [VarNode]
+-- assignFreeLocs' (SingleNode (Vari (locA) (datA) (nameA) ))  ( (Vari (locB) (datB) (nameB) ) :xs) tblName = (Vari (tblName) (datB) (nameA)) : xs : []
+-- assignFreeLocs' (CommaNode (Vari (locNext) (datNext) (nameNext) ) (remTree)) ( (Vari (locB) (datB) (nameB) ) :xs) tblName = (Vari (tblName) (datB) (nameNext)) : assignFreeLocs' remTree xs tblName
 
-evaluateExisit :: ExisitTree -> [String]
-evaluateExisit (ExisitVar var op) = evaluateVar var ++ evaluateOp op
+-- doesNameExistInVar :: [VarNode] -> String -> Maybe VarNode
+-- doesNameExistInVar [] targString = EmptyTree
+-- doesNameExistInVar ((Vari (loc) (dat) (name)):xs) targString    | name == targString = (Vari (loc) (dat) (name))
+--                                                                 | name /= targString = doesNameExistInVar xs 
 
-evaluateOp :: (OpTree) -> [String]
-evaluateOp (ConjunctionNode left right) = evaluateOp left ++ evaluateOp right
-evaluateOp (RelationNode string variables) = [string] ++ evaluateVar variables ++ [")"]
-evaluateOp (EquateNode left right) = ["("] ++ evaluateOp left ++ ["="] ++ evaluateOp right ++ [")"]
-evaluateOp (LSubNode left right) = evaluateOp left ++ evaluateOp right
-evaluateOp (RSubNode left right) = evaluateOp left ++ evaluateOp right
-evaluateOp (BoolNode f) = [toString f]
+-- findAllVarsMatchingName :: [VarNode] -> String -> Maybe [VarNode]
+-- findAllVarsMatchingGame [] str = []
+-- findAllVarsMatchingName ((Vari (loc) (dat) (name)) : xs) str    | name == str = (Vari (loc) (dat) (name)) :  findAllVarsMatchingName xs str
+--                                                                 | name /= str = findAllVarsMatchingName xs str
 
-evaluateVar :: (VarTree) -> [String]
-evaluateVar (CommaNode a b) = evaluateVar a ++ evaluateVar b
-evaluateVar (VarNode s) = [s]
+--if name is identical and loc is different, check equality
 
 
+--checkConjunction :: OpTree -> [VarNode] -> (Bool, [VarNode])
 
-
-
-
-
-
-
--- All commands available within language.
--- COMMAND TREE
-data ComTree = Assign String ParseTree
-    | Seq ComTree ComTree -- sequence commands together so that a parser can parse long sequences.
-    | If ParseTree ComTree
-    | IfElse ParseTree ComTree ComTree
-    | While ParseTree ComTree
-    | Declare Int ParseTree ComTree
-    | Print ParseTree
-    | List ParseTree
-    | Place Int ParseTree
-    deriving Show
--}
+-- compareNodeNameLoc :: VarNode -> VarNode -> Bool
+-- compareNodeNameLoc (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))    | (nameA == nameB) && (locA /= locB) = True
+--                                                                                 | (nameA /= nameB) = False

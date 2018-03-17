@@ -26,7 +26,6 @@ data OpTree = ConjunctionNode (OpTree) (OpTree)
     | LSubNode (OpTree) (OpTree)
     | RSubNode (OpTree) (OpTree)
     | BoolNode (Bool)
-<<<<<<< HEAD
     | VarOp (VarTree)
 =======
     | VarOp VarTree
@@ -35,8 +34,8 @@ data OpTree = ConjunctionNode (OpTree) (OpTree)
     deriving Show
 
 -- Seperate exisitential operator.
--- EXISITENTIAL TREE
-data ExisitTree = ExisitVar (VarTree) (OpTree)
+-- EXISITENTIAL TREE ***TODO** add case for nested eTree
+data ExisitTree = ExisitVar (VarTree) (OpTree) 
     | EmptyET (EmptyTree)
     deriving Show
 
@@ -141,7 +140,11 @@ assignRelation (RelationNode (tbl) (vTree)) (x:xs)  | isTreeAssigned (vTree) == 
 liftRelationNodesOut :: [OpTree] -> [OpTree] --Creates list of single node OpTree's 
 liftRelationNodesOut ((RelationNode (tbl) (vTree)):xs) = (RelationNode (tbl) (vTree) ) : liftRelationNodesOut xs 
 liftRelationNodesOut  (_:xs) = liftRelationNodesOut xs : []
-=======
+
+
+extractTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodesOut, possibly needs to be reversed
+extractTableNames [] = []
+extractTableNames ( (RelationNode (tbl) (vTree)) :xs) = (tbl) : extractTableNames xs
 
 -- assignRelation :: OpTree -> [String] -> OpTree
 -- assignRelation (RelationNode (tbl) (vTree)) (x:xs) = 
@@ -241,12 +244,16 @@ assignFreeLocs' (CommaNode (Vari (locNext) (datNext) (nameNext) ) (remTree)) ( (
 
 {-=============================== TREE HANDLING & TRAVERSAL ==============================-}
 
+evaluateParseTree :: ParseTree a -> [String] -> (Bool, [VarNode])
+evaluateParseTree (Marker ordVars oTree)
+evaluateParseTree (MarkerExis eTree )
+
 <<<<<<< HEAD
 evaluate :: OpTree -> [String] -> (Bool, [VarNode])--evaluate opTree freeVarList
 evaluate (EquateNode (l) (r)) freeVars =( ( checkEquality (EquateNode (l) (r)) ), freeVars )
 evaluate (RelationNode (loc) (varTr)) freeVars = checkRelation ( (RelationNode (loc) (varTr)) freeVars )
 evaluate (ConjunctionNode (l) (r)) freeVars = checkConjunction ( (ConjunctionNode (l) (r)) freeVars )
-evaluate (VarTree ) varRow = 
+--evaluate (VarTree ) varRow = 
 --evaluate (VarOp tree) freeVars = assignVars ((varTreeToList (tree)) freeVars)
 =======
 -- evaluate :: OpTree -> [VarNode] -> (Bool, [VarNode])--evaluate opTree freeVarList

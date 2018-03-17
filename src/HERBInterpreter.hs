@@ -24,7 +24,7 @@ data VarNode = Vari (String) (String) (String) -- loc dat name
 -- OPERATORS TREE
 data OpTree = ConjunctionNode (OpTree) (OpTree)
     | RelationNode (String) (VarTree) -- String is Table name.
-    | EquateNode (OpTree) (OpTree)
+    | EquateNode (SingleNode (VarNode)) (VarTree)
     | LSubNode (OpTree) (OpTree)
     | RSubNode (OpTree) (OpTree)
     | BoolNode (Bool)
@@ -34,15 +34,16 @@ data OpTree = ConjunctionNode (OpTree) (OpTree)
 
 -- Seperate exisitential operator.
 -- EXISITENTIAL TREE ***TODO** add case for nested eTree
-data ExisitTree = ExisitVar (VarTree) (OpTree) 
+data ExistTree = ExistVar (VarTree) (OpTree) 
+    | ExistNest (VarTree) (ExistTree)
     | EmptyET (EmptyTree)
     deriving Show
 
 -- All expressions available within language.
 -- PARSE TREE
 data ParseTree = Marker (OrderedVars) (OpTree)
-    | MarkerNested (OrderedVars) (ExisitTree)
-    | MarkerExtended (OrderedVars) (ExisitTree) (OpTree)
+    | MarkerNested (OrderedVars) (ExistTree)
+    | MarkerExtended (OrderedVars) (ExistTree) (OpTree)
     | EmptyPT (EmptyTree)
     deriving Show
   --  (1,10,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
@@ -119,9 +120,9 @@ extractRelNodeLocation (RelationNode (thisLoc) (vTree)) = thisLoc
 -- assignRelation :: OpTree -> [String] -> OpTree
 -- assignRelation (RelationNode (tbl) (vTree)) (x:xs) = 
 
-assignVarTreeLoc :: VarTree -> [String] -> VarTree
-assignVarTreeLoc (SingleNode (Vari (loc) (dat) (name))) (x:xs) = (SingleNode (Vari (x) (dat) (name)))
-assignVarTreeLoc (CommaNode (Vari (loc) (dat) (name)) (remTree)) (x:xs) = (CommaNode (Vari (x) (dat) (name)) (assignVarTreeLoc (remTree) (xs)))
+assignVarTreeLoc :: VarTree -> String -> VarTree
+assignVarTreeLoc (SingleNode (Vari (loc) (dat) (name))) x = (SingleNode (Vari (x) (dat) (name)))
+assignVarTreeLoc (CommaNode (Vari (loc) (dat) (name)) (remTree)) x = (CommaNode (Vari (x) (dat) (name)) (assignVarTreeLoc (remTree) (xs)))
 
 assignAssignment :: OpTree -> String -> OpTree
 assignAssignment (RelationNode (ass) (vTree) ) newAss = (RelationNode (newAss) (vTree))
@@ -154,9 +155,9 @@ traverseDFOp (LSubNode left right) = traverseDFOp left : traverseDFOp right
 traverseDFOp (RSubNode left right) = traverseDFOp left : traverseDFOp right
 traverseDFOp (BoolNode f) = toString f
     
-traverseDFEx :: ExisitTree -> [a]
+traverseDFEx :: ExistTree -> [a]
 traverseDFEx (EmptyET) = []
-traverseDFEx (ExisitVar var op) = traverseDFVar var : traverseDFOp op
+traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
 
 traverseDFVar :: VarTree -> [VarNode] --Int represents ORDER (NB: this is why I decided to add VarNode)
 traverseDFVar (SingleNode (node) )  = (treeToNode (SingleNode (node)))  : []
@@ -186,10 +187,34 @@ convertOpToVarNode VarOp (varTree) = treeToNode (varTree)
 -- *** TODO *** : Non bounded var w/ Exis
 
 {-=============================== MAIN EVALUATION ==============================-}
+buildParseTree :: Exp -> ParseTree
+buildParseTree (Evaluate (vars) (query)) = Marker (traverseDFVar(buildVarTree(vars))) (buildOpTree(query))
+buildParseTree Eval vars exis = MarkerNested (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis))
+buildParseTree EvalExisExt vars exis quer = MarkerExtended (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (buildOpTree(quer))
 
-evaluateParseTree :: ParseTree a -> [String] -> (Bool, [VarNode])
-evaluateParseTree (Marker ordVars oTree)
-evaluateParseTree (MarkerNested eTree )
+buildVarTree :: Variables -> VarTree
+buildVarTree Var strName = SingleNode (Vari ("*") ("*") (strName))
+buildVarTree Comma (VarSingle (nextStrName)) remVars = CommaNode (Vari ("*") ("*") (nextStrName)) (buildVarTree remVars)
+
+
+buildExisTree :: Existential -> ExistTree 
+buildExisTree ExistentialSingle (vars) (quer) = ExistVar (buildVarTree(vars)) (buildOpTree (quer))
+buildExisTree ExistentialNested (vars) (exisNest) = ExistNest (buildVarTree(vars)) (buildExisTree (exisNest))
+
+
+buildOpTree :: Query -> OpTree 
+buildOpTree Conjunction querA querB = ConjunctionNode (buildOpTree querA) (buildOpTree querB)
+buildOpTree Relation tblN varis = RelationNode (tblN) (assignVarTreeLoc (buildVarTree varis) (tblN) )
+--Below (TODO) add type checker for querA/B, checking its a VarTree
+buildOpTree Equality querA querB = EquateNode (buildVarTree(querA)) (buildVarTree(querB))
+buildOpTree V varis = VarOp (buildVarTree(varis))
+buildOpTree _ = EmptyOT (Nothing)
+
+
+
+--evaluateParseTree :: ParseTree a -> [String] -> (Bool, [VarNode])
+--evaluateParseTree (Marker ordVars oTree)
+--evaluateParseTree (MarkerNested eTree )
 
 evaluate :: OpTree -> [String] -> (Bool, [VarNode])--evaluate opTree freeVarList
 evaluate (EquateNode (l) (r)) freeVars =( ( checkEquality (EquateNode (l) (r)) ), freeVars )
@@ -269,7 +294,7 @@ getCSV inp | inp == [] = Left( hPutStrLn stderr "Error: Missing CSV data" )
            | otherwise = Right( gatherCSVdata inp 1 )  
 -}
 
--- evaluateE :: ExisitTree -> Bool
+-- evaluateE :: ExistTree -> Bool
 -- evaluateE varTree opTree | (traverseDFVar (varTree)) --TODO
 
 {-=============================== ERROR HANDLING ==============================-}

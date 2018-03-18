@@ -13,6 +13,7 @@ import Data.Ord
 
 {-==============================================================================-}
 {-=============================== DATA STRUCTURES ==============================-}
+{-==============================================================================-}
 
 -- Left hand side of algebra (variables or arguments)
 -- VARIABLES TREE
@@ -77,20 +78,16 @@ main = do
 {-============================== LIFTING TO MONADS =============================-}
 {-==============================================================================-}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 --liftBPT :: Exp -> IO ParseTree
 --liftBPT exp = liftM (buildParseTree (exp))
 
 --liftTraverseDF :: 
-=======
 liftBuildParseTree :: Exp -> IO ParseTree
 liftBuildParseTree exp = liftM (buildParseTree (exp))
-=======
+
 --BPT
 liftBuildParseTree :: [Token] -> ParseTree
 liftBuildParseTree alex = liftM buildParseTree parseCalc(alex)
->>>>>>> elliott
 
 liftTraverseDF :: [Token] -> [OpTree]
 liftTraverseDF alex = liftM traverseDF liftBuildParseTree(alex)
@@ -105,12 +102,8 @@ liftExecuteHERB :: [a] -> [[String]] -> IO String
 liftExecuteHERB stack tableData = liftM(executeHERB (stack) (tableData))
 
 liftPrettyPrint :: String -> IO String
-<<<<<<< HEAD
-liftPrettyPrint answer = liftM2(prettyPrint (answer))
->>>>>>> 51a71e24b38c94f46986d0e443f4ec85c70f9de3
-=======
 liftPrettyPrint answer = liftM2 prettyPrint answer
->>>>>>> elliott
+
 
 {-==============================================================================-}
 {-================================= BUILDING ===================================-}
@@ -227,6 +220,35 @@ varToOpTree :: VarTree -> OpTree
 varToOpTree (CommaNode varN varT) = (VarOp (CommaNode varN varT))
 varToOpTree (SingleNode varN) = (VarOp (SingleNode varN))
 varToOpTree (EmptyVT emptyT) = (VarOp (EmptyVT emptyT))
+
+data OpTree = ConjunctionNode (OpTree) (OpTree)
+    | RelationNode (String) (VarTree) -- String is Table name.
+    | EquateNode (OpTree) (OpTree)
+    | LSubNode (OpTree) (OpTree)
+    | RSubNode (OpTree) (OpTree)
+    | BoolNode (Bool)
+    | VarOp (VarTree)
+    | EmptyOT (EmptyTree)
+    deriving Show
+
+countPopNodes :: OpTree -> Int
+countPopNodes (ConjunctionNode (opTree) (opTreeX)) = countPopNodes opTree + countPopNodes opTreeX
+countPopNodes (RelationNode (string) (varTree)) = countPopNodes varTree
+countPopNodes (EquateNode (opTree) (opTreeX)) = countPopNodes opTree + countPopNodes opTreeX
+countPopNodes (LSubNode (opTree) (opTreeX)) = countPopNodes opTree + countPopNodes opTreeX
+countPopNodes (RSubNode (opTree) (opTreeX)) = countPopNodes opTree + countPopNodes opTreeX
+countPopNodes (BoolNode (bool)) = 0
+countPopNodes (VarOp (varTree)) = countPopNodes varTree
+countPopNodes (EmptyOT (emptyTree)) = 0
+
+countPopNodesInVT :: VarTree -> Int
+countPopNodesInVT (CommaNode varN varTree) = (if(checkNodePop varN) then 1 else 0) + countPopNodes varTree
+countPopNodesInVT (SingleNode varN) = (if(checkNodePop varN) then 1 else 0)
+countPopNodesInVT (EmptyVT empty) = 0
+
+checkNodePop :: VarNode -> Bool
+checkNodePop (Vari loc dat name) | dat /= "*" = False
+checkNodePop (Vari loc dat name) | dat == "*" = True
 
 countVarNodes :: VarTree -> Int
 countVarNodes (CommaNode varN varTree) = 1 + countVarNodes varTree

@@ -66,6 +66,7 @@ main = do
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
+<<<<<<< HEAD
     pTree <- liftBuildParseTree(alex)
     tables <- liftBuildTables (pTree)
     crossProd <- liftCrossProduct (tables)
@@ -73,6 +74,21 @@ main = do
     liftPrettyPrint(answer)
 
     {-
+=======
+    pTree <- buildParseTree(alex)
+    tabNodes <- liftRelationNodesOut(pTree)
+    tabNames <- extractTableNames(tabNodes)
+    --get csv data from tabName ++ ".csv" whatever method u used to do that
+    -- tableData <- crossProdOutput(csv1, csv2, etc..)
+    -- answer <- executeParseTree (tableData) (pTree) (NOT DONE)
+    --Maybe filter output here?
+    --prettyPrint(answer)
+
+    {-
+    parseTree <- liftBuildParseTree(alex)
+
+
+>>>>>>> 9b9527ac6b6681d5cadc904e0fde5c834fe51f9b
     stack <- liftTraverseDF(alex)
     tableNames <- liftExtractTableNames(stack)
     tableData <- liftCrossProductMulti(tableNames)
@@ -225,6 +241,25 @@ evaluate (ConjunctionNode (l) (r)) freeVars = checkConjunction ( (ConjunctionNod
 --evaluate (VarOp tree) freeVars = assignVars ((traverseDFVar (tree)) freeVars)
 evaluate _ freeVars = (True, [(Vari ("loc") ("dat") ("col"))])
 
+
+
+-- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
+checkEquality :: OpTree -> Bool
+checkEquality (EquateNode (l) (r)) = equateNodes left right
+    where   left = convertOpToVarNode (l)
+            right = convertOpToVarNode (r)
+
+equateNodes :: VarNode -> VarNode -> Bool
+equateNodes (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | datA == datB = True
+                                                                        | datA /= datB = False
+
+equateNodesName :: VarNode -> VarNode -> Bool
+equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | nameA == nameB = True
+                                                                            | nameA /= nameB = False
+
+
+
+
 -- evaluateE :: ExisitTree -> Bool
 -- evaluateE varTree opTree | (traverseDFVar (varTree)) --TODO
 
@@ -328,19 +363,7 @@ countVarNodes (CommaNode varN varTree) = 1 + countVarNodes varTree
 countVarNodes (SingleNode varN) = 1
 countVarNodes (EmptyVT empty) = 0
 
--- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
-checkEquality :: OpTree -> Bool
-checkEquality (EquateNode (l) (r)) = equateNodes left right
-    where   left = convertOpToVarNode (l)
-            right = convertOpToVarNode (r)
 
-equateNodes :: VarNode -> VarNode -> Bool
-equateNodes (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | datA == datB = True
-                                                                        | datA /= datB = False
-
-equateNodesName :: VarNode -> VarNode -> Bool
-equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | nameA == nameB = True
-                                                                            | nameA /= nameB = False
 
 extractTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodesOut, possibly needs to be reverse
 extractTableNames [] = []
@@ -359,6 +382,24 @@ assignVarNodeVal (Vari (loc) (dat) (name)) newDat = (Vari (loc) (newDat) (name))
 assignRelation :: OpTree -> String -> OpTree --Will only assign if not signed before. If loc already exists then....what??
 assignRelation (RelationNode (tbl) (vTree)) relName | isTreeAssigned (vTree) == False = RelationNode (tbl) (assignVarTreeLoc (vTree) (tbl))
                                                     | otherwise = (RelationNode (tbl) (vTree)) --check node equality here
+<<<<<<< HEAD
+=======
+
+liftRelationNodesOut :: ParseTree -> [OpTree] --Creates list of single node OpTree's, 
+liftRelationNodesOut Marker vList oTree = getRelationNodesOut(oTree)
+liftRelationNodesOut MarkerNested vList eTree = getExisRelationNodesOut(eTree)
+liftRelationNodesOut MarkerExtended vList eTree oTree = getExisRelationNodesOut(eTree) ++ getRelationNodesOut(oTree)
+
+getExisRelationNodesOut :: ExistTree -> [OpTree]
+getExisRelationNodesOut ExistVar vTree oTree = getOpRelationNodesOut(oTree)
+getExisRelationNodesOut ExistNest vTree eTree = geExisRelationNodes(eTree)
+getExisRelationNodesOut EmptyET = []
+
+getOpRelationNodesOut :: OpTree -> [OpTree] --Relation nodess are never subtrees of "="
+getOpRelationNodesOut (RelationNode (tbl) (vTree)) = (RelationNode (tbl) (vTree) ) 
+getOpRelationNodesOut (ConjunctionNode (querA) (querB)) = getOpRelationNodesOut(querA) ++ getOpRelationNodesOut(querB)
+
+>>>>>>> 9b9527ac6b6681d5cadc904e0fde5c834fe51f9b
                                             
 {-==============================================================================-}
 {-=============================== TREE TRAVERSAL ===============================-}

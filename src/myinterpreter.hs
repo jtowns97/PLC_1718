@@ -223,13 +223,13 @@ sanitiseVarTree :: VarTree -> VarTree
 sanitiseVarTree (SingleNode ( Vari (loc) (dat) (name) ) ) = (  SingleNode (  Vari (loc) ("*") (name)  )  )
 sanitiseVarTree (CommaNode ( Vari (loc) (dat) (name) ) (remTree) ) = (CommaNode ( Vari (loc) ("*") (name) ) (sanitiseVarTree remTree) )
 
-countPopulations :: OpTree -> Int -> Int
-countPopulations (RelationNode (tbl) (vTree))   | isTreePopulated (vTree) == True = countPopNodesInVT (vTree)
-                                                | isTreePopulated (vTree) == False = 0
-countPopulations (ConjunctionNode (querA) (querB)) = countPopulations(querA) + countPopulations(querB)
-countPopulations (EquateNode (querA) (querB)) = countPopulations(querA) + countPopulations(querB)
-countPopulations (VarOp (vTree))                | isTreePopulated (vTree) == True = countPopNodesInVT (vTree)
-                                                | isTreePopulated (vTree) == False = 0
+-- countPopulations :: OpTree -> Int -> Int
+-- countPopulations (RelationNode (tbl) (vTree))   | isTreePopulated (vTree) == True = countPopNodesInVT (vTree)
+--                                                 | isTreePopulated (vTree) == False = 0
+-- countPopulations (ConjunctionNode (querA) (querB)) = countPopulations(querA) + countPopulations(querB)
+-- countPopulations (EquateNode (querA) (querB)) = countPopulations(querA) + countPopulations(querB)
+-- countPopulations (VarOp (vTree))                | isTreePopulated (vTree) == True = countPopNodesInVT (vTree)
+--                                                 | isTreePopulated (vTree) == False = 0
 
 populateRelation :: OpTree -> [String] -> Int -> OpTree
 populateRelation (RelationNode (tblName) (vTree)) rList ind  | isTreePopulated (vTree) == False = (RelationNode (tblName) (populateVarTree (vTree) rList (ind) )) --Somethings gone wrong maybe?

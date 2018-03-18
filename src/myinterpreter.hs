@@ -209,12 +209,14 @@ filterTrue ((bool, vars):xs) | bool == False = filterTrue xs
 {-==============================================================================-}
 
 populateTree :: OpTree -> [String] -> Int -> OpTree
-populateTree (VarOp (vTree)) rList ind = (VarOp (populateVarTree (vTree) (rList) (ind)))
-populateTree (ConjunctionNode (querA) (querB)) rList ind  = (ConjunctionNode (populateTree (querA) (rList) (ind)) (populateTree (querB) (rList) (popsA+ind) ) )
-populateTree (EquateNode (querX) (querY)) rList ind = (EquateNode (populateTree(querX) (rList) (ind)) (populateTree(querY) (rList) (popsX+ind)) )
-populateTree (RelationNode (tbl) (vTree)) rList ind  = populateRelation (RelationNode (tbl) (vTree)) rList ind
+populateTree (VarOp (vTree)) rList ind                      = (VarOp (populateVarTree (vTree) (rList) (ind)))
+populateTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (populateTree (querA) (rList) (ind)) (populateTree (querB) (rList) (popsA+ind) ) )
                                                     where   popsA = countPopNodes (querA)
-                                                            popsX = countPopNodes (querX)
+populateTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (populateTree(querX) (rList) (ind)) (populateTree(querY) (rList) (popsX+ind)) )
+                                                    where   popsX = countPopNodes (querX)
+populateTree (RelationNode (tbl) (vTree)) rList ind         = populateRelation (RelationNode (tbl) (vTree)) rList ind
+                                                    
+
 
 -- sanitiseOpTree :: OpTree -> OpTree
 -- sanitiseOpTree (RelationNode (tblName) (vTree)) =
@@ -222,18 +224,17 @@ populateTree (RelationNode (tbl) (vTree)) rList ind  = populateRelation (Relatio
 sanitiseVarTree :: VarTree -> VarTree
 sanitiseVarTree (SingleNode ( Vari (loc) (dat) (name) ) ) = (  SingleNode (  Vari (loc) ("*") (name)  )  )
 sanitiseVarTree (CommaNode ( Vari (loc) (dat) (name) ) (remTree) ) = (CommaNode ( Vari (loc) ("*") (name) ) (sanitiseVarTree remTree) )
-
+{-
 countPopulations :: OpTree -> Int -> Int
-countPopulations (RelationNode (tbl) (vTree))   | isTreePopulated (vTree) == True = countPopNodesInVT (vTree)
+countPopulations (RelationNode (tbl) (vTree)) _ | isTreePopulated (vTree) == True = countPopNodesInVT (vTree)
                                                 | isTreePopulated (vTree) == False = 0
 countPopulations (ConjunctionNode (querA) (querB)) = countPopulations(querA) + countPopulations(querB)
 countPopulations (EquateNode (querA) (querB)) = countPopulations(querA) + countPopulations(querB)
 countPopulations (VarOp (vTree))                | isTreePopulated (vTree) == True = countPopNodesInVT (vTree)
                                                 | isTreePopulated (vTree) == False = 0
-
+-}
 populateRelation :: OpTree -> [String] -> Int -> OpTree
 populateRelation (RelationNode (tblName) (vTree)) rList ind  | isTreePopulated (vTree) == False = (RelationNode (tblName) (populateVarTree (vTree) rList (ind) )) --Somethings gone wrong maybe?
---populateRelation 
 
 populateVarTree :: VarTree -> [String] -> Int -> VarTree
 populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) vList | isNodePopulated (Vari (loc) (dat) (name)) == False = (SingleNode (Vari (loc) (generateNextVarData (x:xs) (vList)) (name) ))

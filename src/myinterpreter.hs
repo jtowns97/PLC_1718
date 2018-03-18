@@ -40,10 +40,10 @@ data OpTree = ConjunctionNode (OpTree) (OpTree)
 -- Seperate exisitential operator.
 -- EXISITENTIAL TREE ***TODO** add case for nested eTree
 data ExistTree = ExistVar (VarTree) (OpTree) 
-    | ExistNest (VarTree) (ExistTree)
+    | ExistNest (VarTree) (ExistTree) (OpTree)
     | EmptyET (EmptyTree)
     deriving Show
-
+-- ***TODO*** ADD NESTED EXISTENTIAL
 -- All expressions available within language.
 -- PARSE TREE
 data ParseTree = Marker ([VarNode]) (OpTree)
@@ -69,28 +69,53 @@ main = do
     tables <- liftBuildTables (pTree)
     crossProd <- liftCrossProduct (tables)
     answer <- liftExecuteHERB (crossProd) (pTree)
-    mapM_ putStrLn (answer)
+    liftPrettyPrint(answer)
+
+    {-
+<<<<<<< HEAD
+    pTree <- buildParseTree(alex)
+    tabNodes <- liftRelationNodesOut(pTree)
+    tabNames <- extractTableNames(tabNodes)
+    --get csv data from tabName ++ ".csv" whatever method u used to do that
+    -- tableData <- crossProdOutput(csv1, csv2, etc..)
+    -- answer <- executeParseTree (tableData) (pTree) (NOT DONE)
+    --Maybe filter output here?
+    --prettyPrint(answer)
+    -}
+    {-
+    parseTree <- liftBuildParseTree(alex)
+
+
+=======
+>>>>>>> 361259cf628dfb437e9e2896cbef87cb7c174137
+    stack <- liftTraverseDF(alex)
+    tableNames <- liftExtractTableNames(stack)
+    tableData <- liftCrossProductMulti(tableNames)
+    answer <- liftExecuteHERB (stack) (tableData)
+    liftPrettyPrint (answer) -- answer contains all false rows as well as true. Just output true.
+    -}
+
 
 {-==============================================================================-}
 {-============================== LIFTING TO MONADS =============================-}
 {-==============================================================================-}
  
-liftBuildParseTree :: [Token] -> IO (ParseTree)
+liftBuildParseTree :: [Token] -> ParseTree
 liftBuildParseTree alex = liftM buildParseTree parseCalc(alex)
 
 -- liftExtractTableNames :: ParseTree -> [String]
 -- liftExtractTableNames pTree = liftM extractTableNames liftRelationNamesOut(pTree)
 
-liftCrossProduct :: [Either ParseError [[String]]] -> IO ([[String]])
+liftCrossProduct :: [String] -> [[String]]
 liftCrossProduct tableNames = liftM crossProd tableNames
 
-liftExecuteHERB :: [[String]] -> ParseTree -> IO (String)
+liftExecuteHERB :: [[String]] -> ParseTree -> String
 liftExecuteHERB stack tableData = liftM(executeHERB (stack) (tableData))
 
-liftBuildTables :: ParseTree -> IO ([Either ParseError [[String]]])
+liftBuildTables :: [String] -> [Either ParseError [[String]]]
 liftBuildTables tabNames = liftM buildTables extractTableNames(pTree)
 
-liftPrettyPrint :: String -> IO (String)
+liftPrettyPrint :: String -> IO String
 liftPrettyPrint answer = liftM2 prettyPrint answer
 
 {-==============================================================================-}
@@ -100,7 +125,7 @@ liftPrettyPrint answer = liftM2 prettyPrint answer
 buildParseTree :: Exp -> ParseTree
 buildParseTree (Evaluate (vars) (query)) = Marker (traverseDFVar(buildVarTree(vars))) (buildOpTree(query))
 buildParseTree (Eval vars exis) = MarkerNested (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis))
--- buildParseTree (EvalExisExt vars exis quer) = MarkerExtended (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (buildOpTree(quer))
+buildParseTree (EvalExisExt vars exis quer) = MarkerExtended (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (buildOpTree(quer))
 
 buildVarTree :: Variables -> VarTree
 buildVarTree (VarSingle strName) = SingleNode (Vari ("*") ("*") (strName))
@@ -203,9 +228,21 @@ filterTrue ((bool, vars):xs) | bool == False = filterTrue xs
 {-=============================== MAIN EVALUATION ==============================-}
 {-==============================================================================-}
 
---evaluateParseTree :: ParseTree a -> [String] -> (Bool, [VarNode])
---evaluateParseTree (Marker ordVars oTree)
---evaluateParseTree (MarkerNested eTree )
+executeQuery :: [[String]] -> ParseTree -> [[VarNode]]
+executeQuery [[]] _ = [[]]
+executeQuery (x:xs) pTree   | (evaluateParseTree (pTree) (x)) == True = getTreeState(pTree) ++ executeQuery (xs) 
+                            | (evaluateParseTree (pTree) (x)) == False = executeQuery (xs)
+
+evaluateParseTree :: ParseTree a -> [String] -> Bool
+evaluateParseTree (Marker ordVars oTree) rList  | evaluate (  populateTree (sanitiseOpTree(oTree)) (rList) (0) ) == True = True
+                                                | evaluate (  populateTree (sanitiseOpTree(oTree)) (rList) (0) ) == False = False
+evaluateParseTree (MarkerNested ordVars eTree ) rList | evaluateExis (eTree)
+
+evaluateExis :: ExistTree -> [String] -> Bool
+evaluateExis (ExistVar (ordList) (oTree)) (rList)   | evaluate (oTree) == True = True
+                                                    | evaluate (oTree) == False = True
+evaluateExis (ExisNest (vTree) (eTree)) (rList)     | evaluateExis
+                                                    populateExisTree (sanitiseExisTree())
 
 evaluate :: OpTree -> Bool --evaluate opTree freeVarList
 evaluate (EquateNode (l) (r))  =  ( checkEquality (EquateNode (l) (r))) 
@@ -214,6 +251,10 @@ evaluate (ConjunctionNode (l) (r))  = checkConjunction (ConjunctionNode (l) (r))
 --evaluate (VarTree ) varRow = 
 --evaluate (VarOp tree) freeVars = assignVars ((traverseDFVar (tree)) freeVars)
 evaluate (VarOp v)  = True
+
+checkExistential :: ExistTree -> Bool
+checkExistential (ExistVar (vTree) (oTree)) = (doesExistInOpTree (traverseDFVar(vTree)) (oTree)) 
+checkExistential (ExistNest (vTree) (eTree) (oTree)) = (doesExistInOpTree (traverseDFVar(vTree)) (oTree)) && checkExistential (eTree)
 
 checkConjunction :: OpTree -> Bool
 checkConjunction  (ConjunctionNode (l) (r) ) = (evaluate(l)) && (evaluate(r))
@@ -246,6 +287,8 @@ equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | na
 {-=========================== TREE & NODE OPERATIONS ===========================-}
 {-==============================================================================-}
 
+
+
 getTreeState :: OpTree -> [VarNode]
 getTreeState (ConjunctionNode (opTree) (opTreeX)) = getTreeState(opTree) ++ getTreeState (opTreeX)
 getTreeState (RelationNode (string) (varTree)) = getTreeState(varToOpTree(varTree))
@@ -264,10 +307,16 @@ populateTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (popul
                                                     where   popsX = countPopNodes (querX)
 populateTree (RelationNode (tbl) (vTree)) rList ind         = populateRelation (RelationNode (tbl) (vTree)) rList ind
                                                     
+--populateParseTree :: ParseTree -> [String] ->
 
+populateExisTree :: ExistTree -> [String] -> ExistTree
+populateExisTree (ExistVar (vTree) (oTree)) rList = (ExistVar (populateVarTree (vTree) (rList) ) (populateTree (oTree) (rList) ))
+populateExisTree (ExistNest (vTree) (eTree)) rList = (ExistNest (populateVarTree (vTree) (rList) ) (populateExisTree (eTree) (rList) ))
 
--- sanitiseOpTree :: OpTree -> OpTree
--- sanitiseOpTree (RelationNode (tblName) (vTree)) =
+sanitiseOpTree :: OpTree -> OpTree
+sanitiseOpTree (RelationNode (tblName) (vTree)) = (RelationNode (tblName) (sanitiseVarTree(vTree)))
+sanitiseOpTree (VarOp (vT)) = (VarOp (sanitiseVarTree(vT)))
+sanitiseOpTree op = op
 
 sanitiseVarTree :: VarTree -> VarTree
 sanitiseVarTree (SingleNode ( Vari (loc) (dat) (name) ) ) = (  SingleNode (  Vari (loc) ("*") (name)  )  )
@@ -293,7 +342,7 @@ populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) vList  
 -- doesNameExistInVList :: String -> [VarNode] -> Bool
 -- doesNameExistInVList _  (x:xs) [] = False
 -- doesNameExistInVList targStr (x:xs) ((Vari (loc) (dat) (name)):ys)  | targStr == name = True
---                                                                     | targStr /= name = doesNameExistInVList targStr ys
+--                                                                | targStr /= name = doesNameExistInVList targStr ys
 
 --If name already exists, assign variable with same name to the next unassigned 
 --Add syntax error here?
@@ -375,11 +424,11 @@ assignRelation (RelationNode (tbl) (vTree)) relName | isTreeAssigned (vTree) == 
 liftRelationNodesOut :: ParseTree -> [OpTree] --Creates list of single node OpTree's, 
 liftRelationNodesOut (Marker vList oTree) = getOpRelationNodesOut(oTree)
 liftRelationNodesOut (MarkerNested vList eTree) = getExisRelationNodesOut(eTree)
--- liftRelationNodesOut (MarkerExtended vList eTree oTree) = getExisRelationNodesOut(eTree) ++ getOpRelationNodesOut(oTree)
+--liftRelationNodesOut (MarkerExtended vList eTree oTree) = getExisRelationNodesOut(eTree) ++ getOpRelationNodesOut(oTree)
 
 getExisRelationNodesOut :: ExistTree -> [OpTree]
-getExisRelationNodesOut (ExistVar vTree oTree) = getOpRelationNodesOut(oTree)
-getExisRelationNodesOut (ExistNest vTree eTree) = getExisRelationNodesOut(eTree)
+getExisRelationNodesOut (ExistVar (vTree) (oTree)) = getOpRelationNodesOut(oTree)
+getExisRelationNodesOut (ExistNest (vTree) (eTree) (oTree)) = getExisRelationNodesOut(eTree) ++ getOpRelationNodesOut(oTree)
 getExisRelationNodesOut (EmptyET empty) = []
 
 getOpRelationNodesOut :: OpTree -> [OpTree] --Relation nodess are never subtrees of "="
@@ -391,6 +440,8 @@ getOpRelationNodesOut (ConjunctionNode (querA) (querB)) = getOpRelationNodesOut(
 {-=============================== TREE TRAVERSAL ===============================-}
 {-==============================================================================-}
 
+liftTraversal :: [VarTree] -> IO VarTree
+liftTraversal [a] = liftM [a]
 {-
 traverseDF :: ParseTree -> [VarTree]
 traverseDF (EmptyPT e) = []
@@ -407,13 +458,23 @@ traverseDFOp (LSubNode left right) = traverseDFOp left : traverseDFOp right
 traverseDFOp (RSubNode left right) = traverseDFOp left : traverseDFOp right
 traverseDFOp (BoolNode f) = toString f
     
--- traverseDFEx :: ExistTree -> [a]
--- traverseDFEx (EmptyET e) = []
--- traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
+<<<<<<< HEAD
+traverseDFEx :: ExistTree -> [a]
+traverseDFEx (EmptyET e) = []
+traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
 -}
 traverseDFVar :: VarTree -> [VarNode] --Int represents ORDER (NB: this is why I decided to add VarNode)
 traverseDFVar (SingleNode (node) )  = [(treeToNode (SingleNode (node)))]  ++ []
 traverseDFVar (CommaNode (nextVar) (remainingTree)) = [nextVar] ++ traverseDFVar remainingTree
+=======
+-- traverseDFEx :: ExistTree -> [a]
+-- traverseDFEx (EmptyET e) = []
+-- traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
+
+-- traverseDFVar :: VarTree -> [Node] --Int represents ORDER (NB: this is why I decided to add VarNode)
+-- traverseDFVar (SingleNode (node) )  = [(treeToNode (SingleNode (node)))]  ++ []
+-- traverseDFVar (CommaNode (nextVar) (remainingTree)) = [nextVar] ++ traverseDFVar remainingTree
+>>>>>>> 361259cf628dfb437e9e2896cbef87cb7c174137
 
 {-========================== HANDLING FOR TREES ================================-}
 

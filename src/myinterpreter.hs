@@ -82,10 +82,6 @@ main = do
 --liftBPT exp = liftM (buildParseTree (exp))
 
 --liftTraverseDF :: 
-liftBuildParseTree :: Exp -> IO ParseTree
-liftBuildParseTree exp = liftM (buildParseTree (exp))
-
---BPT
 liftBuildParseTree :: [Token] -> ParseTree
 liftBuildParseTree alex = liftM buildParseTree parseCalc(alex)
 
@@ -212,6 +208,68 @@ filterTrue ((bool, vars):xs) | bool == False = filterTrue xs
 {-=========================== TREE & NODE OPERATIONS ===========================-}
 {-==============================================================================-}
 
+populateTree :: OpTree -> [String] -> Int -> OpTree
+populateTree (VarOp (vTree)) rList ind = (VarOp (populateVarTree (vTree) (rList) (ind)))
+populateTree (ConjunctionNode (querA) (querB)) rList ind  = (ConjunctionNode (populateTree (querA) (rList) (ind)) (populateTree (querB) (rList) (popsA+ind) ) )
+populateTree (EquateNode (querX) (querY)) rList ind = (EquateNode (populateTree(querX) (rList) (ind)) (populateTree(querY) (rList) (popsX+ind)) )
+populateTree (RelationNode (tbl) (vTree)) rList ind  = populateRelation (RelationNode (tbl) (vTree)) rList ind
+                                                    where   popsA = countPopNodes (querA)
+                                                            popsX = countPopNodes (querX)
+
+-- sanitiseOpTree :: OpTree -> OpTree
+-- sanitiseOpTree (RelationNode (tblName) (vTree)) =
+
+sanitiseVarTree :: VarTree -> VarTree
+sanitiseVarTree (SingleNode ( Vari (loc) (dat) (name) ) ) = (  SingleNode (  Vari (loc) ("*") (name)  )  )
+sanitiseVarTree (CommaNode ( Vari (loc) (dat) (name) ) (remTree) ) = (CommaNode ( Vari (loc) ("*") (name) ) (sanitiseVarTree remTree) )
+
+countPopulations :: OpTree -> Int -> Int
+countPopulations (RelationNode (tbl) (vTree))   | isTreePopulated (vTree) == True = countPopNodesInVT (vTree)
+                                                | isTreePopulated (vTree) == False = 0
+countPopulations (ConjunctionNode (querA) (querB)) = countPopulations(querA) + countPopulations(querB)
+countPopulations (EquateNode (querA) (querB)) = countPopulations(querA) + countPopulations(querB)
+countPopulations (VarOp (vTree))                | isTreePopulated (vTree) == True = countPopNodesInVT (vTree)
+                                                | isTreePopulated (vTree) == False = 0
+
+populateRelation :: OpTree -> [String] -> Int -> OpTree
+populateRelation (RelationNode (tblName) (vTree)) rList ind  | isTreePopulated (vTree) == False = (RelationNode (tblName) (populateVarTree (vTree) rList (ind) )) --Somethings gone wrong maybe?
+--populateRelation 
+
+populateVarTree :: VarTree -> [String] -> Int -> VarTree
+populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) vList | isNodePopulated (Vari (loc) (dat) (name)) == False = (SingleNode (Vari (loc) (generateNextVarData (x:xs) (vList)) (name) ))
+populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) vList | isNodePopulated (Vari (loc) (dat) (name)) == True = (SingleNode (Vari (loc) (dat) (name)))
+populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) vList  | isNodePopulated (Vari (loc) (dat) (name)) == False = ( CommaNode (Vari (loc) (generateNextVarData (x:xs) (vList)) (name)) ( populateVarTree (remTree) (x:xs) (vList) ) )
+populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) vList  | isNodePopulated (Vari (loc) (dat) (name)) == True = (SingleNode (Vari (loc) (dat) (name)))
+
+-- doesNameExistInVList :: String -> [VarNode] -> Bool
+-- doesNameExistInVList _  (x:xs) [] = False
+-- doesNameExistInVList targStr (x:xs) ((Vari (loc) (dat) (name)):ys)  | targStr == name = True
+--                                                                     | targStr /= name = doesNameExistInVList targStr ys
+
+--If name already exists, assign variable with same name to the next unassigned 
+--Add syntax error here?
+generateNextVarData :: [String] -> Int -> String
+generateNextVarData (x:xs) ind = ( (x:xs)!!(ind + 1) ) --possibly unsafe
+
+-- getDataMatchingName :: String -> [VarNode] -> VarNode
+
+-- doesVarNameExist :: [VarNode] -> String -> Bool
+
+isTreePopulated :: VarTree -> Bool
+isTreePopulated (SingleNode vNode) = isNodePopulated vNode
+isTreePopulated (CommaNode vNode remTree) = isNodePopulated vNode && isTreeAssigned remTree 
+
+isNodePopulated :: VarNode -> Bool
+isNodePopulated (Vari (loc) (dat) (name))       | dat == "*"  = False-- Represents unassiged null value 
+                                                | otherwise = True
+
+isTreeAssigned :: VarTree -> Bool
+isTreeAssigned (SingleNode vNode) = isNodeAssigned vNode
+isTreeAssigned (CommaNode vNode remTree) = isNodeAssigned vNode && isTreeAssigned remTree 
+
+isNodeAssigned :: VarNode -> Bool
+isNodeAssigned (Vari (loc) (dat) (name))    | loc == "*"  = False-- Represents unassiged null value 
+                                            | otherwise = True
 queryToVariables :: Query -> Variables
 queryToVariables (V (Comma varA varB))  = (Comma varA varB)
 queryToVariables (V (VarSingle string)) = (VarSingle string)
@@ -221,28 +279,18 @@ varToOpTree (CommaNode varN varT) = (VarOp (CommaNode varN varT))
 varToOpTree (SingleNode varN) = (VarOp (SingleNode varN))
 varToOpTree (EmptyVT emptyT) = (VarOp (EmptyVT emptyT))
 
-data OpTree = ConjunctionNode (OpTree) (OpTree)
-    | RelationNode (String) (VarTree) -- String is Table name.
-    | EquateNode (OpTree) (OpTree)
-    | LSubNode (OpTree) (OpTree)
-    | RSubNode (OpTree) (OpTree)
-    | BoolNode (Bool)
-    | VarOp (VarTree)
-    | EmptyOT (EmptyTree)
-    deriving Show
-
 countPopNodes :: OpTree -> Int
 countPopNodes (ConjunctionNode (opTree) (opTreeX)) = countPopNodes opTree + countPopNodes opTreeX
-countPopNodes (RelationNode (string) (varTree)) = countPopNodes varTree
+countPopNodes (RelationNode (string) (varTree)) = countPopNodesInVT varTree
 countPopNodes (EquateNode (opTree) (opTreeX)) = countPopNodes opTree + countPopNodes opTreeX
 countPopNodes (LSubNode (opTree) (opTreeX)) = countPopNodes opTree + countPopNodes opTreeX
 countPopNodes (RSubNode (opTree) (opTreeX)) = countPopNodes opTree + countPopNodes opTreeX
 countPopNodes (BoolNode (bool)) = 0
-countPopNodes (VarOp (varTree)) = countPopNodes varTree
+countPopNodes (VarOp (varTree)) = countPopNodesInVT varTree
 countPopNodes (EmptyOT (emptyTree)) = 0
 
 countPopNodesInVT :: VarTree -> Int
-countPopNodesInVT (CommaNode varN varTree) = (if(checkNodePop varN) then 1 else 0) + countPopNodes varTree
+countPopNodesInVT (CommaNode varN varTree) = (if(checkNodePop varN) then 1 else 0) + countPopNodesInVT varTree
 countPopNodesInVT (SingleNode varN) = (if(checkNodePop varN) then 1 else 0)
 countPopNodesInVT (EmptyVT empty) = 0
 
@@ -269,7 +317,6 @@ equateNodesName :: VarNode -> VarNode -> Bool
 equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | nameA == nameB = True
                                                                             | nameA /= nameB = False
 
-
 extractTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodesOut, possibly needs to be reverse
 extractTableNames [] = []
 extractTableNames ( (RelationNode (tbl) (vTree)) :xs) = (tbl) : extractTableNames xs
@@ -288,17 +335,9 @@ assignRelation :: OpTree -> String -> OpTree --Will only assign if not signed be
 assignRelation (RelationNode (tbl) (vTree)) relName | isTreeAssigned (vTree) == False = RelationNode (tbl) (assignVarTreeLoc (vTree) (tbl))
                                                     | otherwise = (RelationNode (tbl) (vTree)) --check node equality here
 
-isTreeAssigned :: VarTree -> Bool
-isTreeAssigned (SingleNode vNode) = isNodeAssigned vNode
-isTreeAssigned (CommaNode vNode remTree) = isNodeAssigned vNode && isTreeAssigned remTree 
-
-isNodeAssigned :: VarNode -> Bool
-isNodeAssigned (Vari (loc) (dat) (name))    | loc == "*"  = False-- Represents unassiged null value 
-                                            | otherwise = True
-
-liftRelationNodesOut :: OpTree -> [OpTree] --Creates list of single node OpTree's 
-liftRelationNodesOut (RelationNode (tbl) (vTree)) = (RelationNode (tbl) (vTree) ) ++ liftRelationNodesOut xs 
-liftRelationNodesOut  (x:xs) = liftRelationNodesOut xs ++ []
+-- liftRelationNodesOut :: OpTree -> [OpTree] --Creates list of single node OpTree's 
+-- liftRelationNodesOut (RelationNode (tbl) (vTree)) = (RelationNode (tbl) (vTree) ) ++ liftRelationNodesOut xs 
+-- liftRelationNodesOut  (x:xs) = liftRelationNodesOut xs ++ []
                                             
 {-==============================================================================-}
 {-=============================== TREE TRAVERSAL ===============================-}
@@ -322,15 +361,9 @@ liftRelationNodesOut  (x:xs) = liftRelationNodesOut xs ++ []
 -- traverseDFOp (RSubNode left right) = traverseDFOp left : traverseDFOp right
 -- traverseDFOp (BoolNode f) = toString f
     
-<<<<<<< HEAD
-traverseDFEx :: ExistTree -> [a]
-traverseDFEx (EmptyET e) = []
-traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
-=======
--- traverseDFEx :: ExistTree -> [AllTree]
+-- traverseDFEx :: ExistTree -> [a]
 -- traverseDFEx (EmptyET e) = []
--- traverseDFEx (ExistVar var op) = traverseDFVar var ++ traverseDFOp op
->>>>>>> elliott
+-- traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
 
 -- traverseDFVar :: VarTree -> [VarTree] --Int represents ORDER (NB: this is why I decided to add VarNode)
 -- traverseDFVar (SingleNode (node) )  = [(treeToNode (SingleNode (node)))]  ++ []
@@ -342,12 +375,9 @@ treeToNode :: VarTree -> VarNode
 treeToNode (SingleNode (Vari (loc) (dat) (name))) = Vari (loc) (dat) (name)
 treeToNode (CommaNode (node) (remainingTree)) = error "Variable tree contains multiple nodes. Cannot convert to single node."--Unsure of error notation or if this will work but throw an error here (***TODO***)
 
-<<<<<<< HEAD
 --toIndexedList :: (VarTree) -> [(Int, VarNode)]
 --toIndexedList lst = zip [1..] traverseDFVar(lst)
 
-=======
->>>>>>> 51a71e24b38c94f46986d0e443f4ec85c70f9de3
 -- Blindly assumes OpTree contains a VarTree containing only one VarNode.
 convertOpToVarNode :: OpTree -> VarNode
 convertOpToVarNode (VarOp (vTree)) = treeToNode (vTree)

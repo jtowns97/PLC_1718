@@ -61,17 +61,27 @@ data EmptyTree = Nothing
 {-==============================================================================-}
 main :: IO()
 main = do 
+    --Execution order
     a <- getArgs
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
+    pTree <- buildParseTree(alex)
+    tabNodes <- liftRelationNodesOut(pTree)
+    tabNames <- extractTableNames(tabNodes)
+    --get csv data from tabName ++ ".csv" whatever method u used to do that
+    -- tableData <- crossProdOutput(csv1, csv2, etc..)
+    -- answer <- executeParseTree (tableData) (pTree) (NOT DONE)
+    --Maybe filter output here?
+    --prettyPrint(answer)
 
+    {-
     stack <- liftTraverseDF(alex)
     tableNames <- liftExtractTableNames(stack)
     tableData <- liftCrossProductMulti(tableNames)
     answer <- liftExecuteHERB (stack) (tableData)
     liftPrettyPrint (answer) -- answer contains all false rows as well as true. Just output true.
-
+    -}
 
 
 {-==============================================================================-}
@@ -125,6 +135,9 @@ buildOpTree (Relation tblN varis) = RelationNode (tblN) (assignVarTreeLoc (build
 buildOpTree (Equality querA querB) = (EquateNode (varToOpTree(buildVarTree(queryToVariables(querA)))) (varToOpTree(buildVarTree(queryToVariables(querB)))))
 buildOpTree (V varis) = VarOp (buildVarTree(varis))
 buildOpTree _ = EmptyOT (HERBInterpreter.Nothing)
+
+--buildRelationalTree :: String -> VarTree -> OpTree
+--buildRelationalTree tblName vTree = (RelationNode (tblName) (assignVarTreeLoc (vTree) (tblName)))
 
 {-==============================================================================-}
 {-=============================== CSV EXTRACTION ===============================-}

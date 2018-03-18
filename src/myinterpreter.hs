@@ -72,6 +72,7 @@ main = do
     liftPrettyPrint(answer)
 
     {-
+<<<<<<< HEAD
     pTree <- buildParseTree(alex)
     tabNodes <- liftRelationNodesOut(pTree)
     tabNames <- extractTableNames(tabNodes)
@@ -85,6 +86,8 @@ main = do
     parseTree <- liftBuildParseTree(alex)
 
 
+=======
+>>>>>>> 361259cf628dfb437e9e2896cbef87cb7c174137
     stack <- liftTraverseDF(alex)
     tableNames <- liftExtractTableNames(stack)
     tableData <- liftCrossProductMulti(tableNames)
@@ -109,7 +112,7 @@ liftCrossProduct tableNames = liftM crossProd tableNames
 liftExecuteHERB :: [[String]] -> ParseTree -> String
 liftExecuteHERB stack tableData = liftM(executeHERB (stack) (tableData))
 
-liftBuildTables :: [String] -> [[[String]]]
+liftBuildTables :: [String] -> [Either ParseError [[String]]]
 liftBuildTables tabNames = liftM buildTables extractTableNames(pTree)
 
 liftPrettyPrint :: String -> IO String
@@ -152,13 +155,13 @@ line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
 
-buildTables :: [String] -> [[[String]]] 
+buildTables :: [String] -> [Either ParseError [[String]]] 
 buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
 
-buildTable :: FilePath-> [[String]]
+buildTable :: FilePath-> Either ParseError [[String]]
 buildTable tableName = parseCSV(readFile tableName)
 
-parseCSV :: IO String -> [[String]]
+parseCSV :: IO String -> Either ParseError [[String]]
 parseCSV input = parse csvFile "(unknown)" input
 
 {-==============================================================================-}
@@ -267,6 +270,16 @@ equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | na
 {-==============================================================================-}
 {-=========================== TREE & NODE OPERATIONS ===========================-}
 {-==============================================================================-}
+
+getTreeState :: OpTree -> [VarNode]
+getTreeState (ConjunctionNode (opTree) (opTreeX)) = getTreeState(opTree) ++ getTreeState (opTreeX)
+getTreeState (RelationNode (string) (varTree)) = getTreeState(varToOpTree(varTree))
+getTreeState (EquateNode (opTree) (opTreeX)) = getTreeState (opTree) ++ getTreeState (opTreeX)
+getTreeState (LSubNode (opTree) (opTreeX)) = getTreeState (opTree) ++ getTreeState (opTreeX)
+getTreeState (RSubNode (opTree) (opTreeX)) = getTreeState (opTree) ++ getTreeState (opTreeX)
+getTreeState (BoolNode (bool)) = []
+getTreeState (VarOp (varTree)) = traverseDFVar(varTree)
+getTreeState (EmptyOT (emptyTree)) = []
 
 populateTree :: OpTree -> [String] -> Int -> OpTree
 populateTree (VarOp (vTree)) rList ind                      = (VarOp (populateVarTree (vTree) (rList) (ind)))
@@ -383,24 +396,21 @@ assignVarNodeVal (Vari (loc) (dat) (name)) newDat = (Vari (loc) (newDat) (name))
 assignRelation :: OpTree -> String -> OpTree --Will only assign if not signed before. If loc already exists then....what??
 assignRelation (RelationNode (tbl) (vTree)) relName | isTreeAssigned (vTree) == False = RelationNode (tbl) (assignVarTreeLoc (vTree) (tbl))
                                                     | otherwise = (RelationNode (tbl) (vTree)) --check node equality here
-<<<<<<< HEAD
-=======
 
 liftRelationNodesOut :: ParseTree -> [OpTree] --Creates list of single node OpTree's, 
-liftRelationNodesOut Marker vList oTree = getRelationNodesOut(oTree)
-liftRelationNodesOut MarkerNested vList eTree = getExisRelationNodesOut(eTree)
-liftRelationNodesOut MarkerExtended vList eTree oTree = getExisRelationNodesOut(eTree) ++ getRelationNodesOut(oTree)
+liftRelationNodesOut (Marker vList oTree) = getOpRelationNodesOut(oTree)
+liftRelationNodesOut (MarkerNested vList eTree) = getExisRelationNodesOut(eTree)
+liftRelationNodesOut (MarkerExtended vList eTree oTree) = getExisRelationNodesOut(eTree) ++ getOpRelationNodesOut(oTree)
 
 getExisRelationNodesOut :: ExistTree -> [OpTree]
-getExisRelationNodesOut ExistVar vTree oTree = getOpRelationNodesOut(oTree)
-getExisRelationNodesOut ExistNest vTree eTree = geExisRelationNodes(eTree)
-getExisRelationNodesOut EmptyET = []
+getExisRelationNodesOut (ExistVar vTree oTree) = getOpRelationNodesOut(oTree)
+getExisRelationNodesOut (ExistNest vTree eTree) = getExisRelationNodesOut(eTree)
+getExisRelationNodesOut (EmptyET empty) = []
 
 getOpRelationNodesOut :: OpTree -> [OpTree] --Relation nodess are never subtrees of "="
-getOpRelationNodesOut (RelationNode (tbl) (vTree)) = (RelationNode (tbl) (vTree) ) 
+getOpRelationNodesOut (RelationNode (tbl) (vTree)) = [(RelationNode (tbl) (vTree))]
 getOpRelationNodesOut (ConjunctionNode (querA) (querB)) = getOpRelationNodesOut(querA) ++ getOpRelationNodesOut(querB)
 
->>>>>>> 9b9527ac6b6681d5cadc904e0fde5c834fe51f9b
                                             
 {-==============================================================================-}
 {-=============================== TREE TRAVERSAL ===============================-}
@@ -424,6 +434,7 @@ traverseDFOp (LSubNode left right) = traverseDFOp left : traverseDFOp right
 traverseDFOp (RSubNode left right) = traverseDFOp left : traverseDFOp right
 traverseDFOp (BoolNode f) = toString f
     
+<<<<<<< HEAD
 traverseDFEx :: ExistTree -> [a]
 traverseDFEx (EmptyET e) = []
 traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
@@ -431,6 +442,15 @@ traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
 traverseDFVar :: VarTree -> [VarNode] --Int represents ORDER (NB: this is why I decided to add VarNode)
 traverseDFVar (SingleNode (node) )  = [(treeToNode (SingleNode (node)))]  ++ []
 traverseDFVar (CommaNode (nextVar) (remainingTree)) = [nextVar] ++ traverseDFVar remainingTree
+=======
+-- traverseDFEx :: ExistTree -> [a]
+-- traverseDFEx (EmptyET e) = []
+-- traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
+
+-- traverseDFVar :: VarTree -> [Node] --Int represents ORDER (NB: this is why I decided to add VarNode)
+-- traverseDFVar (SingleNode (node) )  = [(treeToNode (SingleNode (node)))]  ++ []
+-- traverseDFVar (CommaNode (nextVar) (remainingTree)) = [nextVar] ++ traverseDFVar remainingTree
+>>>>>>> 361259cf628dfb437e9e2896cbef87cb7c174137
 
 {-========================== HANDLING FOR TREES ================================-}
 

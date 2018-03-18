@@ -65,6 +65,8 @@ main = do
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
+    parseTree <- liftBuildParseTree(alex)
+
 
     stack <- liftTraverseDF(alex)
     tableNames <- liftExtractTableNames(stack)
@@ -205,6 +207,25 @@ filterTrue ((bool, vars):xs) | bool == True = vars : filterTrue xs
 filterTrue ((bool, vars):xs) | bool == False = filterTrue xs
 
 {-==============================================================================-}
+{-=============================== MAIN EVALUATION ==============================-}
+{-==============================================================================-}
+
+--evaluateParseTree :: ParseTree a -> [String] -> (Bool, [VarNode])
+--evaluateParseTree (Marker ordVars oTree)
+--evaluateParseTree (MarkerNested eTree )
+
+evaluate :: OpTree -> [String] -> (Bool, [VarNode])--evaluate opTree freeVarList
+evaluate (EquateNode (l) (r)) freeVars =( ( checkEquality (EquateNode (l) (r)) ), freeVars )
+evaluate (RelationNode (loc) (varTr)) freeVars = checkRelation ( (RelationNode (loc) (varTr)) freeVars )
+evaluate (ConjunctionNode (l) (r)) freeVars = checkConjunction ( (ConjunctionNode (l) (r)) freeVars )
+--evaluate (VarTree ) varRow = 
+--evaluate (VarOp tree) freeVars = assignVars ((traverseDFVar (tree)) freeVars)
+evaluate _ freeVars = (True, [(Vari ("loc") ("dat") ("col"))])
+
+-- evaluateE :: ExisitTree -> Bool
+-- evaluateE varTree opTree | (traverseDFVar (varTree)) --TODO
+
+{-==============================================================================-}
 {-=========================== TREE & NODE OPERATIONS ===========================-}
 {-==============================================================================-}
 
@@ -224,7 +245,6 @@ populateTree (RelationNode (tbl) (vTree)) rList ind         = populateRelation (
 sanitiseVarTree :: VarTree -> VarTree
 sanitiseVarTree (SingleNode ( Vari (loc) (dat) (name) ) ) = (  SingleNode (  Vari (loc) ("*") (name)  )  )
 sanitiseVarTree (CommaNode ( Vari (loc) (dat) (name) ) (remTree) ) = (CommaNode ( Vari (loc) ("*") (name) ) (sanitiseVarTree remTree) )
-<<<<<<< HEAD
 {-
 countPopulations :: OpTree -> Int -> Int
 countPopulations (RelationNode (tbl) (vTree)) _ | isTreePopulated (vTree) == True = countPopNodesInVT (vTree)
@@ -234,17 +254,6 @@ countPopulations (EquateNode (querA) (querB)) = countPopulations(querA) + countP
 countPopulations (VarOp (vTree))                | isTreePopulated (vTree) == True = countPopNodesInVT (vTree)
                                                 | isTreePopulated (vTree) == False = 0
 -}
-=======
-
--- countPopulations :: OpTree -> Int -> Int
--- countPopulations (RelationNode (tbl) (vTree))   | isTreePopulated (vTree) == True = countPopNodesInVT (vTree)
---                                                 | isTreePopulated (vTree) == False = 0
--- countPopulations (ConjunctionNode (querA) (querB)) = countPopulations(querA) + countPopulations(querB)
--- countPopulations (EquateNode (querA) (querB)) = countPopulations(querA) + countPopulations(querB)
--- countPopulations (VarOp (vTree))                | isTreePopulated (vTree) == True = countPopNodesInVT (vTree)
---                                                 | isTreePopulated (vTree) == False = 0
-
->>>>>>> dc0399f18cf932417965d4aa5b65aefc2120ee84
 populateRelation :: OpTree -> [String] -> Int -> OpTree
 populateRelation (RelationNode (tblName) (vTree)) rList ind  | isTreePopulated (vTree) == False = (RelationNode (tblName) (populateVarTree (vTree) rList (ind) )) --Somethings gone wrong maybe?
 

@@ -66,22 +66,13 @@ main = do
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
-<<<<<<< HEAD
-    pTree <- buildParseTree(alex)
-    tabNodes <- liftRelationNodesOut(pTree)
-    tabNames <- extractTableNames(tabNodes)
-    --get csv data from tabName ++ ".csv" whatever method u used to do that
-    -- tableData <- crossProdOutput(csv1, csv2, etc..)
-    -- answer <- executeParseTree (tableData) (pTree) (NOT DONE)
-    --Maybe filter output here?
-    --prettyPrint(answer)
+    pTree <- liftBuildParseTree(alex)
+    tables <- liftBuildTables (pTree)
+    crossProd <- liftCrossProduct (tables)
+    answer <- liftExecuteHERB (crossProd) (pTree)
+    liftPrettyPrint(answer)
 
     {-
-=======
-    parseTree <- liftBuildParseTree(alex)
-
-
->>>>>>> 4730a621561c08ff7964eed298ef2a520310f30b
     stack <- liftTraverseDF(alex)
     tableNames <- liftExtractTableNames(stack)
     tableData <- liftCrossProductMulti(tableNames)
@@ -93,29 +84,24 @@ main = do
 {-==============================================================================-}
 {-============================== LIFTING TO MONADS =============================-}
 {-==============================================================================-}
-
---liftBPT :: Exp -> IO ParseTree
---liftBPT exp = liftM (buildParseTree (exp))
-
---liftTraverseDF :: 
+ 
 liftBuildParseTree :: [Token] -> ParseTree
 liftBuildParseTree alex = liftM buildParseTree parseCalc(alex)
 
-liftTraverseDF :: [Token] -> [OpTree]
-liftTraverseDF alex = liftM traverseDF liftBuildParseTree(alex)
-
-liftExtractTableNames :: [OpTree] -> [String]
-liftExtractTableNames stack = liftM extractTableNames liftRelationNodesOut(stack)
+-- liftExtractTableNames :: ParseTree -> [String]
+-- liftExtractTableNames pTree = liftM extractTableNames liftRelationNamesOut(pTree)
 
 liftCrossProduct :: [String] -> [[String]]
-liftCrossProduct tableNames = liftM crossProd buildTables(tableNames)
+liftCrossProduct tableNames = liftM crossProd tableNames
 
-liftExecuteHERB :: [a] -> [[String]] -> IO String
+liftExecuteHERB :: [[String]] -> ParseTree -> String
 liftExecuteHERB stack tableData = liftM(executeHERB (stack) (tableData))
+
+liftBuildTables :: [String] -> [[[String]]]
+liftBuildTables tabNames = liftM buildTables extractTableNames(pTree)
 
 liftPrettyPrint :: String -> IO String
 liftPrettyPrint answer = liftM2 prettyPrint answer
-
 
 {-==============================================================================-}
 {-================================= BUILDING ===================================-}
@@ -373,10 +359,6 @@ assignVarNodeVal (Vari (loc) (dat) (name)) newDat = (Vari (loc) (newDat) (name))
 assignRelation :: OpTree -> String -> OpTree --Will only assign if not signed before. If loc already exists then....what??
 assignRelation (RelationNode (tbl) (vTree)) relName | isTreeAssigned (vTree) == False = RelationNode (tbl) (assignVarTreeLoc (vTree) (tbl))
                                                     | otherwise = (RelationNode (tbl) (vTree)) --check node equality here
-
--- liftRelationNodesOut :: OpTree -> [OpTree] --Creates list of single node OpTree's 
--- liftRelationNodesOut (RelationNode (tbl) (vTree)) = (RelationNode (tbl) (vTree) ) ++ liftRelationNodesOut xs 
--- liftRelationNodesOut  (x:xs) = liftRelationNodesOut xs ++ []
                                             
 {-==============================================================================-}
 {-=============================== TREE TRAVERSAL ===============================-}

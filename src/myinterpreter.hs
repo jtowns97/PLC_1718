@@ -66,7 +66,6 @@ main = do
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
-<<<<<<< HEAD
     pTree <- buildParseTree(alex)
     tabNodes <- liftRelationNodesOut(pTree)
     tabNames <- extractTableNames(tabNodes)
@@ -77,11 +76,9 @@ main = do
     --prettyPrint(answer)
 
     {-
-=======
     parseTree <- liftBuildParseTree(alex)
 
 
->>>>>>> 4730a621561c08ff7964eed298ef2a520310f30b
     stack <- liftTraverseDF(alex)
     tableNames <- liftExtractTableNames(stack)
     tableData <- liftCrossProductMulti(tableNames)
@@ -239,6 +236,25 @@ evaluate (ConjunctionNode (l) (r)) freeVars = checkConjunction ( (ConjunctionNod
 --evaluate (VarOp tree) freeVars = assignVars ((traverseDFVar (tree)) freeVars)
 evaluate _ freeVars = (True, [(Vari ("loc") ("dat") ("col"))])
 
+
+
+-- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
+checkEquality :: OpTree -> Bool
+checkEquality (EquateNode (l) (r)) = equateNodes left right
+    where   left = convertOpToVarNode (l)
+            right = convertOpToVarNode (r)
+
+equateNodes :: VarNode -> VarNode -> Bool
+equateNodes (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | datA == datB = True
+                                                                        | datA /= datB = False
+
+equateNodesName :: VarNode -> VarNode -> Bool
+equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | nameA == nameB = True
+                                                                            | nameA /= nameB = False
+
+
+
+
 -- evaluateE :: ExisitTree -> Bool
 -- evaluateE varTree opTree | (traverseDFVar (varTree)) --TODO
 
@@ -342,19 +358,7 @@ countVarNodes (CommaNode varN varTree) = 1 + countVarNodes varTree
 countVarNodes (SingleNode varN) = 1
 countVarNodes (EmptyVT empty) = 0
 
--- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
-checkEquality :: OpTree -> Bool
-checkEquality (EquateNode (l) (r)) = equateNodes left right
-    where   left = convertOpToVarNode (l)
-            right = convertOpToVarNode (r)
 
-equateNodes :: VarNode -> VarNode -> Bool
-equateNodes (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | datA == datB = True
-                                                                        | datA /= datB = False
-
-equateNodesName :: VarNode -> VarNode -> Bool
-equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | nameA == nameB = True
-                                                                            | nameA /= nameB = False
 
 extractTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodesOut, possibly needs to be reverse
 extractTableNames [] = []
@@ -374,9 +378,20 @@ assignRelation :: OpTree -> String -> OpTree --Will only assign if not signed be
 assignRelation (RelationNode (tbl) (vTree)) relName | isTreeAssigned (vTree) == False = RelationNode (tbl) (assignVarTreeLoc (vTree) (tbl))
                                                     | otherwise = (RelationNode (tbl) (vTree)) --check node equality here
 
--- liftRelationNodesOut :: OpTree -> [OpTree] --Creates list of single node OpTree's 
--- liftRelationNodesOut (RelationNode (tbl) (vTree)) = (RelationNode (tbl) (vTree) ) ++ liftRelationNodesOut xs 
--- liftRelationNodesOut  (x:xs) = liftRelationNodesOut xs ++ []
+liftRelationNodesOut :: ParseTree -> [OpTree] --Creates list of single node OpTree's, 
+liftRelationNodesOut Marker vList oTree = getRelationNodesOut(oTree)
+liftRelationNodesOut MarkerNested vList eTree = getExisRelationNodesOut(eTree)
+liftRelationNodesOut MarkerExtended vList eTree oTree = getExisRelationNodesOut(eTree) ++ getRelationNodesOut(oTree)
+
+getExisRelationNodesOut :: ExistTree -> [OpTree]
+getExisRelationNodesOut ExistVar vTree oTree = getOpRelationNodesOut(oTree)
+getExisRelationNodesOut ExistNest vTree eTree = geExisRelationNodes(eTree)
+getExisRelationNodesOut EmptyET = []
+
+getOpRelationNodesOut :: OpTree -> [OpTree] --Relation nodess are never subtrees of "="
+getOpRelationNodesOut (RelationNode (tbl) (vTree)) = (RelationNode (tbl) (vTree) ) 
+getOpRelationNodesOut (ConjunctionNode (querA) (querB)) = getOpRelationNodesOut(querA) ++ getOpRelationNodesOut(querB)
+
                                             
 {-==============================================================================-}
 {-=============================== TREE TRAVERSAL ===============================-}

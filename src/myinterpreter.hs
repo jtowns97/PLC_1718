@@ -48,8 +48,7 @@ data ExistTree = ExistVar (VarTree) (OpTree)
 -- PARSE TREE
 data ParseTree = Marker ([VarNode]) (OpTree)
     | MarkerNested ([VarNode]) (ExistTree)
-    | MarkerExtended ([VarNode]) (ExistTree) (OpTree)
-    | EmptyPT (EmptyTree)
+va    | EmptyPT (EmptyTree)
     deriving Show
   --  (1,10,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
 
@@ -66,7 +65,6 @@ main = do
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
-<<<<<<< HEAD
     pTree <- liftBuildParseTree(alex)
     tables <- liftBuildTables (pTree)
     crossProd <- liftCrossProduct (tables)
@@ -74,7 +72,6 @@ main = do
     liftPrettyPrint(answer)
 
     {-
-=======
     pTree <- buildParseTree(alex)
     tabNodes <- liftRelationNodesOut(pTree)
     tabNames <- extractTableNames(tabNodes)
@@ -83,12 +80,11 @@ main = do
     -- answer <- executeParseTree (tableData) (pTree) (NOT DONE)
     --Maybe filter output here?
     --prettyPrint(answer)
-
+    -}
     {-
     parseTree <- liftBuildParseTree(alex)
 
 
->>>>>>> 9b9527ac6b6681d5cadc904e0fde5c834fe51f9b
     stack <- liftTraverseDF(alex)
     tableNames <- liftExtractTableNames(stack)
     tableData <- liftCrossProductMulti(tableNames)
@@ -233,18 +229,23 @@ filterTrue ((bool, vars):xs) | bool == False = filterTrue xs
 --evaluateParseTree (Marker ordVars oTree)
 --evaluateParseTree (MarkerNested eTree )
 
-evaluate :: OpTree -> [String] -> (Bool, [VarNode])--evaluate opTree freeVarList
-evaluate (EquateNode (l) (r)) freeVars =( ( checkEquality (EquateNode (l) (r)) ), freeVars )
-evaluate (RelationNode (loc) (varTr)) freeVars = checkRelation ( (RelationNode (loc) (varTr)) freeVars )
-evaluate (ConjunctionNode (l) (r)) freeVars = checkConjunction ( (ConjunctionNode (l) (r)) freeVars )
+evaluate :: OpTree -> Bool --evaluate opTree freeVarList
+evaluate (EquateNode (l) (r))  =  ( checkEquality (EquateNode (l) (r))) 
+evaluate (RelationNode (loc) (varTr))  = checkRelation (RelationNode (loc) (varTr))
+evaluate (ConjunctionNode (l) (r))  = checkConjunction (ConjunctionNode (l) (r))
 --evaluate (VarTree ) varRow = 
 --evaluate (VarOp tree) freeVars = assignVars ((traverseDFVar (tree)) freeVars)
-evaluate _ freeVars = (True, [(Vari ("loc") ("dat") ("col"))])
+evaluate (VarOp v)  = True
 
+checkConjunction :: OpTree -> Bool
+checkConjunction  (ConjunctionNode (l) (r) ) = (evaluate(l)) && (evaluate(r))
 
+checkRelation :: OpTree -> Bool
+checkRelation (RelationNode (tbl) (vList)) = isTreePopulated(vList)
 
 -- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
 checkEquality :: OpTree -> Bool
+--checkEquality (EquateNodes (VarOp (SingleNode(v))) (restN) ) = evaluate (VarOp (SingleNode(v))) && checkEquality(restN)
 checkEquality (EquateNode (l) (r)) = equateNodes left right
     where   left = convertOpToVarNode (l)
             right = convertOpToVarNode (r)
@@ -405,31 +406,31 @@ getOpRelationNodesOut (ConjunctionNode (querA) (querB)) = getOpRelationNodesOut(
 {-=============================== TREE TRAVERSAL ===============================-}
 {-==============================================================================-}
 
--- liftTraversal :: [VarTree] -> IO VarTree
--- liftTraversal [a] = liftM [a]
+liftTraversal :: [VarTree] -> IO VarTree
+liftTraversal [a] = liftM [a]
+{-
+traverseDF :: ParseTree -> [VarTree]
+traverseDF (EmptyPT e) = []
+traverseDF (Marker list op) = Marker : traverseDF list : traverseDF op
+traverseDF (Marker list exisit) = Marker : traverseDF list : traverseDF exisit
+traverseDF (Marker list exisit op) = Marker : traverseDF list : traverseDF exisit : traverseDF op
 
--- traverseDF :: ParseTree -> [VarTree]
--- traverseDF (EmptyPT e) = []
--- traverseDF (Marker list op) = Marker : traverseDF list : traverseDF op
--- traverseDF (Marker list exisit) = Marker : traverseDF list : traverseDF exisit
--- traverseDF (Marker list exisit op) = Marker : traverseDF list : traverseDF exisit : traverseDF op
-
--- traverseDFOp :: OpTree -> [AllTree]
--- traverseDFOp (EmptyOT e) = []
--- traverseDFOp (ConjunctionNode left right) = traverseDFOp left : traverseDFOp right
--- traverseDFOp (RelationNode string variables) = traverseDFVar
--- traverseDFOp (EquateNode left right) = traverseDFOp left : traverseDFOp right
--- traverseDFOp (LSubNode left right) = traverseDFOp left : traverseDFOp right
--- traverseDFOp (RSubNode left right) = traverseDFOp left : traverseDFOp right
--- traverseDFOp (BoolNode f) = toString f
+traverseDFOp :: OpTree -> [AllTree]
+traverseDFOp (EmptyOT e) = []
+traverseDFOp (ConjunctionNode left right) = traverseDFOp left : traverseDFOp right
+traverseDFOp (RelationNode string variables) = traverseDFVar
+traverseDFOp (EquateNode left right) = traverseDFOp left : traverseDFOp right
+traverseDFOp (LSubNode left right) = traverseDFOp left : traverseDFOp right
+traverseDFOp (RSubNode left right) = traverseDFOp left : traverseDFOp right
+traverseDFOp (BoolNode f) = toString f
     
--- traverseDFEx :: ExistTree -> [a]
--- traverseDFEx (EmptyET e) = []
--- traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
-
--- traverseDFVar :: VarTree -> [VarTree] --Int represents ORDER (NB: this is why I decided to add VarNode)
--- traverseDFVar (SingleNode (node) )  = [(treeToNode (SingleNode (node)))]  ++ []
--- traverseDFVar (CommaNode (nextVar) (remainingTree)) = [nextVar] ++ traverseDFVar remainingTree
+traverseDFEx :: ExistTree -> [a]
+traverseDFEx (EmptyET e) = []
+traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
+-}
+traverseDFVar :: VarTree -> [VarNode] --Int represents ORDER (NB: this is why I decided to add VarNode)
+traverseDFVar (SingleNode (node) )  = [(treeToNode (SingleNode (node)))]  ++ []
+traverseDFVar (CommaNode (nextVar) (remainingTree)) = [nextVar] ++ traverseDFVar remainingTree
 
 {-========================== HANDLING FOR TREES ================================-}
 

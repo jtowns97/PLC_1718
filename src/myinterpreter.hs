@@ -48,6 +48,7 @@ data ExistTree = ExistVar (VarTree) (OpTree)
 -- PARSE TREE
 data ParseTree = Marker ([VarNode]) (OpTree)
     | MarkerNested ([VarNode]) (ExistTree)
+    | Marker
     | EmptyPT (EmptyTree)
     deriving Show
   --  (1,10,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
@@ -200,8 +201,9 @@ crossRows xs ys =
     | x <- xs 
     , y <- ys ]
 
-allRows :: [[[String]]] -> [[String]]
-allRows ((y:ys):xs) = 
+-- allRows :: [[[String]]] -> [[String]]
+-- allRows ((y:ys):xs) = 
+
 cartProd :: [[String]] -> [[String]]
 cartProd = sequence
 
@@ -209,20 +211,12 @@ doesExistInOpTree :: VarNode -> OpTree -> Bool
 doesExistInOpTree (node) (ConjunctionNode (opTree) (opTreeX)) = doesExistInOpTree node opTree || doesExistInOpTree node opTreeX
 doesExistInOpTree (node) (RelationNode (string) (varTree)) = doesExistInVarTree node varTree
 doesExistInOpTree (node) (EquateNode (opTree) (opTreeX)) =  doesExistInOpTree node opTree || doesExistInOpTree node opTreeX
-doesExistInOpTree (node) (VarOp (varTree)) | doesExistInVarTree node varTree
+doesExistInOpTree (node) (VarOp (varTree)) = doesExistInVarTree node varTree
 
 doesExistInVarTree :: VarNode -> VarTree -> Bool
 doesExistInVarTree (node) (CommaNode (varNode) (varTree)) = equateNodesDatAndName node varNode || doesExistInVarTree node varTree
 doesExistInVarTree (node) (SingleNode (varNode)) = equateNodesDatAndName node varNode
 doesExistInVarTree (node) (EmptyVT (emptyTree)) = False
--- getTr
-
--- combineTables :: [[[String]]] -> [[String]]
--- combineTables ((x:xs)) = x ++ concatTables ((xs))
-
--- concatTables :: [[String]] -> [[String]]
--- concatTables [(x:xs)] | length xs == 0 = x
--- concatTables [(x:xs)] = x : concatTables xs
 
 orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]]
 orderOutput (o:os) (list) = [orderOutput' o list] ++ orderOutput os list

@@ -39,6 +39,7 @@ data OpTree = ConjunctionNode (OpTree) (OpTree)
 -- Seperate exisitential operator.
 -- EXISITENTIAL TREE ***TODO** add case for nested eTree
 data ExistTree = ExistVar (VarTree) (OpTree) 
+    | ExistNest (VarTree) (ExistTree)
     | EmptyET (EmptyTree)
     deriving Show
 
@@ -72,36 +73,37 @@ main = do
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
-    let happy = parseCalc (alex)
 
-    tree <- liftBuildParseTree(happy)
-    stack <- liftTraverseDF(tree)
+    stack <- liftTraverseDF(alex)
     tableNames <- liftExtractTableNames(stack)
     tableData <- liftCrossProductMulti(tableNames)
     answer <- liftExecuteHERB (stack) (tableData)
     liftPrettyPrint (answer) -- answer contains all false rows as well as true. Just output true.
 
+
+
 {-==============================================================================-}
 {-============================== LIFTING TO MONADS =============================-}
 {-==============================================================================-}
 
-liftBuildParseTree :: Exp -> IO ParseTree
-liftBuildParseTree exp = liftM (buildParseTree (exp))
+--BPT
+liftBuildParseTree :: [Token] -> ParseTree
+liftBuildParseTree alex = liftM buildParseTree parseCalc(alex)
 
-liftTraverseDF :: ParseTree -> IO [a]
-liftTraverseDF tree = liftM(traverseDF(tree))
+liftTraverseDF :: [Token] -> [OpTree]
+liftTraverseDF alex = liftM traverseDF liftBuildParseTree(alex)
 
-liftExtractTableNames :: [a] -> IO String
-liftExtractTableNames stack = liftM(extractTableNames(liftRelationNodesOut(stack)))
+liftExtractTableNames :: [OpTree] -> [String]
+liftExtractTableNames stack = liftM extractTableNames liftRelationNodesOut(stack)
 
-liftCrossProductMulti :: String -> IO Table
-liftCrossProductMulti tableNames = liftM(crossProductMulti(buildTables(tableNames)))
+liftCrossProductMulti :: [String] -> Table
+liftCrossProductMulti tableNames = liftM crossProductMulti buildTables(tableNames)
 
 liftExecuteHERB :: [a] -> Table -> IO String
 liftExecuteHERB stack tableData = liftM(executeHERB (stack) (tableData))
 
 liftPrettyPrint :: String -> IO String
-liftPrettyPrint answer = liftM2(prettyPrint (answer))
+liftPrettyPrint answer = liftM2 prettyPrint answer
 
 {-==============================================================================-}
 {-================================= BUILDING ===================================-}
@@ -109,26 +111,24 @@ liftPrettyPrint answer = liftM2(prettyPrint (answer))
 
 buildParseTree :: Exp -> ParseTree
 buildParseTree (Evaluate (vars) (query)) = Marker (traverseDFVar(buildVarTree(vars))) (buildOpTree(query))
-buildParseTree Eval vars exis = MarkerNested (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis))
-buildParseTree EvalExisExt vars exis quer = MarkerExtended (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (buildOpTree(quer))
+buildParseTree (Eval vars exis) = MarkerNested (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis))
+buildParseTree (EvalExisExt vars exis quer) = MarkerExtended (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (buildOpTree(quer))
 
 buildVarTree :: Variables -> VarTree
-buildVarTree VarSingle strName = SingleNode (Vari ("*") ("*") (strName))
-buildVarTree Comma (VarSingle (nextStrName)) remVars = CommaNode (Vari ("*") ("*") (nextStrName)) (buildVarTree remVars)
-
+buildVarTree (VarSingle strName) = SingleNode (Vari ("*") ("*") (strName))
+buildVarTree (Comma (VarSingle (nextStrName)) remVars) = CommaNode (Vari ("*") ("*") (nextStrName)) (buildVarTree remVars)
 
 buildExisTree :: Existential -> ExistTree 
-buildExisTree ExistentialSingle (vars) (quer) = ExistVar (buildVarTree(vars)) (buildOpTree (quer))
-buildExisTree ExistentialNested (vars) (exisNest) = ExistNest (buildVarTree(vars)) (buildExisTree (exisNest))
-
+buildExisTree (ExistentialSingle (vars) (quer)) = (ExistVar (buildVarTree(vars)) (buildOpTree (quer)))
+buildExisTree (ExistentialNested (vars) (exisNest)) = (ExistNest (buildVarTree(vars)) (buildExisTree (exisNest)))
 
 buildOpTree :: Query -> OpTree 
-buildOpTree Conjunction querA querB = ConjunctionNode (buildOpTree querA) (buildOpTree querB)
-buildOpTree Relation tblN varis = RelationNode (tblN) (assignVarTreeLoc (buildVarTree varis) (tblN) )
+buildOpTree (Conjunction querA querB) = ConjunctionNode (buildOpTree querA) (buildOpTree querB)
+buildOpTree (Relation tblN varis) = RelationNode (tblN) (assignVarTreeLoc (buildVarTree varis) (tblN) )
 --Below (TODO) add type checker for querA/B, checking its a VarTree
-buildOpTree Equality querA querB = EquateNode (buildVarTree(querA)) (buildVarTree(querB))
-buildOpTree V varis = VarOp (buildVarTree(varis))
-buildOpTree _ = EmptyOT (Data.Maybe.Nothing)
+buildOpTree (Equality querA querB) = (EquateNode (varToOpTree(buildVarTree(queryToVariables(querA)))) (varToOpTree(buildVarTree(queryToVariables(querB)))))
+buildOpTree (V varis) = VarOp (buildVarTree(varis))
+buildOpTree _ = EmptyOT (HERBInterpreter.Nothing)
 
 {-==============================================================================-}
 {-=============================== CSV EXTRACTION ===============================-}
@@ -142,10 +142,10 @@ eol = char '\n'
 buildTables :: [String] -> [Table] 
 buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
 
-buildTable :: String -> Table
+buildTable :: FilePath-> Table
 buildTable tableName = parseCSV(readFile tableName)
 
-parseCSV :: String -> Table
+parseCSV :: IO String -> Table
 parseCSV input = parse csvFile "(unknown)" input
 
 {-==============================================================================-}
@@ -171,7 +171,7 @@ getNthEl (x:xs) goal current | goal == current = x
 
 crossProductMulti :: [Table] -> Table
 crossProductMulti [] = []
-crossProductMulti (x:y:xs) = crossProductMulti([crossProductTwo (x) (y)] : xs)
+crossProductMulti (x:y:xs) = crossProductMulti([crossProductTwo (x) (y)] ++ xs)
 
 -- input Cols, transpose will change to rows
 crossProductTwo :: [Col] -> [Col] -> Table
@@ -181,26 +181,48 @@ crossProduct xs ys = crossProduct' [(x,y) | x <- (transpose xs), y <- (transpose
 crossProduct' :: [(Col,Col)] -> Table
 crossProduct' xs ys = xs : ys
 
-orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]]
-orderOutput (o:os) (list) = orderOutput' o (list) : orderOutput os (list)
+crossProd :: [[Col]] -> [[a]]
+crossProd = foldr
+    (\xs as ->
+        [ x : a
+        | x <- xs
+        , a <- as ])
+    [[]]
+
+orderOutput :: [VarNode] -> [[VarNode]] -> [VarNode]
+orderOutput (o:os) (list) = orderOutput' o (list) ++ orderOutput os (list)
 
 --              LHS ORDER      filterTrueOutput            TRUE ROWS
 orderOutput' :: VarNode -> [[VarNode]] -> [VarNode]
 orderOutput' o [] = []
-orderOutput' o (t:ts) = orderOutput'' (o) (t) : orderOutput' (o) (ts)
+orderOutput' o (t:ts) = orderOutput'' (o) (t) ++ orderOutput' (o) (ts)
 
 orderOutput'' :: VarNode -> [VarNode] -> [VarNode]
-orderOutput'' v (w:ws) | equateNodeNames v w == True = w : orderOutput'' v ws
-orderOutput'' v (w:ws) | equateNodeNames v w == False = orderOutput'' v ws
+orderOutput'' v (w:ws) | equateNodesName v w == True = w : orderOutput'' v ws
+orderOutput'' v (w:ws) | equateNodesName v w == False = orderOutput'' v ws
 
 filterTrue :: [(Bool, [VarNode])] -> [[VarNode]]
-filterTrue ((_, [])) = [[]]
+filterTrue ((bool, vars):xs) | length xs == 0 = [[]]
 filterTrue ((bool, vars):xs) | bool == True = vars : filterTrue xs
 filterTrue ((bool, vars):xs) | bool == False = filterTrue xs
 
 {-==============================================================================-}
 {-=========================== TREE & NODE OPERATIONS ===========================-}
 {-==============================================================================-}
+
+queryToVariables :: Query -> Variables
+queryToVariables (V (Comma varA varB))  = (Comma varA varB)
+queryToVariables (V (VarSingle string)) = (VarSingle string)
+
+varToOpTree :: VarTree -> OpTree
+varToOpTree (CommaNode varN varT) = (VarOp (CommaNode varN varT))
+varToOpTree (SingleNode varN) = (VarOp (SingleNode varN))
+varToOpTree (EmptyVT emptyT) = (VarOp (EmptyVT emptyT))
+
+countVarNodes :: VarTree -> Int
+countVarNodes (CommaNode varN varTree) = 1 + countVarNodes varTree
+countVarNodes (SingleNode varN) = 1
+countVarNodes (EmptyVT empty) = 0
 
 -- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
 checkEquality :: OpTree -> Bool
@@ -216,21 +238,36 @@ equateNodesName :: VarNode -> VarNode -> Bool
 equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | nameA == nameB = True
                                                                             | nameA /= nameB = False
 
-isTreeAssigned :: VarTree -> Bool
-isTreeAssigned (SingleNode vNode) = isNodeAssigned vNode
-isTreeAssigned (CommaNode vNode remTree) = isNodeAssinged vNode && isTreeAssigned remTree 
-
-isNodeAssigned :: VarNode -> Bool
-isNodeAssigned (Vari (loc) (dat) (name))    | loc == "*"  = False-- Represents unassiged null value 
-                                            | otherwise = True
 
 extractTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodesOut, possibly needs to be reverse
 extractTableNames [] = []
 extractTableNames ( (RelationNode (tbl) (vTree)) :xs) = (tbl) : extractTableNames xs
 
-liftRelationNodesOut :: [OpTree] -> [OpTree] --Creates list of single node OpTree's 
-liftRelationNodesOut ((RelationNode (tbl) (vTree)):xs) = (RelationNode (tbl) (vTree) ) : liftRelationNodesOut xs 
-liftRelationNodesOut  (_:xs) = liftRelationNodesOut xs : []
+assignVarTreeLoc :: VarTree -> String -> VarTree
+assignVarTreeLoc (SingleNode (Vari (loc) (dat) (name))) x = (SingleNode (Vari (x) (dat) (name)))
+assignVarTreeLoc (CommaNode (Vari (loc) (dat) (name)) (remTree)) x = (CommaNode (Vari (x) (dat) (name)) (assignVarTreeLoc (remTree) (x)))
+
+assignAssignment :: OpTree -> String -> OpTree
+assignAssignment (RelationNode (ass) (vTree) ) newAss = (RelationNode (newAss) (vTree))
+
+assignVarNodeVal :: VarNode -> String -> VarNode
+assignVarNodeVal (Vari (loc) (dat) (name)) newDat = (Vari (loc) (newDat) (name))
+
+assignRelation :: OpTree -> String -> OpTree --Will only assign if not signed before. If loc already exists then....what??
+assignRelation (RelationNode (tbl) (vTree)) relName | isTreeAssigned (vTree) == False = RelationNode (tbl) (assignVarTreeLoc (vTree) (tbl))
+                                                    | otherwise = (RelationNode (tbl) (vTree)) --check node equality here
+
+isTreeAssigned :: VarTree -> Bool
+isTreeAssigned (SingleNode vNode) = isNodeAssigned vNode
+isTreeAssigned (CommaNode vNode remTree) = isNodeAssigned vNode && isTreeAssigned remTree 
+
+isNodeAssigned :: VarNode -> Bool
+isNodeAssigned (Vari (loc) (dat) (name))    | loc == "*"  = False-- Represents unassiged null value 
+                                            | otherwise = True
+
+-- liftRelationNodesOut :: OpTree -> [OpTree] --Creates list of single node OpTree's 
+-- liftRelationNodesOut (RelationNode (tbl) (vTree)) = (RelationNode (tbl) (vTree) ) ++ liftRelationNodesOut xs 
+-- liftRelationNodesOut  (x:xs) = liftRelationNodesOut xs ++ []
                                             
 {-==============================================================================-}
 {-=============================== TREE TRAVERSAL ===============================-}

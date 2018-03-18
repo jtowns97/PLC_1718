@@ -55,15 +55,6 @@ data ParseTree = Marker ([VarNode]) (OpTree)
 data EmptyTree = Nothing
     deriving Show
 
-type Cell = String
-
-type Col = [Cell]
-
-type Row = [Cell]
-
-type Table = [Col]
-type TableRows = [Row]
-
 {-==============================================================================-}
 {-===================================== MAIN ===================================-}
 {-==============================================================================-}
@@ -96,10 +87,10 @@ liftTraverseDF alex = liftM traverseDF liftBuildParseTree(alex)
 liftExtractTableNames :: [OpTree] -> [String]
 liftExtractTableNames stack = liftM extractTableNames liftRelationNodesOut(stack)
 
-liftCrossProductMulti :: [String] -> Table
-liftCrossProductMulti tableNames = liftM crossProductMulti buildTables(tableNames)
+liftCrossProduct :: [String] -> [[String]]
+liftCrossProduct tableNames = liftM crossProd buildTables(tableNames)
 
-liftExecuteHERB :: [a] -> Table -> IO String
+liftExecuteHERB :: [a] -> [[String]] -> IO String
 liftExecuteHERB stack tableData = liftM(executeHERB (stack) (tableData))
 
 liftPrettyPrint :: String -> IO String
@@ -139,49 +130,51 @@ line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
 
-buildTables :: [String] -> [Table] 
+buildTables :: [String] -> [[[String]]] 
 buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
 
-buildTable :: FilePath-> Table
+buildTable :: FilePath-> [[String]]
 buildTable tableName = parseCSV(readFile tableName)
 
-parseCSV :: IO String -> Table
+parseCSV :: IO String -> [[String]]
 parseCSV input = parse csvFile "(unknown)" input
 
 {-==============================================================================-}
 {-============================== TABLE OPERATIONS ==============================-}
 {-==============================================================================-}
 
-countCols :: [Col] -> Int
+colToRows :: [[String]] -> [[String]]
+colToRows input = transpose input
+
+countCols :: [[String]] -> Int
 countCols input = countColsFromRows (transpose input)
 
-countColsFromRows :: [Row] -> Int
+countColsFromRows :: [[String]] -> Int
 countColsFromRows (x:xs) = length x
 
-countRows :: [Row] -> Int
+countRows :: [[String]] -> Int
 countRows input = countRowsFromCols (transpose input)
 
-countRowsFromCols :: [Col] -> Int
+countRowsFromCols :: [[String]] -> Int
 countRowsFromCols (x:xs) = length x
 
-getNthEl :: [Col] -> Int -> Int -> Col
+getNthEl :: [[String]] -> Int -> Int -> [String]
 getNthEl [] _ _ = []
 getNthEl (x:xs) goal current | goal == current = x
                              | goal /= current = getNthEl xs goal (current+1)
 
-crossProductMulti :: [Table] -> Table
-crossProductMulti [] = []
-crossProductMulti (x:y:xs) = crossProductMulti([crossProductTwo (x) (y)] ++ xs)
+--INPUT ROWS                            
+getNthRow :: [[String]] -> Int -> Int -> [String]
+getNthRow [] _ _ = []
+getNthRow (x:xs) goal current | goal == current = x
+                             | goal /= current = getNthRow xs goal (current+1)
 
--- input Cols, transpose will change to rows
-crossProductTwo :: [Col] -> [Col] -> Table
-crossProductTwo [] [] = []
-crossProduct xs ys = crossProduct' [(x,y) | x <- (transpose xs), y <- (transpose ys)] 
+--INPUT ROWS
+getNRowFromCrossProd :: [[String]] -> Int -> [String]
+getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
 
-crossProduct' :: [(Col,Col)] -> Table
-crossProduct' xs ys = xs : ys
-
-crossProd :: [[Col]] -> [[a]]
+-- input list of tables, returns tables of rows
+crossProd :: [[[String]]] -> [[[String]]]
 crossProd = foldr
     (\xs as ->
         [ x : a
@@ -265,9 +258,9 @@ isNodeAssigned :: VarNode -> Bool
 isNodeAssigned (Vari (loc) (dat) (name))    | loc == "*"  = False-- Represents unassiged null value 
                                             | otherwise = True
 
--- liftRelationNodesOut :: OpTree -> [OpTree] --Creates list of single node OpTree's 
--- liftRelationNodesOut (RelationNode (tbl) (vTree)) = (RelationNode (tbl) (vTree) ) ++ liftRelationNodesOut xs 
--- liftRelationNodesOut  (x:xs) = liftRelationNodesOut xs ++ []
+liftRelationNodesOut :: OpTree -> [OpTree] --Creates list of single node OpTree's 
+liftRelationNodesOut (RelationNode (tbl) (vTree)) = (RelationNode (tbl) (vTree) ) ++ liftRelationNodesOut xs 
+liftRelationNodesOut  (x:xs) = liftRelationNodesOut xs ++ []
                                             
 {-==============================================================================-}
 {-=============================== TREE TRAVERSAL ===============================-}

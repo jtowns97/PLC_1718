@@ -13,7 +13,6 @@ import Data.Ord
 
 {-==============================================================================-}
 {-=============================== DATA STRUCTURES ==============================-}
-{-==============================================================================-}
 
 -- Left hand side of algebra (variables or arguments)
 -- VARIABLES TREE
@@ -237,31 +236,31 @@ liftRelationNodesOut  (_:xs) = liftRelationNodesOut xs : []
 {-=============================== TREE TRAVERSAL ===============================-}
 {-==============================================================================-}
 
-liftTraversal :: [a] -> IO a
-liftTraversal [a] = liftM [a]
+-- liftTraversal :: [VarTree] -> IO VarTree
+-- liftTraversal [a] = liftM [a]
 
-traverseDF :: ParseTree -> [a]
-traverseDF (EmptyPT) = []
-traverseDF (Marker list op) = Marker : traverseDF list : traverseDF op
-traverseDF (Marker list exisit) = Marker : traverseDF list : traverseDF exisit
-traverseDF (Marker list exisit op) = Marker : traverseDF list : traverseDF exisit : traverseDF op
+-- traverseDF :: ParseTree -> [VarTree]
+-- traverseDF (EmptyPT e) = []
+-- traverseDF (Marker list op) = Marker : traverseDF list : traverseDF op
+-- traverseDF (Marker list exisit) = Marker : traverseDF list : traverseDF exisit
+-- traverseDF (Marker list exisit op) = Marker : traverseDF list : traverseDF exisit : traverseDF op
 
-traverseDFOp :: OpTree -> [a]
-traverseDFOp (EmptyOT) = []
-traverseDFOp (ConjunctionNode left right) = traverseDFOp left : traverseDFOp right
-traverseDFOp (RelationNode string variables) = traverseDFVar
-traverseDFOp (EquateNode left right) = traverseDFOp left : traverseDFOp right
-traverseDFOp (LSubNode left right) = traverseDFOp left : traverseDFOp right
-traverseDFOp (RSubNode left right) = traverseDFOp left : traverseDFOp right
-traverseDFOp (BoolNode f) = toString f
+-- traverseDFOp :: OpTree -> [AllTree]
+-- traverseDFOp (EmptyOT e) = []
+-- traverseDFOp (ConjunctionNode left right) = traverseDFOp left : traverseDFOp right
+-- traverseDFOp (RelationNode string variables) = traverseDFVar
+-- traverseDFOp (EquateNode left right) = traverseDFOp left : traverseDFOp right
+-- traverseDFOp (LSubNode left right) = traverseDFOp left : traverseDFOp right
+-- traverseDFOp (RSubNode left right) = traverseDFOp left : traverseDFOp right
+-- traverseDFOp (BoolNode f) = toString f
     
-traverseDFEx :: ExistTree -> [a]
-traverseDFEx (EmptyET) = []
-traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
+-- traverseDFEx :: ExistTree -> [AllTree]
+-- traverseDFEx (EmptyET e) = []
+-- traverseDFEx (ExistVar var op) = traverseDFVar var ++ traverseDFOp op
 
-traverseDFVar :: VarTree -> [VarNode] --Int represents ORDER (NB: this is why I decided to add VarNode)
-traverseDFVar (SingleNode (node) )  = (treeToNode (SingleNode (node)))  : []
-traverseDFVar (CommaNode (nextVar) (remainingTree)) = nextVar : traverseDFVar remainingTree
+-- traverseDFVar :: VarTree -> [VarTree] --Int represents ORDER (NB: this is why I decided to add VarNode)
+-- traverseDFVar (SingleNode (node) )  = [(treeToNode (SingleNode (node)))]  ++ []
+-- traverseDFVar (CommaNode (nextVar) (remainingTree)) = [nextVar] ++ traverseDFVar remainingTree
 
 {-========================== HANDLING FOR TREES ================================-}
 
@@ -271,6 +270,6 @@ treeToNode (CommaNode (node) (remainingTree)) = error "Variable tree contains mu
 
 -- Blindly assumes OpTree contains a VarTree containing only one VarNode.
 convertOpToVarNode :: OpTree -> VarNode
-convertOpToVarNode VarOp (varTree) = treeToNode (varTree)
+convertOpToVarNode (VarOp (vTree)) = treeToNode (vTree)
 
 

@@ -65,6 +65,7 @@ main = do
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
+<<<<<<< HEAD
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let tableNames = extractPTableNames (pTree)
@@ -73,6 +74,15 @@ main = do
     let bigTable = crossProd(tables)
 
     putStr("Execution completed!!!!!!!")
+=======
+    let pTree = buildParseTree (alex)
+    let tableNames = extractTableNames (pTree)
+    let tables = liftBuildTables tableNames
+    let bigTable = crossProd(buildTables(tables))
+
+    putStr "Execution completed!!!!!!!" 
+    return
+>>>>>>> b7806a4c3936f0b0c315d48f19257248f002419b
   
 {-==============================================================================-}
 {-================================= BUILDING ===================================-}
@@ -156,21 +166,25 @@ getNthRow (x:xs) goal current | goal == current = x
 getNRowFromCrossProd :: [[String]] -> Int -> [String]
 getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
 
+<<<<<<< HEAD
 -- input list of tables, returns tables of rows
 crossProd :: [[[String]]] -> [[[String]]]
 crossProd input = input
+=======
+--[Table] -> Table
+--[[Row]] -> [Row]
+--[[[String]]] -> [[String]]
+crossProd :: [[a]] -> [[a]]
+crossProd input = foldRows(cartProd(input))
+>>>>>>> b7806a4c3936f0b0c315d48f19257248f002419b
 
--- crossRows :: [[String]] -> [[String]] -> [(String,String)]
--- crossRows xs ys =
---     [ (x, y)
---     | x <- xs 
---     , y <- ys ]
+cartprod :: [[a]] -> [[a]]
+cartprod [] = [[]]
+cartprod (xs:xss) = [x:ys | x<- xs, ys <-yss]
+                        where yss = cartprod xss
 
--- -- allRows :: [[[String]]] -> [[String]]
--- -- allRows ((y:ys):xs) = 
-
--- cartProd :: [[String]] -> [[String]]
--- cartProd = sequence
+foldRows :: [[[String]]] -> [[String]]
+foldRows [[row]] = foldr (++) [] row
 
 doesListExistInOpTree :: [VarNode] -> OpTree -> Bool
 doesListExistInOpTree (x:xs) oTree = ( doesExistInOpTree (x) (oTree) ) && ( doesListExistInOpTree (xs) (oTree) )

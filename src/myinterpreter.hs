@@ -60,89 +60,19 @@ data EmptyTree = Nothing
 {-==============================================================================-}
 main :: IO()
 main = do 
-
     a <- getArgs
     a <- getArgs
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
+    let pTree = buildParseTree (alex)
+    let tableNames = extractTableNames (pTree)
+    let tables = liftBuildTables tableNames
+    let bigTable crossProd(buildTables(tables))
 
-    -- pTree <- liftBuildParseTree(alex)
-    -- tables <- liftBuildTables (pTree)
-    -- crossProd <- liftCrossProduct (tables)
-    -- answer <- liftexecuteQuery (crossProd) (pTree)
-    -- liftPrettyPrint(answer)
-
-    {-
-    pTree <- buildParseTree(alex)
-    tabNodes <- liftRelationNodesOut(pTree)
-    tabNames <- extractTableNames(tabNodes)
-    --get csv data from tabName ++ ".csv" whatever method u used to do that
-    -- tableData <- crossProdOutput(csv1, csv2, etc..)
-    -- answer <- executeParseTree (tableData) (pTree) (NOT DONE)
-    --Maybe filter output here?
-    --prettyPrint(answer)
-    -}
-    {-
-    parseTree <- liftBuildParseTree(alex)
-
-
-    stack <- liftTraverseDF(alex)
-    tableNames <- liftExtractTableNames(stack)
-    tableData <- liftCrossProductMulti(tableNames)
-    answer <- liftexecuteQuery (stack) (tableData)
-    liftPrettyPrint (answer) -- answer contains all false rows as well as true. Just output true.
-    -}
-
-
-
-    -- pTree <- liftBuildParseTree(alex)
-    -- tables <- liftBuildTables (pTree)
-    -- crossProd <- liftCrossProduct (tables)
-    -- answer <- liftexecuteQuery (crossProd) (pTree)
-    -- mapM_ putStrLn (answer)
-
-    pTree <- liftBuildParseTree alex
-    tableNames <- liftExtractTableNames pTree
-    tables <- liftBuildTables tableNames
-    bigTable <- crossProd(buildTables(tables))
-    executeQuery bigTable pTree
--- liftexecuteQuery :: [[[String]]] -> ParseTree  -> IO [String]
--- liftexecuteQuery [[[]]]
-{-==============================================================================-}
-{-============================== LIFTING TO MONADS =============================-}
-{-==============================================================================-}
- 
---liftBuildParseTree :: [Token] -> ParseTree
-liftBuildParseTree alex = liftM buildParseTree (m3 parseCalc(alex))
--- liftEXECUTION 
-
--- liftBuildParseTree :: [Token] -> IO (ParseTree)
--- liftBuildParseTree alex = liftM buildParseTree parseCalc(alex)
-
-liftExtractTableNames pTree = liftM extractTableNames (m2 liftRelationNodesOut(pTree))
-
---liftexecuteQuery :: [[String]] -> ParseTree -> String
-liftExecuteQuery stack tableData = liftM2 executeQuery (stack) (tableData)
-
---liftBuildTables :: [String] -> [Either ParseError [[String]]]
-liftBuildTables tables = liftM buildTables (m4 tables)
-
--- --liftPrettyPrint :: String -> IO String
--- liftPrettyPrint answer = liftM2 prettyPrint answer
-
---liftCrossProduct :: [Either ParseError [[String]]] -> IO ([[String]])
-liftCrossProduct tableNames = liftM crossProd tableNames
-
---m :: [[String]] -> IO [[String]]
-m xs = do return xs
---m2 :: [String] -> IO [String]
-m2 xs = do return xs
-m3 :: ParseTree -> IO ParseTree
-m3 xs = do return xs
---m4 :: [Either ParseError [[String]]] -> IO [Either ParseError [[String]]]
-m4 xs = do return xs
-
+    putStr("Execution completed!!!!!!!")
+    return
+  
 {-==============================================================================-}
 {-================================= BUILDING ===================================-}
 {-==============================================================================-}
@@ -549,5 +479,106 @@ treeToNode (CommaNode (node) (remainingTree)) = error "Variable tree contains mu
 -- Blindly assumes OpTree contains a VarTree containing only one VarNode.
 convertOpToVarNode :: OpTree -> VarNode
 convertOpToVarNode (VarOp (vTree)) = treeToNode (vTree)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{-==============================================================================-}
+{-===============================     TRASH      ===============================-}
+{-==============================================================================-}
+
+
+
+
+
+
+  -- pTree <- liftBuildParseTree(alex)
+    -- tables <- liftBuildTables (pTree)
+    -- crossProd <- liftCrossProduct (tables)
+    -- answer <- liftexecuteQuery (crossProd) (pTree)
+    -- liftPrettyPrint(answer)
+
+    {-
+    pTree <- buildParseTree(alex)
+    tabNodes <- liftRelationNodesOut(pTree)
+    tabNames <- extractTableNames(tabNodes)
+    --get csv data from tabName ++ ".csv" whatever method u used to do that
+    -- tableData <- crossProdOutput(csv1, csv2, etc..)
+    -- answer <- executeParseTree (tableData) (pTree) (NOT DONE)
+    --Maybe filter output here?
+    --prettyPrint(answer)
+    -}
+    {-
+    parseTree <- liftBuildParseTree(alex)
+
+
+    stack <- liftTraverseDF(alex)
+    tableNames <- liftExtractTableNames(stack)
+    tableData <- liftCrossProductMulti(tableNames)
+    answer <- liftexecuteQuery (stack) (tableData)
+    liftPrettyPrint (answer) -- answer contains all false rows as well as true. Just output true.
+    -}
+
+
+
+    -- pTree <- liftBuildParseTree(alex)
+    -- tables <- liftBuildTables (pTree)
+    -- crossProd <- liftCrossProduct (tables)
+    -- answer <- liftexecuteQuery (crossProd) (pTree)
+    -- mapM_ putStrLn (answer)
+
+
+    --executeQuery bigTable pTree
+    -- ^^add a function that outputs this to stdout
+-- liftexecuteQuery :: [[[String]]] -> ParseTree  -> IO [String]
+-- liftexecuteQuery [[[]]]
+{-==============================================================================-}
+{-============================== LIFTING TO MONADS =============================-}
+{-==============================================================================-}
+ 
+--liftBuildParseTree :: [Token] -> ParseTree
+--liftBuildParseTree alex = liftM buildParseTree (m3 parseCalc(alex))
+-- liftEXECUTION 
+
+-- liftBuildParseTree :: [Token] -> IO (ParseTree)
+-- liftBuildParseTree alex = liftM buildParseTree parseCalc(alex)
+
+--liftExtractTableNames pTree = liftM extractTableNames (m2 liftLiftRelationNodesOut(pTree))
+--liftLiftRelationNodesOut pTree = liftM liftRelationNodesOut (m pTree)
+
+--liftexecuteQuery :: [[String]] -> ParseTree -> String
+--liftExecuteQuery stack tableData = liftM2 executeQuery (stack) (tableData)
+
+--liftBuildTables :: [String] -> [Either ParseError [[String]]]
+--liftBuildTables tables = liftM buildTables (m4 tables)
+
+-- --liftPrettyPrint :: String -> IO String
+-- liftPrettyPrint answer = liftM2 prettyPrint answer
+
+--liftCrossProduct :: [Either ParseError [[String]]] -> IO ([[String]])
+--liftCrossProduct tableNames = liftM crossProd tableNames
+{-
+--m :: [[String]] -> IO [[String]]
+m xs = do return xs
+m2 :: [String] -> IO [String]
+m2 xs = do return xs
+m3 :: ParseTree -> IO ParseTree
+m3 xs = do return xs
+--m4 :: [Either ParseError [[String]]] -> IO [Either ParseError [[String]]]
+m4 xs = do return xs
+-}
 
 

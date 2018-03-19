@@ -87,9 +87,13 @@ myinterpreter = do
     let alex = alexScanTokens (content)
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
+    let lhsVar = getOrderOfVars(pTree)
     let tableNames = extractPTableNames (pTree)
     let bigTable = crossProd(allTables)
-    putStr("Execution completed!!!!!!!")
+    let answer = executeQuery (bigTable) (pTree)
+    let output = orderOutput (lhsVar)
+
+    putStr("Execution complete")
   
 {-==============================================================================-}
 {-================================= BUILDING ===================================-}
@@ -201,8 +205,10 @@ doesExistInVarTree (node) (CommaNode (varNode) (varTree)) = equateNodesDatAndNam
 doesExistInVarTree (node) (SingleNode (varNode)) = equateNodesDatAndName node varNode
 doesExistInVarTree (node) (EmptyVT (emptyTree)) = False
 
--- doTheseExistInVarTree :: VarNode -> [VarNode] -> Bool
-
+getOrderOfVars :: ParseTree -> [VarNode]
+getOrderOfVars (Marker (list) (opTree)) = list
+getOrderOfVars (MarkerNested (list) (existTree)) = list
+getOrderOfVars (EmptyPT (emptyTree)) = []
 
 orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]]
 orderOutput (o:os) (list) = [orderOutput' o list] ++ orderOutput os list

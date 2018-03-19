@@ -295,11 +295,13 @@ checkAllDataSame ((Vari (loc) (datA) (name)):xs) dat = ( dat == datA ) && ( chec
 
 
 
-getRepeats :: [VarNode] -> Int ->  [VarNode] --return repeated namez
---getRepeats [] = []
+getRepeats :: [VarNode] -> Int -> Maybe [VarNode] --return repeated namez
+--getRepeats [] = Nothing
 --getRepeats [x,y] ind    | countInstancesInVarList x y
-getRepeats (x:xs) ind   | (ind <= length(x:xs)) && (countInstancesInVarList ((x:xs)!!ind) (x:xs) > 1) = [x] ++ getRepeats (x:xs) (ind+1)
-                        | (ind <= length(x:xs)) && (countInstancesInVarList ((x:xs)!!ind) (x:xs) == 1) = getRepeats (x:xs) (ind+1)
+getRepeats (x:xs) ind   | (ind <= length(x:xs)) && ((countInstancesInVarList (getNthVNode(x:xs) (ind) (0)) (x:xs)) > 1) = [x] ++ getRepeats (x:xs) (ind+1)
+                        | (ind <= length(x:xs)) && ((countInstancesInVarList (getNthVNode(x:xs) (ind) (0)) (x:xs)) == 1) = getRepeats (x:xs) (ind+1)
+                        | (ind > length(x:xs)) = Nothing
+
 
 countInstancesInVarList :: VarNode -> [VarNode] -> Int
 countInstancesInVarList vN [] = 0

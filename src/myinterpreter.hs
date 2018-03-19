@@ -72,6 +72,21 @@ main = do
     a <- getArgs
     a <- getArgs
     b <- readFile (head a)
+    tableA <- readFile ("A.csv")
+    tableB <- readFile ("B.csv")
+    tableC <- readFile ("C.csv")
+    tableD <- readFile ("D.csv")
+    tableE <- readFile ("E.csv")
+    tableF <- readFile ("F.csv")
+    let parsedTableA = parseCSV'(tableA)
+    let parsedTableB = parseCSV'(tableB)
+    let parsedTableC = parseCSV'(tableC)
+    let parsedTableD = parseCSV'(tableD)
+    let parsedTableE = parseCSV'(tableE)
+    let parsedTableF = parseCSV'(tableF)
+
+    
+
 
 
     
@@ -106,8 +121,8 @@ main = do
     -- let contB = readFile(testB)
     -- let tableA = parse csvFile "(unknown)" contA
     -- let tableB = parse csvFile "(unknown)" contB
-    fileA <- readMyFile(appendCSV("A"))
-    let contA =  buildTable(fileA)
+    -- fileA <- readMyFile(appendCSV("A"))
+    -- let contA =  buildTable(fileA)
     -- buildTable table = do
     --     contA <- parseCSV'("A")
     --     case parseCSV' of
@@ -203,11 +218,11 @@ eol = char '\n'
 --     "" -> Left ("ERROR: NO TABLE")
 --     _ -> Right (parse csvFile "(unknown)" y)
 
-readMyFile :: String -> IO String
-readMyFile filename = readFile(appendCSV(filename))
+-- readMyFile :: String ->  String
+-- readMyFile filename = readFile(appendCSV(filename))
 
 parseCSV' :: String -> Either ParseError [[String]]
-parseCSV' filename = parse csvFile "(unknown)" (readMyFile(filename))   
+parseCSV' fileThatIsRead = parse csvFile "(unknown)" fileThatIsRead   
 
 -- -- parseCSVs :: [String] -> [[[String]]]
 -- -- -- parseCSVs (x:xs) = (parse (appendCSV x)) : parseCSVs xs

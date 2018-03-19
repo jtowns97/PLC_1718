@@ -5,6 +5,8 @@ import Control.Monad
 import HERBGrammar
 import HERBTokens
 import Text.ParserCombinators.Parsec
+import Text.Parsec.String
+import Text.Parsec
 import Data.List
 import Data.List.Split
 import Data.Typeable
@@ -56,6 +58,12 @@ data ParseTree = Marker ([VarNode]) (OpTree)
 data EmptyTree = Nothing
     deriving Show
 
+data TableBuild = E
+    deriving Show
+
+buildTable :: Either ParseError [[String]] -> [[String]]
+buildTable (Right string) = string
+buildTable (Left err) = error "parse error"
 {-==============================================================================-}
 {-===================================== MAIN ===================================-}
 {-==============================================================================-}
@@ -72,35 +80,39 @@ main = do
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let tableNames = extractPTableNames (pTree)
-<<<<<<< HEAD
 
-    tblA <- readFile "A.csv"
-    let tableA = parse csvFile "(unknown)" tblA
+    -- tblA <- readFile "A.csv"
+    -- let tableA = parse csvFile "(unknown)" tblA
 
-    tblB <- readFile "B.csv"
-    let tableB = parse csvFile "(unknown)" tblB
+    -- tblB <- readFile "B.csv"
+    -- let tableB = parse csvFile "(unknown)" tblB
 
-    tblC <- readFile "C.csv"
-    let tableC = parse csvFile "(unknown)" tblB
+    -- tblC <- readFile "C.csv"
+    -- let tableC = parse csvFile "(unknown)" tblB
     
-    tblD <- readFile "D.csv"
-    let tableD = parse csvFile "(unknown)" tblB
+    -- tblD <- readFile "D.csv"
+    -- let tableD = parse csvFile "(unknown)" tblB
 
-    tblE <- readFile "E.csv"
-    let tableE = parse csvFile "(unknown)" tblB
+    -- tblE <- readFile "E.csv"
+    -- let tableE = parse csvFile "(unknown)" tblB
 
-    tblF <- readFile "F.csv"
-    let tableF = parse csvFile "(unknown)" tblB
+    -- tblF <- readFile "F.csv"
+    -- let tableF = parse csvFile "(unknown)" tblB
 
-=======
-    --csvBSA <- readFile(appendCSV(last (take 1 (tableNames))))
-    let testA = "A.csv"
-    let testB = "B.csv"
-    let contA = readFile(testA)
-    let contB = readFile(testB)
-    let tableA = parse csvFile "(unknown)" contA
-    let tableB = parse csvFile "(unknown)" contB
-    
+    -- --csvBSA <- readFile(appendCSV(last (take 1 (tableNames))))
+    -- let testA = "A.csv"
+    -- let testB = "B.csv"
+    -- let contA = readFile(testA)
+    -- let contB = readFile(testB)
+    -- let tableA = parse csvFile "(unknown)" contA
+    -- let tableB = parse csvFile "(unknown)" contB
+    fileA <- readMyFile(appendCSV("A"))
+    let contA =  buildTable(fileA)
+    -- buildTable table = do
+    --     contA <- parseCSV'("A")
+    --     case parseCSV' of
+    --         Left err -> error ("parsing failed: " ++ show err)
+    --         Right newTable -> do
     -- case parseCSV(csvBSA) of
     --     Right(x) -> tableA
     --     Left parseError -> hPutStrLn stderr "Error:"
@@ -137,7 +149,6 @@ main = do
     let tableD = parseCSV(csvBSD)
     let tableE = parseCSV(csvBSE)
     let tableF = parseCSV(csvBSF)
->>>>>>> b6e68594d94e8280aa58931cdfc9eacb51fcbfc6
     let tables = tableA : tableB : tableC : tableD : tableE : tableF : []
     -}
    -- let bigTable = crossProd(tables)
@@ -175,7 +186,7 @@ buildOpTree _ = EmptyOT (HERBInterpreter.Nothing)
 {-=============================== CSV EXTRACTION ===============================-}
 {-==============================================================================-}
 
-{-
+
 readFiles :: [FilePath] -> IO (C.ByteString)
 readFiles = fmap C.concat . mapM C.readFile
 
@@ -183,18 +194,20 @@ csvFile = Text.ParserCombinators.Parsec.endBy line eol
 line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
--}
+
 -- buildTables :: [String] -> [[[String]]]
 -- buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
 
+-- parseCSV :: String -> Either ParseError [[String]]
+-- parseCSV y = case input of
+--     "" -> Left ("ERROR: NO TABLE")
+--     _ -> Right (parse csvFile "(unknown)" y)
 
-{-
-parseCSV :: String -> Either ParseError [[String]]
-parseCSV y = case input of
-    "" -> Left ("ERROR: NO TABLE")
-    _ -> Right (parse csvFile "(unknown)" y)
--}
-    
+readMyFile :: String -> IO String
+readMyFile filename = readFile(appendCSV(filename))
+
+parseCSV' :: String -> Either ParseError [[String]]
+parseCSV' filename = parse csvFile "(unknown)" (readMyFile(filename))   
 
 -- -- parseCSVs :: [String] -> [[[String]]]
 -- -- -- parseCSVs (x:xs) = (parse (appendCSV x)) : parseCSVs xs
@@ -243,7 +256,7 @@ getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
 --[Table] -> Table
 --[[Row]] -> [Row]
 --[[[String]]] -> [[String]]
-crossProd :: [Either ParseError [[[String]]]] -> [[String]]
+crossProd :: [[[String]]] -> [[String]]
 crossProd input = foldRows(cartprod(input))
 
 cartprod :: [[[String]]] -> [[[String]]]

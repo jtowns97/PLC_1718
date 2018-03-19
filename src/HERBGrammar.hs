@@ -161,7 +161,23 @@ action_33 _ = happyFail
 
 action_34 _ = happyReduce_4
 
-action_35 _ = happyReduce_5
+action_35 (13) = happyShift action_36
+action_35 _ = happyFail
+
+action_36 (9) = happyShift action_10
+action_36 (10) = happyShift action_11
+action_36 (12) = happyShift action_12
+action_36 (7) = happyGoto action_37
+action_36 _ = happyFail
+
+action_37 (14) = happyShift action_38
+action_37 (15) = happyShift action_19
+action_37 (16) = happyShift action_20
+action_37 (17) = happyShift action_21
+action_37 (18) = happyShift action_22
+action_37 _ = happyFail
+
+action_38 _ = happyReduce_5
 
 happyReduce_1 = happySpecReduce_3  4 happyReduction_1
 happyReduction_1 (HappyAbsSyn7  happy_var_3)
@@ -204,8 +220,11 @@ happyReduction_4 (_ `HappyStk`
 		 (ExistentialSingle happy_var_2 happy_var_6
 	) `HappyStk` happyRest
 
-happyReduce_5 = happyReduce 7 5 happyReduction_5
+happyReduce_5 = happyReduce 10 5 happyReduction_5
 happyReduction_5 (_ `HappyStk`
+	(HappyAbsSyn7  happy_var_9) `HappyStk`
+	_ `HappyStk`
+	_ `HappyStk`
 	(HappyAbsSyn5  happy_var_6) `HappyStk`
 	_ `HappyStk`
 	_ `HappyStk`
@@ -214,7 +233,7 @@ happyReduction_5 (_ `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn5
-		 (ExistentialNested happy_var_2 happy_var_6
+		 (ExistentialNested happy_var_2 happy_var_6 happy_var_9
 	) `HappyStk` happyRest
 
 happyReduce_6 = happySpecReduce_3  6 happyReduction_6
@@ -368,7 +387,7 @@ data Query = Conjunction Query Query
     deriving Show
 
 data Existential = ExistentialSingle Variables Query
-    | ExistentialNested Variables Existential
+    | ExistentialNested Variables Existential Query
     deriving Show
 {-# LINE 1 "templates\GenericTemplate.hs" #-}
 {-# LINE 1 "templates\\GenericTemplate.hs" #-}

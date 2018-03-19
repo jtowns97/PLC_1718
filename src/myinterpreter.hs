@@ -67,11 +67,11 @@ main = do
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
 
-    pTree <- liftBuildParseTree(alex)
-    tables <- liftBuildTables (pTree)
-    crossProd <- liftCrossProduct (tables)
-    answer <- liftExecuteHERB (crossProd) (pTree)
-    liftPrettyPrint(answer)
+    -- pTree <- liftBuildParseTree(alex)
+    -- tables <- liftBuildTables (pTree)
+    -- crossProd <- liftCrossProduct (tables)
+    -- answer <- liftexecuteQuery (crossProd) (pTree)
+    -- liftPrettyPrint(answer)
 
     {-
     pTree <- buildParseTree(alex)
@@ -90,7 +90,7 @@ main = do
     stack <- liftTraverseDF(alex)
     tableNames <- liftExtractTableNames(stack)
     tableData <- liftCrossProductMulti(tableNames)
-    answer <- liftExecuteHERB (stack) (tableData)
+    answer <- liftexecuteQuery (stack) (tableData)
     liftPrettyPrint (answer) -- answer contains all false rows as well as true. Just output true.
     -}
 
@@ -99,54 +99,49 @@ main = do
     -- pTree <- liftBuildParseTree(alex)
     -- tables <- liftBuildTables (pTree)
     -- crossProd <- liftCrossProduct (tables)
-    -- answer <- liftExecuteHERB (crossProd) (pTree)
+    -- answer <- liftexecuteQuery (crossProd) (pTree)
     -- mapM_ putStrLn (answer)
 
-    pTree <- buildParseTree (parseCalc(alex))
-    tables <- buildTables(extractTableNames(liftRelationNodesOut(buildParseTree (parseCalc(alex)))))
-    crossProd(buildTables(extractTableNames(liftRelationNodesOut(buildParseTree (parseCalc(alex))))))
-    -- executeHERB (crossProd) (pTree)
--- liftExecuteHERB :: [[[String]]] -> ParseTree  -> IO [String]
--- liftExecuteHERB [[[]]]
+    pTree <- liftBuildParseTree alex
+    tableNames <- liftExtractTableNames pTree
+    tables <- liftBuildTables tableNames
+    bigTable <- crossProd(buildTables(tables))
+    executeQuery bigTable pTree
+-- liftexecuteQuery :: [[[String]]] -> ParseTree  -> IO [String]
+-- liftexecuteQuery [[[]]]
 {-==============================================================================-}
 {-============================== LIFTING TO MONADS =============================-}
 {-==============================================================================-}
  
 --liftBuildParseTree :: [Token] -> ParseTree
-liftBuildParseTree alex = liftM buildParseTree parseCalc(alex)
+liftBuildParseTree alex = liftM buildParseTree (m3 parseCalc(alex))
 -- liftEXECUTION 
 
 -- liftBuildParseTree :: [Token] -> IO (ParseTree)
 -- liftBuildParseTree alex = liftM buildParseTree parseCalc(alex)
 
--- -- liftExtractTableNames :: ParseTree -> [String]
--- -- liftExtractTableNames pTree = liftM extractTableNames liftRelationNamesOut(pTree)
+liftExtractTableNames pTree = liftM extractTableNames (m2 liftRelationNamesOut(pTree))
 
-liftCrossProduct :: [String] -> [[String]]
-liftCrossProduct tableNames = liftM crossProd tableNames
-
-liftExecuteHERB :: [[String]] -> ParseTree -> String
-liftExecuteHERB stack tableData = liftM(executeHERB (stack) (tableData))
+--liftexecuteQuery :: [[String]] -> ParseTree -> String
+liftExecuteQuery stack tableData = liftM2 executeQuery (stack) (tableData)
 
 --liftBuildTables :: [String] -> [Either ParseError [[String]]]
-liftBuildTables tabNames = liftM buildTables extractTableNames(pTree)
+liftBuildTables tables = liftM buildTables (m4 tables)
 
-liftPrettyPrint :: String -> IO String
-liftPrettyPrint answer = liftM2 prettyPrint answer
--- liftCrossProduct :: [Either ParseError [[String]]] -> IO ([[String]])
--- liftCrossProduct tableNames = liftM crossProd tableNames
-
--- liftExecuteHERB :: [[String]] -> ParseTree -> IO (String)
--- liftExecuteHERB stack tableData = liftM(executeHERB (stack) (tableData))
-
--- liftBuildTables :: ParseTree -> IO ([Either ParseError [[String]]])
--- liftBuildTables tabNames = liftM buildTables extractTableNames(pTree)
-
--- liftPrettyPrint :: String -> IO (String)
+-- --liftPrettyPrint :: String -> IO String
 -- liftPrettyPrint answer = liftM2 prettyPrint answer
 
+--liftCrossProduct :: [Either ParseError [[String]]] -> IO ([[String]])
+liftCrossProduct tableNames = liftM crossProd tableNames
 
-
+m :: [[String]] -> IO [[String]]
+m xs = do return xs
+m2 :: [String] -> IO [String]
+m2 xs = do return xs
+m3 :: ParseTree -> IO ParseTree
+m3 xs = do return xs
+m4 :: [Either ParseError [[String]]] -> IO [Either ParseError [[String]]]
+m4 xs = do return xs
 
 {-==============================================================================-}
 {-================================= BUILDING ===================================-}
@@ -230,24 +225,19 @@ getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
 
 -- input list of tables, returns tables of rows
 crossProd :: [[[String]]] -> [[[String]]]
-crossProd = foldr
-    (\xs as ->
-        [ x : a
-        | x <- xs
-        , a <- as ])
-    [[]]
+crossProd input = output
 
-crossRows :: [[String]] -> [[String]] -> [(String,String)]
-crossRows xs ys =
-    [ (x, y)
-    | x <- xs 
-    , y <- ys ]
+-- crossRows :: [[String]] -> [[String]] -> [(String,String)]
+-- crossRows xs ys =
+--     [ (x, y)
+--     | x <- xs 
+--     , y <- ys ]
 
--- allRows :: [[[String]]] -> [[String]]
--- allRows ((y:ys):xs) = 
+-- -- allRows :: [[[String]]] -> [[String]]
+-- -- allRows ((y:ys):xs) = 
 
-cartProd :: [[String]] -> [[String]]
-cartProd = sequence
+-- cartProd :: [[String]] -> [[String]]
+-- cartProd = sequence
 
 doesListExistInOpTree :: [VarNode] -> OpTree -> Bool
 doesListExistInOpTree (x:xs) oTree = ( doesExistInOpTree (x) (oTree) ) && ( doesListExistInOpTree (xs) (oTree) )
@@ -514,8 +504,8 @@ getOpRelationNodesOut (ConjunctionNode (querA) (querB)) = getOpRelationNodesOut(
 {-=============================== TREE TRAVERSAL ===============================-}
 {-==============================================================================-}
 
-liftTraversal :: [VarTree] -> IO VarTree
-liftTraversal [a] = liftM [a]
+-- liftTraversal :: [VarTree] -> IO VarTree
+-- liftTraversal [a] = liftM [a]
 {-
 traverseDF :: ParseTree -> [VarTree]
 traverseDF (EmptyPT e) = []

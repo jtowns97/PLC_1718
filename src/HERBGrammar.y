@@ -30,7 +30,7 @@ Exp : Variables "|-" Query                              { Evaluate $1 $3 }
 	| Variables "|-" Existential                        { Eval $1 $3}
     | Variables "|-" Existential Query                  { EvalExisExt $1 $3 $4}
 Existential :  "(" Variables ")" "E." "(" Query ")"     { ExistentialSingle $2 $6 }
-    | "(" Variables ")" "E." "(" Existential  ")"       { ExistentialNested $2 $6 }
+    | "(" Variables ")" "E." "(" Existential  ")"  "(" Query ")"  { ExistentialNested $2 $6 $9 }
 
 Variables : Variables "," Variables                     { Comma $1 $3 }
     | var                                               { VarSingle $1}

@@ -65,36 +65,47 @@ data EmptyTree = Nothing
 
 --main :: IO()
 main = do 
+    putStrLn ("**********Begin computation**************")
     a <- getArgs
+    putStrLn (head a)
    -- input1 <- getLine
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
 
     tableA <- readFile ("A.csv")
     tableB <- readFile ("B.csv")
-    -- tableC <- readFile ("C.csv")
-    -- tableD <- readFile ("D.csv")
-    -- tableE <- readFile ("E.csv")
-    -- tableF <- readFile ("F.csv")
+    tableC <- readFile ("C.csv")
+    tableD <- readFile ("D.csv")
+    tableE <- readFile ("E.csv")
+    tableF <- readFile ("F.csv")
 
     let parsedTableA = parseCSV'(tableA)
     let parsedTableB = parseCSV'(tableB)
-    -- let parsedTableC = parseCSV'(tableC)
-    -- let parsedTableD = parseCSV'(tableD)
-    -- let parsedTableE = parseCSV'(tableE)
-    -- let parsedTableF = parseCSV'(tableF)
-    let allTables = parsedTableA : parsedTableB : [] -- parsedTableC : parsedTableD : parsedTableE : parsedTableF : []
+    let parsedTableC = parseCSV'(tableC)
+    let parsedTableD = parseCSV'(tableD)
+    let parsedTableE = parseCSV'(tableE)
+    let parsedTableF = parseCSV'(tableF)
+    let allTables = parsedTableA : parsedTableB : parsedTableC : parsedTableD : parsedTableE : parsedTableF : []
     
     let alex = alexScanTokens (content)
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let lhsVar = getOrderOfVars(pTree)
     let tableNames = extractPTableNames (pTree)
+<<<<<<< HEAD
+    --let bigTable = crossProd(allTables)
+   -- let answer = executeQuery (bigTable) (pTree)
+    print "answer"
+   -- let output = orderOutput (order) (answer)
+
+    
+=======
     let bigTable = crossProd(allTables)
     let answer = executeQuery (bigTable) (pTree)
-    let output = orderOutput (lhsVar) (answer)
-    let stringOutput = extractTableData(output)
-    mapM_ putStrLn stringOutput
+    let output = orderOutput (lhsVar)
+
+    putStr("Execution complete")
+>>>>>>> 8472eea36e2eb17882fdf67df8fe90355050eaac
   
 
    -- return putStr("Execution completed!!!!!!!")
@@ -140,7 +151,7 @@ parseCSV' :: String -> [[String]]
 parseCSV' fileThatIsRead = fromRight(parse csvFile "(unknown)" fileThatIsRead)   
 
 fromRight :: Either a b -> b
-fromRight (Left _)  = error "ParseError at: "-- yuck
+fromRight (Left _)  = error "ParseError" -- yuck
 fromRight (Right x) = x
 
 appendCSV :: String -> FilePath
@@ -149,6 +160,11 @@ appendCSV input = input ++ ".csv"
 {-==============================================================================-}
 {-============================== TABLE OPERATIONS ==============================-}
 {-==============================================================================-}
+{-
+multiTableToTable :: [[[String]]] -> [[String]]
+multiTableToTable [] = []
+multiTableToTable (y:ys) = zip (y) (multiTableToTable (ys))
+-}
 
 colToRows :: [[String]] -> [[String]]
 colToRows input = transpose input
@@ -214,7 +230,7 @@ getOrderOfVars (Marker (list) (opTree)) = list
 getOrderOfVars (MarkerNested (list) (existTree)) = list
 getOrderOfVars (EmptyPT (emptyTree)) = []
 
-orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]] -- Outputs list of rows (i.e. one table)
+orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]]
 orderOutput (o:os) (list) = [orderOutput' o list] ++ orderOutput os list
 
 --              LHS ORDER      filterTrueOutput            TRUE ROWS
@@ -226,28 +242,11 @@ orderOutput'' :: VarNode -> [VarNode] -> [VarNode]
 orderOutput'' v (w:ws) | equateNodesName v w == True = w : orderOutput'' v ws
 orderOutput'' v (w:ws) | equateNodesName v w == False = orderOutput'' v ws
 
-extractData :: VarNode -> String
-extractData (Vari (loc) (dat) (name)) = dat
-
--- takes tabletoString and changes all VarNodes to all the dat within using extractData.
-extractTableData :: [[VarNode]] -> [String]
-extractTableData [] = []
-extractTableData (x:xs) = [extractRowData(x)] ++ extractTableData (xs)
-
---list of varN -> String
-
--- varN -> String
-extractRowData :: [VarNode] -> String
-extractRowData [] = ""
-extractRowData (x:xs) = extractData(x) ++ extractRowData (xs)
-
-rowToString :: [String] -> String
-rowToString (x:xs) = x ++ "," ++ rowToString xs 
-
 filterTrue :: [(Bool, [VarNode])] -> [[VarNode]]
 filterTrue ((bool, vars):xs) | length xs == 0 = [[]]
 filterTrue ((bool, vars):xs) | bool == True = vars : filterTrue xs
 filterTrue ((bool, vars):xs) | bool == False = filterTrue xs
+
 
 {-==============================================================================-}
 {-=============================== MAIN EVALUATION ==============================-}
@@ -264,8 +263,12 @@ evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (
 
 evaluateExis :: ExistTree -> [String] -> Bool
 evaluateExis eTree strL = checkExistential( populateExisTree (sanitiseExisTree(eTree)) (strL) )
-
+{-
 checkRepeats :: [VarNode] -> Bool
+checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length (getRepeats(  ((Vari (loc) (dat) (name)) : xs)  )) == length(  ((Vari (loc) (dat) (name)) : xs)  ) = 
+    ( checkAllDataSame( (matchNodeFromName( getRepeats( (  ((Vari (loc) (dat) (name)) : xs)  ) (1) ) name )) (dat) ) ) && (checkRepeats (xs))
+                                                where totalList =   ((Vari (loc) (dat) (name)) : xs)  
+-}
 checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length repeats == length totalList = checkAllDataSame (matches) (dat) && checkRepeats (xs)
                                                 where   totalList =   ((Vari (loc) (dat) (name)):xs)
                                                         repeats = getRepeats (totalList) 1

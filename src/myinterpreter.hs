@@ -94,9 +94,9 @@ main = do
     let tableNames = extractPTableNames (pTree)
     let bigTable = crossProd(allTables)
     let answer = executeQuery (bigTable) (pTree)
-    let output = orderOutput (lhsVar)
-    putStr(output)
-    putStr("Execution complete")
+    let output = orderOutput (lhsVar) (answer)
+    let stringOutput = extractTableData(output)
+    mapM_ putStrLn stringOutput
   
 
    -- return putStr("Execution completed!!!!!!!")
@@ -216,7 +216,7 @@ getOrderOfVars (Marker (list) (opTree)) = list
 getOrderOfVars (MarkerNested (list) (existTree)) = list
 getOrderOfVars (EmptyPT (emptyTree)) = []
 
-orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]]
+orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]] -- Outputs list of rows (i.e. one table)
 orderOutput (o:os) (list) = [orderOutput' o list] ++ orderOutput os list
 
 --              LHS ORDER      filterTrueOutput            TRUE ROWS
@@ -228,8 +228,23 @@ orderOutput'' :: VarNode -> [VarNode] -> [VarNode]
 orderOutput'' v (w:ws) | equateNodesName v w == True = w : orderOutput'' v ws
 orderOutput'' v (w:ws) | equateNodesName v w == False = orderOutput'' v ws
 
-dataNodeToString :: [VarNode] -> [String]
-dataNodeToString [(Vari (loc) (dat) (name)):vs] = dat ++ dataNodeToString (xs)
+extractData :: VarNode -> String
+extractData (Vari (loc) (dat) (name)) = dat
+
+-- takes tabletoString and changes all VarNodes to all the dat within using extractData.
+extractTableData :: [[VarNode]] -> [String]
+extractTableData [] = []
+extractTableData (x:xs) = [extractRowData(x)] ++ extractTableData (xs)
+
+--list of varN -> String
+
+-- varN -> String
+extractRowData :: [VarNode] -> String
+extractRowData [] = ""
+extractRowData (x:xs) = extractData(x) ++ extractRowData (xs)
+
+rowToString :: [String] -> String
+rowToString (x:xs) = x ++ "," ++ rowToString xs 
 
 filterTrue :: [(Bool, [VarNode])] -> [[VarNode]]
 filterTrue ((bool, vars):xs) | length xs == 0 = [[]]

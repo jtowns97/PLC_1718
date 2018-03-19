@@ -120,7 +120,7 @@ liftBuildParseTree alex = liftM buildParseTree (m3 parseCalc(alex))
 -- liftBuildParseTree :: [Token] -> IO (ParseTree)
 -- liftBuildParseTree alex = liftM buildParseTree parseCalc(alex)
 
-liftExtractTableNames pTree = liftM extractTableNames (m2 liftRelationNamesOut(pTree))
+liftExtractTableNames pTree = liftM extractTableNames (m2 liftRelationNodesOut(pTree))
 
 --liftexecuteQuery :: [[String]] -> ParseTree -> String
 liftExecuteQuery stack tableData = liftM2 executeQuery (stack) (tableData)
@@ -134,13 +134,13 @@ liftBuildTables tables = liftM buildTables (m4 tables)
 --liftCrossProduct :: [Either ParseError [[String]]] -> IO ([[String]])
 liftCrossProduct tableNames = liftM crossProd tableNames
 
-m :: [[String]] -> IO [[String]]
+--m :: [[String]] -> IO [[String]]
 m xs = do return xs
-m2 :: [String] -> IO [String]
+--m2 :: [String] -> IO [String]
 m2 xs = do return xs
 m3 :: ParseTree -> IO ParseTree
 m3 xs = do return xs
-m4 :: [Either ParseError [[String]]] -> IO [Either ParseError [[String]]]
+--m4 :: [Either ParseError [[String]]] -> IO [Either ParseError [[String]]]
 m4 xs = do return xs
 
 {-==============================================================================-}
@@ -341,8 +341,8 @@ getPTreeState (Marker (vars) (oTree)) = getTreeState (oTree)
 getPTreeState (MarkerNested (vars) (eTree) (oTree)) = getTreeState (oTree)
 
 getETreeState :: ExistTree -> [VarNode]
-getETreeState (ExisVar (vars) (oTree)) = getTreeState(oTree)
-getETreeState (ExisNest (vars) (eTree) (oTree)) = getTreeState(oTree)
+getETreeState (ExistVar (vars) (oTree)) = getTreeState(oTree)
+getETreeState (ExistNest (vars) (eTree) (oTree)) = getTreeState(oTree)
 
 
 getTreeState :: OpTree -> [VarNode]

@@ -108,6 +108,7 @@ buildOpTree _ = EmptyOT (HERBInterpreter.Nothing)
 {-==============================================================================-}
 
 
+<<<<<<< HEAD
 readFiles :: [FilePath] -> IO (C.ByteString)
 readFiles = fmap C.concat . mapM C.readFile
 {-
@@ -118,19 +119,31 @@ eol = char '\n'
 -}
 -- buildTables :: [String] -> [[[String]]]
 -- buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
+=======
+readFiles :: [FilePath] -> IO [String]
+readFiles = fmap B.concat . mapM B.readFile
 
--- buildTable :: FilePath-> [[String]]
--- buildTable tableName = parseCSV(readFile tableName)
+-- -- csvFile = Text.ParserCombinators.Parsec.endBy line eol
+-- -- line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
+-- -- cell = many (noneOf ",\n")
+-- -- eol = char '\n'
 
--- parseCSV :: String -> [[String]]
--- parseCSV input = parse csvFile
+-- -- buildTables :: [String] -> [[[String]]]
+-- -- buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
+>>>>>>> 8f342a46cbe1aadfa6df7ba746757592893557d0
 
--- parseCSVs :: [String] -> [[[String]]]
--- parseCSVs (x:xs) = (parse (appendCSV x)) : parseCSVs xs
+-- -- buildTable :: FilePath-> [[String]]
+-- -- buildTable tableName = parseCSV(readFile tableName)
 
-appendCSV :: [String] -> [String]
-appendCSV (x:xs) | length xs == 0 = [(x ++ ".csv")]
-appendCSV (x:xs) = (x ++ ".csv") : appendCSV (xs)
+-- -- parseCSV :: String -> [[String]]
+-- -- parseCSV input = parse csvFile
+
+-- -- parseCSVs :: [String] -> [[[String]]]
+-- -- -- parseCSVs (x:xs) = (parse (appendCSV x)) : parseCSVs xs
+
+-- appendCSV :: [String] -> [String]
+-- appendCSV (x:xs) | length xs == 0 = [(x ++ ".csv")]
+-- appendCSV (x:xs) = (x ++ ".csv") : appendCSV (xs)
 
 {-==============================================================================-}
 {-============================== TABLE OPERATIONS ==============================-}

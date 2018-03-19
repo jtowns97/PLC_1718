@@ -65,9 +65,7 @@ data EmptyTree = Nothing
 
 --main :: IO()
 main = do 
-    putStrLn ("**********Begin computation**************")
     a <- getArgs
-    putStrLn (head a)
    -- input1 <- getLine
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
@@ -142,7 +140,7 @@ parseCSV' :: String -> [[String]]
 parseCSV' fileThatIsRead = fromRight(parse csvFile "(unknown)" fileThatIsRead)   
 
 fromRight :: Either a b -> b
-fromRight (Left _)  = error "ParseError" -- yuck
+fromRight (Left _)  = error "ParseError at: "-- yuck
 fromRight (Right x) = x
 
 appendCSV :: String -> FilePath

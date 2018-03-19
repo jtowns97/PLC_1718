@@ -14,6 +14,7 @@ import HERBTokens
     rel      { TokenRelation _ $$ }           
     "("      { TokenLParen _ }      
     ")"      { TokenRParen _ }   
+    "}"      { TokenRCurly _ } 
     "^"      { TokenConjunction _ $$} 
     "="      { TokenEquality _ $$}    
     "<C"     { TokenLSubset _ $$}    
@@ -38,7 +39,7 @@ Variables : Variables "," Variables                     { Comma $1 $3 }
 
 
 Query : Query "^" Query                                 { Conjunction $1 $3}
-    | rel "(" Variables ")"                             { Relation $1 $3 }
+    | rel Variables "}"                                 { Relation $1 $2 }
 	| Query "=" Query                                   { Equality $1 $3 }
 	| Query "<C" Query                                  { LSub $1 $3 }
 	| Query ">C" Query                                  { RSub $1 $3 }
@@ -47,7 +48,7 @@ Query : Query "^" Query                                 { Conjunction $1 $3}
      
 { 
 parseError :: [Token] -> a
-parseError _ = error "Parse error"
+parseError token = error "Parse error on Token: " ++ read tokenPosn token
 
 data Exp = Evaluate Variables Query
     | Eval Variables Existential

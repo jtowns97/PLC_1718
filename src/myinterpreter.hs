@@ -74,18 +74,18 @@ main = do
 
     tableA <- readFile ("A.csv")
     tableB <- readFile ("B.csv")
-    tableC <- readFile ("C.csv")
-    tableD <- readFile ("D.csv")
-    tableE <- readFile ("E.csv")
-    tableF <- readFile ("F.csv")
+    -- tableC <- readFile ("C.csv")
+    -- tableD <- readFile ("D.csv")
+    -- tableE <- readFile ("E.csv")
+    -- tableF <- readFile ("F.csv")
 
     let parsedTableA = parseCSV'(tableA)
     let parsedTableB = parseCSV'(tableB)
-    let parsedTableC = parseCSV'(tableC)
-    let parsedTableD = parseCSV'(tableD)
-    let parsedTableE = parseCSV'(tableE)
-    let parsedTableF = parseCSV'(tableF)
-    let allTables = parsedTableA : parsedTableB : parsedTableC : parsedTableD : parsedTableE : parsedTableF : []
+    -- let parsedTableC = parseCSV'(tableC)
+    -- let parsedTableD = parseCSV'(tableD)
+    -- let parsedTableE = parseCSV'(tableE)
+    -- let parsedTableF = parseCSV'(tableF)
+    let allTables = parsedTableA : parsedTableB : [] -- parsedTableC : parsedTableD : parsedTableE : parsedTableF : []
     
     let alex = alexScanTokens (content)
     let happy = parseCalc(alex)
@@ -95,7 +95,7 @@ main = do
     let bigTable = crossProd(allTables)
     let answer = executeQuery (bigTable) (pTree)
     let output = orderOutput (lhsVar)
-
+    putStr(output)
     putStr("Execution complete")
   
 

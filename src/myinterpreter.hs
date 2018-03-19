@@ -14,6 +14,7 @@ import Data.Maybe
 import Data.Ord
 import qualified Data.ByteString.Char8 as C
 
+
 {-==============================================================================-}
 {-=============================== DATA STRUCTURES ==============================-}
 {-==============================================================================-}
@@ -58,8 +59,6 @@ data ParseTree = Marker ([VarNode]) (OpTree)
 data EmptyTree = Nothing
     deriving Show
 
-data TableBuild = E
-    deriving Show
 {-==============================================================================-}
 {-===================================== MAIN ===================================-}
 {-==============================================================================-}
@@ -91,13 +90,22 @@ main = do
     let alex = alexScanTokens (content)
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
+    let lhsVar = getOrderOfVars(pTree)
     let tableNames = extractPTableNames (pTree)
+<<<<<<< HEAD
     --let bigTable = crossProd(allTables)
    -- let answer = executeQuery (bigTable) (pTree)
     print "answer"
    -- let output = orderOutput (order) (answer)
 
     
+=======
+    let bigTable = crossProd(allTables)
+    let answer = executeQuery (bigTable) (pTree)
+    let output = orderOutput (lhsVar)
+
+    putStr("Execution complete")
+>>>>>>> 8472eea36e2eb17882fdf67df8fe90355050eaac
   
 
    -- return putStr("Execution completed!!!!!!!")
@@ -134,17 +142,17 @@ buildOpTree _ = EmptyOT (Main.Nothing)
 {-=============================== CSV EXTRACTION ===============================-}
 {-==============================================================================-}
 
-
-readFiles :: [FilePath] -> IO (C.ByteString)
-readFiles = fmap C.concat . mapM C.readFile
-
 csvFile = Text.ParserCombinators.Parsec.endBy line eol
 line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
 
-parseCSV' :: String -> Either ParseError [[String]]
-parseCSV' fileThatIsRead = parse csvFile "(unknown)" fileThatIsRead   
+parseCSV' :: String -> [[String]]
+parseCSV' fileThatIsRead = fromRight(parse csvFile "(unknown)" fileThatIsRead)   
+
+fromRight :: Either a b -> b
+fromRight (Left _)  = error "ParseError" -- yuck
+fromRight (Right x) = x
 
 appendCSV :: String -> FilePath
 appendCSV input = input ++ ".csv"
@@ -212,8 +220,10 @@ doesExistInVarTree (node) (CommaNode (varNode) (varTree)) = equateNodesDatAndNam
 doesExistInVarTree (node) (SingleNode (varNode)) = equateNodesDatAndName node varNode
 doesExistInVarTree (node) (EmptyVT (emptyTree)) = False
 
--- doTheseExistInVarTree :: VarNode -> [VarNode] -> Bool
-
+getOrderOfVars :: ParseTree -> [VarNode]
+getOrderOfVars (Marker (list) (opTree)) = list
+getOrderOfVars (MarkerNested (list) (existTree)) = list
+getOrderOfVars (EmptyPT (emptyTree)) = []
 
 orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]]
 orderOutput (o:os) (list) = [orderOutput' o list] ++ orderOutput os list
@@ -249,10 +259,13 @@ evaluateExis :: ExistTree -> [String] -> Bool
 evaluateExis eTree strL = checkExistential( populateExisTree (sanitiseExisTree(eTree)) (strL) )
 {-
 checkRepeats :: [VarNode] -> Bool
+<<<<<<< HEAD
 checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length (getRepeats(  ((Vari (loc) (dat) (name)) : xs)  )) == length(  ((Vari (loc) (dat) (name)) : xs)  ) = 
     ( checkAllDataSame( (matchNodeFromName( getRepeats( (  ((Vari (loc) (dat) (name)) : xs)  ) (1) ) name )) (dat) ) ) && (checkRepeats (xs))
                                                 where totalList =   ((Vari (loc) (dat) (name)) : xs)  
 -}
+=======
+>>>>>>> 8472eea36e2eb17882fdf67df8fe90355050eaac
 checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length repeats == length totalList = checkAllDataSame (matches) (dat) && checkRepeats (xs)
                                                 where   totalList =   ((Vari (loc) (dat) (name)):xs)
                                                         repeats = getRepeats (totalList) 1

@@ -239,13 +239,10 @@ getOrderOfVars (Marker (list) (opTree)) = list
 getOrderOfVars (MarkerNested (list) (existTree)) = list
 getOrderOfVars (EmptyPT (emptyTree)) = []
 
-<<<<<<< HEAD
 orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]]
-=======
 --              ORDER OF VARS   TABLE IN     TABLE OUT, REARRANGED COLUMNS
 orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]] -- Outputs list of rows (i.e. one table)
 orderOutput [] _ = []
->>>>>>> 83b60264d8298152d36be21832a3dc771258318d
 orderOutput (o:os) (list) = [orderOutput' o list] ++ orderOutput os list
 
 --              LHS ORDER      filterTrueOutput            TRUE ROWS
@@ -274,18 +271,16 @@ executeQuery (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [get
                                 | (evaluateParseTree (pTree) (x)) == False = executeQuery (xs) (pTree)
 
 evaluateParseTree :: ParseTree -> [String] -> Bool
-evaluateParseTree (Marker ordVars oTree) rList          = evaluate (  populateTree (sanitiseOpTree(oTree)) (rList) (0) )
+evaluateParseTree (Marker ordVars oTree) rList          = (checkRepeats(thisTree)) && (evaluate (thisTree))
+                                                        where thisTree = populateTree (sanitiseOpTree(oTree)) (rList) (0)
 evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList)
 
 evaluateExis :: ExistTree -> [String] -> Bool
-evaluateExis eTree strL = checkExistential( populateExisTree (sanitiseExisTree(eTree)) (strL) )
-{-
+evaluateExis eTree strL = (checkRepeats(thisTree)) && (checkExistential(thisTree))
+                        where thisTree = populateExisTree (sanitiseExisTree(eTree)) (strL)
+
 checkRepeats :: [VarNode] -> Bool
-checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length (getRepeats(  ((Vari (loc) (dat) (name)) : xs)  )) == length(  ((Vari (loc) (dat) (name)) : xs)  ) = 
-    ( checkAllDataSame( (matchNodeFromName( getRepeats( (  ((Vari (loc) (dat) (name)) : xs)  ) (1) ) name )) (dat) ) ) && (checkRepeats (xs))
-                                                where totalList =   ((Vari (loc) (dat) (name)) : xs)  
--}
-checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length repeats == length totalList = checkAllDataSame (matches) (dat) && checkRepeats (xs)
+checkRepeats = ( (Vari (loc) (dat) (name)) : xs) | length repeats == length totalList = checkAllDataSame (matches) (dat) && checkRepeats (xs)
                                                 where   totalList =   ((Vari (loc) (dat) (name)):xs)
                                                         repeats = getRepeats (totalList) 1
                                                         matches = matchNodeFromName repeats name

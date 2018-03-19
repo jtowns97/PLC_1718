@@ -10,6 +10,7 @@ import Data.List.Split
 import Data.Typeable
 import Data.Maybe
 import Data.Ord
+import qualified Data.ByteString.Char8 as B
 
 {-==============================================================================-}
 {-=============================== DATA STRUCTURES ==============================-}
@@ -68,9 +69,9 @@ main = do
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let tableNames = extractPTableNames (pTree)
-    --csvContents <- parseMultipleCSVs(tableNames)
-    tables <- buildTables (tableNames)
-    let bigTable = crossProd(tables)
+    csvContents <- readFiles(appendCSV(tableNames))
+    --let tables =  buildTables (tableNames)
+    let bigTable = crossProd(csvContents)
 
     putStr("Execution completed!!!!!!!")
   
@@ -106,25 +107,29 @@ buildOpTree _ = EmptyOT (HERBInterpreter.Nothing)
 {-=============================== CSV EXTRACTION ===============================-}
 {-==============================================================================-}
 
+
+readFiles :: [FilePath] -> IO B.ByteString
+readFiles = fmap B.concat . mapM B.readFile
+
 csvFile = Text.ParserCombinators.Parsec.endBy line eol
 line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
 
-buildTables :: [String] -> [[[String]]]
-buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
+-- buildTables :: [String] -> [[[String]]]
+-- buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
 
-buildTable :: FilePath-> [[String]]
-buildTable tableName = parseCSV(readFile tableName)
+-- buildTable :: FilePath-> [[String]]
+-- buildTable tableName = parseCSV(readFile tableName)
 
-parseCSV :: String -> [[String]]
-parseCSV input = parse csvFile
+-- parseCSV :: String -> [[String]]
+-- parseCSV input = parse csvFile
 
-parseMultipleCSV :: [String] -> [[[String]]]
-parseMultipleCSV listOfCSVNames = appendCSV listOfCSVNames
+-- parseCSVs :: [String] -> [[[String]]]
+-- parseCSVs (x:xs) = (parse (appendCSV x)) : parseCSVs xs
 
 appendCSV :: [String] -> [String]
-appendCSV (x:xs) | length xs == 0 = (x ++ ".csv")
+appendCSV (x:xs) | length xs == 0 = [(x ++ ".csv")]
 appendCSV (x:xs) = (x ++ ".csv") : appendCSV (xs)
 
 {-==============================================================================-}
@@ -164,16 +169,16 @@ getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
 --[Table] -> Table
 --[[Row]] -> [Row]
 --[[[String]]] -> [[String]]
-crossProd :: [[String]] -> [[String]]
-crossProd input = foldRows(cartProd(input))
+crossProd :: [[[String]]] -> [[String]]
+crossProd input = foldRows(cartprod(input))
 
-cartprod :: [[String]] -> [[String]]
+cartprod :: [[[String]]] -> [[[String]]]
 cartprod [] = [[]]
 cartprod (xs:xss) = [x:ys | x<- xs, ys <-yss]
                         where yss = cartprod xss
 
 foldRows :: [[[String]]] -> [[String]]
-foldRows [[row]] = foldr (++) [] row
+foldRows [[[string]]] = foldr (++) [[]] [[[string]]]
 
 doesListExistInOpTree :: [VarNode] -> OpTree -> Bool
 doesListExistInOpTree (x:xs) oTree = ( doesExistInOpTree (x) (oTree) ) && ( doesListExistInOpTree (xs) (oTree) )
@@ -448,38 +453,9 @@ getOpRelationNodesOut (ConjunctionNode (querA) (querB)) = getOpRelationNodesOut(
 {-=============================== TREE TRAVERSAL ===============================-}
 {-==============================================================================-}
 
--- liftTraversal :: [VarTree] -> IO VarTree
--- liftTraversal [a] = liftM [a]
-{-
-traverseDF :: ParseTree -> [VarTree]
-traverseDF (EmptyPT e) = []
-traverseDF (Marker list op) = Marker : traverseDF list : traverseDF op
-traverseDF (Marker list exisit) = Marker : traverseDF list : traverseDF exisit
-traverseDF (Marker list exisit op) = Marker : traverseDF list : traverseDF exisit : traverseDF op
-
-traverseDFOp :: OpTree -> [AllTree]
-traverseDFOp (EmptyOT e) = []
-traverseDFOp (ConjunctionNode left right) = traverseDFOp left : traverseDFOp right
-traverseDFOp (RelationNode string variables) = traverseDFVar
-traverseDFOp (EquateNode left right) = traverseDFOp left : traverseDFOp right
-traverseDFOp (LSubNode left right) = traverseDFOp left : traverseDFOp right
-traverseDFOp (RSubNode left right) = traverseDFOp left : traverseDFOp right
-traverseDFOp (BoolNode f) = toString f
-    
-traverseDFEx :: ExistTree -> [a]
-traverseDFEx (EmptyET e) = []
-traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
--}
 traverseDFVar :: VarTree -> [VarNode] --Int represents ORDER (NB: this is why I decided to add VarNode)
 traverseDFVar (SingleNode (node) )  = [(treeToNode (SingleNode (node)))]  ++ []
 traverseDFVar (CommaNode (nextVar) (remainingTree)) = [nextVar] ++ traverseDFVar remainingTree
--- traverseDFEx :: ExistTree -> [a]
--- traverseDFEx (EmptyET e) = []
--- traverseDFEx (ExistVar var op) = traverseDFVar var : traverseDFOp op
-
--- traverseDFVar :: VarTree -> [Node] --Int represents ORDER (NB: this is why I decided to add VarNode)
--- traverseDFVar (SingleNode (node) )  = [(treeToNode (SingleNode (node)))]  ++ []
--- traverseDFVar (CommaNode (nextVar) (remainingTree)) = [nextVar] ++ traverseDFVar remainingTree
 
 {-========================== HANDLING FOR TREES ================================-}
 
@@ -493,106 +469,3 @@ treeToNode (CommaNode (node) (remainingTree)) = error "Variable tree contains mu
 -- Blindly assumes OpTree contains a VarTree containing only one VarNode.
 convertOpToVarNode :: OpTree -> VarNode
 convertOpToVarNode (VarOp (vTree)) = treeToNode (vTree)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{-==============================================================================-}
-{-===============================     TRASH      ===============================-}
-{-==============================================================================-}
-
-
-
-
-
-
-  -- pTree <- liftBuildParseTree(alex)
-    -- tables <- liftBuildTables (pTree)
-    -- crossProd <- liftCrossProduct (tables)
-    -- answer <- liftexecuteQuery (crossProd) (pTree)
-    -- liftPrettyPrint(answer)
-
-    {-
-    pTree <- buildParseTree(alex)
-    tabNodes <- liftRelationNodesOut(pTree)
-    tabNames <- extractTableNames(tabNodes)
-    --get csv data from tabName ++ ".csv" whatever method u used to do that
-    -- tableData <- crossProdOutput(csv1, csv2, etc..)
-    -- answer <- executeParseTree (tableData) (pTree) (NOT DONE)
-    --Maybe filter output here?
-    --prettyPrint(answer)
-    -}
-    {-
-    parseTree <- liftBuildParseTree(alex)
-
-
-    stack <- liftTraverseDF(alex)
-    tableNames <- liftExtractTableNames(stack)
-    tableData <- liftCrossProductMulti(tableNames)
-    answer <- liftexecuteQuery (stack) (tableData)
-    liftPrettyPrint (answer) -- answer contains all false rows as well as true. Just output true.
-    -}
-
-
-
-    -- pTree <- liftBuildParseTree(alex)
-    -- tables <- liftBuildTables (pTree)
-    -- crossProd <- liftCrossProduct (tables)
-    -- answer <- liftexecuteQuery (crossProd) (pTree)
-    -- mapM_ putStrLn (answer)
-
-
-    --executeQuery bigTable pTree
-    -- ^^add a function that outputs this to stdout
--- liftexecuteQuery :: [[[String]]] -> ParseTree  -> IO [String]
--- liftexecuteQuery [[[]]]
-{-==============================================================================-}
-{-============================== LIFTING TO MONADS =============================-}
-{-==============================================================================-}
- 
---liftBuildParseTree :: [Token] -> ParseTree
---liftBuildParseTree alex = liftM buildParseTree (m3 parseCalc(alex))
--- liftEXECUTION 
-
--- liftBuildParseTree :: [Token] -> IO (ParseTree)
--- liftBuildParseTree alex = liftM buildParseTree parseCalc(alex)
-
---liftExtractTableNames pTree = liftM extractTableNames (m2 liftLiftRelationNodesOut(pTree))
---liftLiftRelationNodesOut pTree = liftM liftRelationNodesOut (m pTree)
-
---liftexecuteQuery :: [[String]] -> ParseTree -> String
---liftExecuteQuery stack tableData = liftM2 executeQuery (stack) (tableData)
-
---liftBuildTables :: [String] -> [Either ParseError [[String]]]
---liftBuildTables tables = liftM buildTables (m4 tables)
-
--- --liftPrettyPrint :: String -> IO String
--- liftPrettyPrint answer = liftM2 prettyPrint answer
-
---liftCrossProduct :: [Either ParseError [[String]]] -> IO ([[String]])
---liftCrossProduct tableNames = liftM crossProd tableNames
-{-
---m :: [[String]] -> IO [[String]]
-m xs = do return xs
-m2 :: [String] -> IO [String]
-m2 xs = do return xs
-m3 :: ParseTree -> IO ParseTree
-m3 xs = do return xs
---m4 :: [Either ParseError [[String]]] -> IO [Either ParseError [[String]]]
-m4 xs = do return xs
--}
-
-

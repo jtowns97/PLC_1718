@@ -145,17 +145,6 @@ liftPrettyPrint answer = liftM2 prettyPrint answer
 -- liftPrettyPrint :: String -> IO (String)
 -- liftPrettyPrint answer = liftM2 prettyPrint answer
 
---IO MONAD LIST COMBO
-combineIO a b = do
-    w <- a
-    x <- b
-    let out = [ y ++ z | y <- w, z <- x ]
-    return out  	
-m :: [[String]] -> IO [[String]]
-m xs = do return xs
-m2 :: [String] -> IO [String]
-m2 xs = do return xs
-
 
 
 
@@ -260,6 +249,10 @@ crossRows xs ys =
 cartProd :: [[String]] -> [[String]]
 cartProd = sequence
 
+doesListExistInOpTree :: [VarNode] -> OpTree -> Bool
+doesListExistInOpTree (x:xs) oTree = ( doesExistInOpTree (x) (oTree) ) && ( doesListExistInOpTree (xs) (oTree) )
+doesListExistInOpTree [] oTree = True
+
 doesExistInOpTree :: VarNode -> OpTree -> Bool
 doesExistInOpTree (node) (ConjunctionNode (opTree) (opTreeX)) = doesExistInOpTree node opTree || doesExistInOpTree node opTreeX
 doesExistInOpTree (node) (RelationNode (string) (varTree)) = doesExistInVarTree node varTree
@@ -318,8 +311,8 @@ evaluate (ConjunctionNode (l) (r))  = checkConjunction (ConjunctionNode (l) (r))
 evaluate (VarOp v)  = True
 
 checkExistential :: ExistTree -> Bool
-checkExistential (ExistVar (vTree) (oTree)) = (doesExistInOpTree (traverseDFVar(vTree)) (oTree)) 
-checkExistential (ExistNest (vTree) (eTree) (oTree)) = (doesExistInOpTree (traverseDFVar(vTree)) (oTree)) && checkExistential (eTree)
+checkExistential (ExistVar (vTree) (oTree)) = (doesListExistInOpTree (traverseDFVar(vTree)) (oTree)) 
+checkExistential (ExistNest (vTree) (eTree) (oTree)) = (doesListExistInOpTree (traverseDFVar(vTree)) (oTree)) && checkExistential (eTree)
 
 checkConjunction :: OpTree -> Bool
 checkConjunction  (ConjunctionNode (l) (r) ) = (evaluate(l)) && (evaluate(r))
@@ -385,7 +378,7 @@ populateTree (RelationNode (tbl) (vTree)) rList ind         = populateRelation (
 
 populateExisTree :: ExistTree -> [String] -> ExistTree
 populateExisTree (ExistVar (vTree) (oTree)) rList = (ExistVar (populateVarTree (vTree) (rList) ) (populateTree (oTree) (rList) ))
-populateExisTree (ExistNest (vTree) (eTree)) rList = (ExistNest (populateVarTree (vTree) (rList) ) (populateExisTree (eTree) (rList) ))
+populateExisTree (ExistNest (vTree) (eTree) (oTree)) rList = (ExistNest (populateVarTree (vTree) (rList) ) (populateExisTree (eTree) (rList) ) (populateTree (oTree) (rList)))
 
 sanitiseExisTree :: ExistTree -> ExistTree
 sanitiseExisTree (ExistVar (vTree) (oTree)) = (ExistVar (sanitiseVarTree(vTree)) (sanitiseOpTree(oTree)))

@@ -68,9 +68,9 @@ main = do
     let pTree = buildParseTree (alex)
     let tableNames = extractTableNames (pTree)
     let tables = liftBuildTables tableNames
-    let bigTable crossProd(buildTables(tables))
+    let bigTable = crossProd(buildTables(tables))
 
-    putStr("Execution completed!!!!!!!")
+    putStr "Execution completed!!!!!!!" 
     return
   
 {-==============================================================================-}
@@ -153,21 +153,19 @@ getNthRow (x:xs) goal current | goal == current = x
 getNRowFromCrossProd :: [[String]] -> Int -> [String]
 getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
 
--- input list of tables, returns tables of rows
-crossProd :: [[[String]]] -> [[[String]]]
-crossProd input = output
+--[Table] -> Table
+--[[Row]] -> [Row]
+--[[[String]]] -> [[String]]
+crossProd :: [[a]] -> [[a]]
+crossProd input = foldRows(cartProd(input))
 
--- crossRows :: [[String]] -> [[String]] -> [(String,String)]
--- crossRows xs ys =
---     [ (x, y)
---     | x <- xs 
---     , y <- ys ]
+cartprod :: [[a]] -> [[a]]
+cartprod [] = [[]]
+cartprod (xs:xss) = [x:ys | x<- xs, ys <-yss]
+                        where yss = cartprod xss
 
--- -- allRows :: [[[String]]] -> [[String]]
--- -- allRows ((y:ys):xs) = 
-
--- cartProd :: [[String]] -> [[String]]
--- cartProd = sequence
+foldRows :: [[[String]]] -> [[String]]
+foldRows [[row]] = foldr (++) [] row
 
 doesListExistInOpTree :: [VarNode] -> OpTree -> Bool
 doesListExistInOpTree (x:xs) oTree = ( doesExistInOpTree (x) (oTree) ) && ( doesListExistInOpTree (xs) (oTree) )

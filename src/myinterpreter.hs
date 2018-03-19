@@ -228,6 +228,9 @@ orderOutput'' :: VarNode -> [VarNode] -> [VarNode]
 orderOutput'' v (w:ws) | equateNodesName v w == True = w : orderOutput'' v ws
 orderOutput'' v (w:ws) | equateNodesName v w == False = orderOutput'' v ws
 
+dataNodeToString :: [VarNode] -> [String]
+dataNodeToString [(Vari (loc) (dat) (name)):vs] = dat ++ dataNodeToString (xs)
+
 filterTrue :: [(Bool, [VarNode])] -> [[VarNode]]
 filterTrue ((bool, vars):xs) | length xs == 0 = [[]]
 filterTrue ((bool, vars):xs) | bool == True = vars : filterTrue xs

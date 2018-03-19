@@ -92,20 +92,11 @@ main = do
     let pTree = buildParseTree (happy)
     let lhsVar = getOrderOfVars(pTree)
     let tableNames = extractPTableNames (pTree)
-<<<<<<< HEAD
-    --let bigTable = crossProd(allTables)
-   -- let answer = executeQuery (bigTable) (pTree)
-    print "answer"
-   -- let output = orderOutput (order) (answer)
-
-    
-=======
     let bigTable = crossProd(allTables)
     let answer = executeQuery (bigTable) (pTree)
     let output = orderOutput (lhsVar)
 
     putStr("Execution complete")
->>>>>>> 8472eea36e2eb17882fdf67df8fe90355050eaac
   
 
    -- return putStr("Execution completed!!!!!!!")
@@ -257,15 +248,8 @@ evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (
 
 evaluateExis :: ExistTree -> [String] -> Bool
 evaluateExis eTree strL = checkExistential( populateExisTree (sanitiseExisTree(eTree)) (strL) )
-{-
+
 checkRepeats :: [VarNode] -> Bool
-<<<<<<< HEAD
-checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length (getRepeats(  ((Vari (loc) (dat) (name)) : xs)  )) == length(  ((Vari (loc) (dat) (name)) : xs)  ) = 
-    ( checkAllDataSame( (matchNodeFromName( getRepeats( (  ((Vari (loc) (dat) (name)) : xs)  ) (1) ) name )) (dat) ) ) && (checkRepeats (xs))
-                                                where totalList =   ((Vari (loc) (dat) (name)) : xs)  
--}
-=======
->>>>>>> 8472eea36e2eb17882fdf67df8fe90355050eaac
 checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length repeats == length totalList = checkAllDataSame (matches) (dat) && checkRepeats (xs)
                                                 where   totalList =   ((Vari (loc) (dat) (name)):xs)
                                                         repeats = getRepeats (totalList) 1

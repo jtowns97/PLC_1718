@@ -1,4 +1,4 @@
-module HERBInterpreter where
+module MyInterpreter where
 import System.IO
 import System.Environment
 import Control.Monad
@@ -60,108 +60,36 @@ data EmptyTree = Nothing
 
 data TableBuild = E
     deriving Show
-
-buildTable :: Either ParseError [[String]] -> [[String]]
-buildTable (Right string) = string
-buildTable (Left err) = error "parse error"
 {-==============================================================================-}
 {-===================================== MAIN ===================================-}
 {-==============================================================================-}
-main :: IO()
-main = do 
-    a <- getArgs
-    a <- getArgs
-    b <- readFile (head a)
+
+myinterpreter :: IO()
+myinterpreter = do 
+    (progName:_) <- getArgs
+    b <- readFile (progName)
+    let content = head (splitOn "\n" b)
+
     tableA <- readFile ("A.csv")
     tableB <- readFile ("B.csv")
     tableC <- readFile ("C.csv")
     tableD <- readFile ("D.csv")
     tableE <- readFile ("E.csv")
     tableF <- readFile ("F.csv")
+
     let parsedTableA = parseCSV'(tableA)
     let parsedTableB = parseCSV'(tableB)
     let parsedTableC = parseCSV'(tableC)
     let parsedTableD = parseCSV'(tableD)
     let parsedTableE = parseCSV'(tableE)
     let parsedTableF = parseCSV'(tableF)
+    let allTables = parsedTableA : parsedTableB : parsedTableC : parsedTableD : parsedTableE : parsedTableF : []
     
-    let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let tableNames = extractPTableNames (pTree)
-
-    -- tblA <- readFile "A.csv"
-    -- let tableA = parse csvFile "(unknown)" tblA
-
-    -- tblB <- readFile "B.csv"
-    -- let tableB = parse csvFile "(unknown)" tblB
-
-    -- tblC <- readFile "C.csv"
-    -- let tableC = parse csvFile "(unknown)" tblB
-    
-    -- tblD <- readFile "D.csv"
-    -- let tableD = parse csvFile "(unknown)" tblB
-
-    -- tblE <- readFile "E.csv"
-    -- let tableE = parse csvFile "(unknown)" tblB
-
-    -- tblF <- readFile "F.csv"
-    -- let tableF = parse csvFile "(unknown)" tblB
-
-    -- --csvBSA <- readFile(appendCSV(last (take 1 (tableNames))))
-    -- let testA = "A.csv"
-    -- let testB = "B.csv"
-    -- let contA = readFile(testA)
-    -- let contB = readFile(testB)
-    -- let tableA = parse csvFile "(unknown)" contA
-    -- let tableB = parse csvFile "(unknown)" contB
-    -- fileA <- readMyFile(appendCSV("A"))
-    -- let contA =  buildTable(fileA)
-    -- buildTable table = do
-    --     contA <- parseCSV'("A")
-    --     case parseCSV' of
-    --         Left err -> error ("parsing failed: " ++ show err)
-    --         Right newTable -> do
-    -- case parseCSV(csvBSA) of
-    --     Right(x) -> tableA
-    --     Left parseError -> hPutStrLn stderr "Error:"
-    -- csvBSB <- readFile(appendCSV(last (take 2 (tableNames))))
-    -- case parseCSV(csvBSB) of
-    --     Right(x) ->  tableB
-    --     Left parseError -> hPutStrLn stderr "Error:"
-    -- csvBSC <- readFile(appendCSV(last (take 3 (tableNames))))
-    -- case parseCSV(csvBSC) of
-    --     Right(x) -> tableC
-    --     Left parseError -> hPutStrLn stderr "Error:"
-    -- csvBSD <- readFile(appendCSV(last (take 4 (tableNames))))
-    -- case parseCSV(csvBSD) of
-    --     Right(x) -> tableD
-    --     Left parseError -> hPutStrLn stderr "Error:"
-    -- csvBSE <- readFile(appendCSV(last (take 5 (tableNames))))
-    -- case parseCSV(csvBSE) of
-    --     Right(x) -> tableE
-    --     Left parseError -> hPutStrLn stderr "Error:"
-    -- csvBSF <- readFile(appendCSV(last (take 6 (tableNames))))
-    -- case parseCSV(csvBSF) of
-    --     Right(x) -> tableF
-    --     Left parseError -> hPutStrLn stderr "Error:"
-
---think this is close
-{-
-    let tableA = case parseCSV(csvBSA) of 
-        Left (parseError) -> fail(parseError)
-        Right(x) -> return x
-    -}
-    {-
-    let tableB = parseCSV(csvBSB)
-    let tableC = parseCSV(csvBSC)
-    let tableD = parseCSV(csvBSD)
-    let tableE = parseCSV(csvBSE)
-    let tableF = parseCSV(csvBSF)
-    let tables = tableA : tableB : tableC : tableD : tableE : tableF : []
-    -}
-   -- let bigTable = crossProd(tables)
+   -- let bigTable = crossProd(allTables)
     putStr("Execution completed!!!!!!!")
   
 {-==============================================================================-}
@@ -169,7 +97,7 @@ main = do
 {-==============================================================================-}
 
 buildParseTree :: Exp -> ParseTree
-buildParseTree (Evaluate (vars) (query)) = Marker (traverseDFVar(buildVarTree(vars))) (buildOpTree(query))
+buildParseTree (Evaluate (vars) (query)) = Marker (traverseDFVar(buildVarTree(vars)))  (buildOpTree(query))
 buildParseTree (Eval vars exis) = MarkerNested (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis))
 --buildParseTree (EvalExisExt vars exis quer) = MarkerExtended (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (buildOpTree(quer))
 
@@ -187,7 +115,7 @@ buildOpTree (Relation tblN varis) = RelationNode (tblN) (assignVarTreeLoc (build
 --Below (TODO) add type checker for querA/B, checking its a VarTree
 buildOpTree (Equality querA querB) = (EquateNode (varToOpTree(buildVarTree(queryToVariables(querA)))) (varToOpTree(buildVarTree(queryToVariables(querB)))))
 buildOpTree (V varis) = VarOp (buildVarTree(varis))
-buildOpTree _ = EmptyOT (HERBInterpreter.Nothing)
+buildOpTree _ = EmptyOT (MyInterpreter.Nothing)
 
 --buildRelationalTree :: String -> VarTree -> OpTree
 --buildRelationalTree tblName vTree = (RelationNode (tblName) (assignVarTreeLoc (vTree) (tblName)))
@@ -205,29 +133,11 @@ line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
 
--- buildTables :: [String] -> [[[String]]]
--- buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
-
--- parseCSV :: String -> Either ParseError [[String]]
--- parseCSV y = case input of
---     "" -> Left ("ERROR: NO TABLE")
---     _ -> Right (parse csvFile "(unknown)" y)
-
--- readMyFile :: String ->  String
--- readMyFile filename = readFile(appendCSV(filename))
-
 parseCSV' :: String -> Either ParseError [[String]]
 parseCSV' fileThatIsRead = parse csvFile "(unknown)" fileThatIsRead   
 
--- -- parseCSVs :: [String] -> [[[String]]]
--- -- -- parseCSVs (x:xs) = (parse (appendCSV x)) : parseCSVs xs
-
 appendCSV :: String -> FilePath
 appendCSV input = input ++ ".csv"
-
--- appendCSV :: [String] -> [String]
--- appendCSV (x:xs) | length xs == 0 = [(x ++ ".csv")]
--- appendCSV (x:xs) = (x ++ ".csv") : appendCSV (xs)
 
 {-==============================================================================-}
 {-============================== TABLE OPERATIONS ==============================-}
@@ -291,6 +201,9 @@ doesExistInVarTree :: VarNode -> VarTree -> Bool
 doesExistInVarTree (node) (CommaNode (varNode) (varTree)) = equateNodesDatAndName node varNode || doesExistInVarTree node varTree
 doesExistInVarTree (node) (SingleNode (varNode)) = equateNodesDatAndName node varNode
 doesExistInVarTree (node) (EmptyVT (emptyTree)) = False
+
+-- doTheseExistInVarTree :: VarNode -> [VarNode] -> Bool
+
 
 orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]]
 orderOutput (o:os) (list) = [orderOutput' o list] ++ orderOutput os list

@@ -218,7 +218,7 @@ filterTrue ((bool, vars):xs) | bool == False = filterTrue xs
 
 executeQuery :: [[String]] -> ParseTree -> [[VarNode]]
 executeQuery [[]] _ = [[]]
-executeQuery (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [getPTreeState(pTree) ++ executeQuery (xs) (pTree)]
+executeQuery (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [getPTreeState(pTree)] ++ executeQuery (xs) (pTree)
                                 | (evaluateParseTree (pTree) (x)) == False = executeQuery (xs) (pTree)
 
 evaluateParseTree :: ParseTree -> [String] -> Bool
@@ -279,7 +279,7 @@ equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | na
 {-==============================================================================-}
 getPTreeState :: ParseTree -> [VarNode]
 getPTreeState (Marker (vars) (oTree)) = getTreeState (oTree)
-getPTreeState (MarkerNested (vars) (eTree) (oTree)) = getTreeState (oTree)
+getPTreeState (MarkerNested (vars) (eTree) ) = getETreeState (eTree)
 
 getETreeState :: ExistTree -> [VarNode]
 getETreeState (ExistVar (vars) (oTree)) = getTreeState(oTree)
@@ -408,13 +408,14 @@ countVarNodes (CommaNode varN varTree) = 1 + countVarNodes varTree
 countVarNodes (SingleNode varN) = 1
 countVarNodes (EmptyVT empty) = 0
 
+
 extractPTableNames :: ParseTree -> [String]
-extractPTableNames (Marker (vars) (oTree)) = extractTableNames(oTree)
+extractPTableNames (Marker (vars) (oTree)) = extractTableNames(getOpRelationNodesOut(oTree))
 extractPTableNames (MarkerNested (vars) (eTree)) = extractETableNames(eTree)
 
 extractETableNames :: ExistTree -> [String]
-extractETableNames (ExistVar (vTree) (oTree)) = extractTableNames(oTree)
-extractETableNames (ExistNest (vTree) (eTree) (oTree)) = extractTableNames(oTree)
+extractETableNames (ExistVar (vTree) (oTree)) = extractTableNames(getOpRelationNodesOut(oTree))
+extractETableNames (ExistNest (vTree) (eTree) (oTree)) = extractTableNames(getOpRelationNodesOut(oTree))
 
 extractTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodesOut, possibly needs to be reverse
 extractTableNames [] = []

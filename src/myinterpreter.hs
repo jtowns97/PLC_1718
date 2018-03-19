@@ -14,6 +14,7 @@ import Data.Maybe
 import Data.Ord
 import qualified Data.ByteString.Char8 as C
 
+
 {-==============================================================================-}
 {-=============================== DATA STRUCTURES ==============================-}
 {-==============================================================================-}
@@ -58,8 +59,6 @@ data ParseTree = Marker ([VarNode]) (OpTree)
 data EmptyTree = Nothing
     deriving Show
 
-data TableBuild = E
-    deriving Show
 {-==============================================================================-}
 {-===================================== MAIN ===================================-}
 {-==============================================================================-}
@@ -89,7 +88,7 @@ myinterpreter = do
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let tableNames = extractPTableNames (pTree)
-   -- let bigTable = crossProd(allTables)
+    let bigTable = crossProd(allTables)
     putStr("Execution completed!!!!!!!")
   
 {-==============================================================================-}
@@ -124,17 +123,17 @@ buildOpTree _ = EmptyOT (MyInterpreter.Nothing)
 {-=============================== CSV EXTRACTION ===============================-}
 {-==============================================================================-}
 
-
-readFiles :: [FilePath] -> IO (C.ByteString)
-readFiles = fmap C.concat . mapM C.readFile
-
 csvFile = Text.ParserCombinators.Parsec.endBy line eol
 line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
 
-parseCSV' :: String -> Either ParseError [[String]]
-parseCSV' fileThatIsRead = parse csvFile "(unknown)" fileThatIsRead   
+parseCSV' :: String -> [[String]]
+parseCSV' fileThatIsRead = fromRight(parse csvFile "(unknown)" fileThatIsRead)   
+
+fromRight :: Either a b -> b
+fromRight (Left _)  = error "ParseError" -- yuck
+fromRight (Right x) = x
 
 appendCSV :: String -> FilePath
 appendCSV input = input ++ ".csv"

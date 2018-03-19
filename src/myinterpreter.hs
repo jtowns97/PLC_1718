@@ -240,7 +240,8 @@ evaluateExis eTree strL = checkExistential( populateExisTree (sanitiseExisTree(e
 
 
 checkRepeats :: [VarNode] -> Bool
-checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length (getRepeats(  ((Vari (loc) (dat) (name)) : xs)  )) == length(  ((Vari (loc) (dat) (name)) : xs)  ) = ( checkAllDataSame( (matchNodeFromName( getRepeats( (  ((Vari (loc) (dat) (name)) : xs)  ) (1) ) name )) (dat) ) ) && (checkRepeats (xs))
+checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length (getRepeats(  ((Vari (loc) (dat) (name)) : xs)  )) == length(  ((Vari (loc) (dat) (name)) : xs)  ) = 
+    ( checkAllDataSame( (matchNodeFromName( getRepeats( (  ((Vari (loc) (dat) (name)) : xs)  ) (1) ) name )) (dat) ) ) && (checkRepeats (xs))
                                                 where totalList =   ((Vari (loc) (dat) (name)) : xs)  
 
 

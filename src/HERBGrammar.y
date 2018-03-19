@@ -68,6 +68,6 @@ data Query = Conjunction Query Query
     deriving Show
 
 data Existential = ExistentialSingle Variables Query
-    | ExistentialNested Variables Existential
+    | ExistentialNested Variables Existential Query
     deriving Show		  
 } 

@@ -65,7 +65,6 @@ main = do
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
-<<<<<<< HEAD
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let tableNames = extractPTableNames (pTree)
@@ -74,7 +73,7 @@ main = do
     let bigTable = crossProd(tables)
 
     putStr("Execution completed!!!!!!!")
-=======
+
     let pTree = buildParseTree (alex)
     let tableNames = extractTableNames (pTree)
     let tables = liftBuildTables tableNames
@@ -121,7 +120,7 @@ line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
 
-buildTables :: [String] -> Either ParseError  [[[String]]]
+buildTables :: [String] -> Either ParseError [[[String]]]
 buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
 
 appendCSV

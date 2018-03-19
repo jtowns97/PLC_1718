@@ -65,7 +65,7 @@ data EmptyTree = Nothing
 
 --main :: IO()
 main = do 
-    putStrLn ("**********Begin computation**************")
+    print ("**********Begin computation**************")
     a <- getArgs
     putStrLn (head a)
    -- input1 <- getLine
@@ -92,20 +92,11 @@ main = do
     let pTree = buildParseTree (happy)
     let lhsVar = getOrderOfVars(pTree)
     let tableNames = extractPTableNames (pTree)
-<<<<<<< HEAD
-    --let bigTable = crossProd(allTables)
-   -- let answer = executeQuery (bigTable) (pTree)
-    print "answer"
-   -- let output = orderOutput (order) (answer)
-
-    
-=======
     let bigTable = crossProd(allTables)
     let answer = executeQuery (bigTable) (pTree)
     let output = orderOutput (lhsVar)
 
     putStr("Execution complete")
->>>>>>> 8472eea36e2eb17882fdf67df8fe90355050eaac
   
 
    -- return putStr("Execution completed!!!!!!!")
@@ -239,7 +230,6 @@ getOrderOfVars (Marker (list) (opTree)) = list
 getOrderOfVars (MarkerNested (list) (existTree)) = list
 getOrderOfVars (EmptyPT (emptyTree)) = []
 
-orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]]
 --              ORDER OF VARS   TABLE IN     TABLE OUT, REARRANGED COLUMNS
 orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]] -- Outputs list of rows (i.e. one table)
 orderOutput [] _ = []
@@ -271,16 +261,16 @@ executeQuery (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [get
                                 | (evaluateParseTree (pTree) (x)) == False = executeQuery (xs) (pTree)
 
 evaluateParseTree :: ParseTree -> [String] -> Bool
-evaluateParseTree (Marker ordVars oTree) rList          = (checkRepeats(thisTree)) && (evaluate (thisTree))
+evaluateParseTree (Marker ordVars oTree) rList          = (checkRepeats(getTreeState(thisTree))) && (evaluate (thisTree))
                                                         where thisTree = populateTree (sanitiseOpTree(oTree)) (rList) (0)
 evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList)
 
 evaluateExis :: ExistTree -> [String] -> Bool
-evaluateExis eTree strL = (checkRepeats(thisTree)) && (checkExistential(thisTree))
+evaluateExis eTree strL = (checkRepeats(getETreeState(thisTree))) && (checkExistential(thisTree))
                         where thisTree = populateExisTree (sanitiseExisTree(eTree)) (strL)
 
 checkRepeats :: [VarNode] -> Bool
-checkRepeats = ( (Vari (loc) (dat) (name)) : xs) | length repeats == length totalList = checkAllDataSame (matches) (dat) && checkRepeats (xs)
+checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length repeats == length totalList = checkAllDataSame (matches) (dat) && checkRepeats (xs)
                                                 where   totalList =   ((Vari (loc) (dat) (name)):xs)
                                                         repeats = getRepeats (totalList) 1
                                                         matches = matchNodeFromName repeats name

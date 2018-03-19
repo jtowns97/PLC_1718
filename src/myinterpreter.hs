@@ -155,7 +155,7 @@ liftPrettyPrint answer = liftM2 prettyPrint answer
 buildParseTree :: Exp -> ParseTree
 buildParseTree (Evaluate (vars) (query)) = Marker (traverseDFVar(buildVarTree(vars))) (buildOpTree(query))
 buildParseTree (Eval vars exis) = MarkerNested (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis))
-buildParseTree (EvalExisExt vars exis quer) = MarkerExtended (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (buildOpTree(quer))
+--buildParseTree (EvalExisExt vars exis quer) = MarkerExtended (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (buildOpTree(quer))
 
 buildVarTree :: Variables -> VarTree
 buildVarTree (VarSingle strName) = SingleNode (Vari ("*") ("*") (strName))
@@ -163,7 +163,7 @@ buildVarTree (Comma (VarSingle (nextStrName)) remVars) = CommaNode (Vari ("*") (
 
 buildExisTree :: Existential -> ExistTree 
 buildExisTree (ExistentialSingle (vars) (quer)) = (ExistVar (buildVarTree(vars)) (buildOpTree (quer)))
-buildExisTree (ExistentialNested (vars) (exisNest)) = (ExistNest (buildVarTree(vars)) (buildExisTree (exisNest)))
+buildExisTree (ExistentialNested (vars) (exisNest) (quer)) = (ExistNest (buildVarTree(vars)) (buildExisTree (exisNest)) (buildOpTree(quer)))
 
 buildOpTree :: Query -> OpTree 
 buildOpTree (Conjunction querA querB) = ConjunctionNode (buildOpTree querA) (buildOpTree querB)
@@ -287,13 +287,12 @@ filterTrue ((bool, vars):xs) | bool == False = filterTrue xs
 
 executeQuery :: [[String]] -> ParseTree -> [[VarNode]]
 executeQuery [[]] _ = [[]]
-executeQuery (x:xs) pTree   | (evaluateParseTree (pTree) (x)) == True = getTreeState(pTree) ++ executeQuery (xs) 
-                            | (evaluateParseTree (pTree) (x)) == False = executeQuery (xs)
+executeQuery (x:xs) pTree   | (evaluateParseTree (pTree) (x)) == True = getTreeState(pTree) ++ executeQuery (xs) (pTree)
+                            | (evaluateParseTree (pTree) (x)) == False = executeQuery (xs) (pTree)
 
 evaluateParseTree :: ParseTree -> [String] -> Bool
-evaluateParseTree (Marker ordVars oTree) rList  | evaluate (  populateTree (sanitiseOpTree(oTree)) (rList) (0) ) == True = True
-                                                | evaluate (  populateTree (sanitiseOpTree(oTree)) (rList) (0) ) == False = False
-evaluateParseTree (MarkerNested ordVars eTree ) rList = evaluateExis (eTree) 
+evaluateParseTree (Marker ordVars oTree) rList          = evaluate (  populateTree (sanitiseOpTree(oTree)) (rList) (0) )
+evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList)
 
 evaluateExis :: ExistTree -> [String] -> Bool
 evaluateExis eTree strL = checkExistential( populateExisTree (sanitiseExisTree(eTree)) (strL) )
@@ -377,8 +376,8 @@ populateTree (RelationNode (tbl) (vTree)) rList ind         = populateRelation (
 --populateParseTree :: ParseTree -> [String] ->
 
 populateExisTree :: ExistTree -> [String] -> ExistTree
-populateExisTree (ExistVar (vTree) (oTree)) rList = (ExistVar (populateVarTree (vTree) (rList) ) (populateTree (oTree) (rList) ))
-populateExisTree (ExistNest (vTree) (eTree) (oTree)) rList = (ExistNest (populateVarTree (vTree) (rList) ) (populateExisTree (eTree) (rList) ) (populateTree (oTree) (rList)))
+populateExisTree (ExistVar (vTree) (oTree)) rList = (ExistVar (populateVarTree (vTree) (rList) (0) ) (populateTree (oTree) (rList) (0) ))
+populateExisTree (ExistNest (vTree) (eTree) (oTree)) rList = (ExistNest (populateVarTree (vTree) (rList) (0) ) (populateExisTree (eTree) (rList) ) (populateTree (oTree) (rList) (0)))
 
 sanitiseExisTree :: ExistTree -> ExistTree
 sanitiseExisTree (ExistVar (vTree) (oTree)) = (ExistVar (sanitiseVarTree(vTree)) (sanitiseOpTree(oTree)))

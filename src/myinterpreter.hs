@@ -64,15 +64,51 @@ main = do
     a <- getArgs
     a <- getArgs
     b <- readFile (head a)
+
+
+    
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let tableNames = extractPTableNames (pTree)
-    csvBS <- readFiles(appendCSV(tableNames))
-    let csvContents = C.unpack(csvBS)
-    --let tables =  buildTables (tableNames)
-    let bigTable = crossProd(csvContents)
+    csvBSA <- readFile(appendCSV(last (take 1 (tableNames))))
+    -- case parseCSV(csvBSA) of
+    --     Right(x) -> tableA
+    --     Left parseError -> hPutStrLn stderr "Error:"
+    -- csvBSB <- readFile(appendCSV(last (take 2 (tableNames))))
+    -- case parseCSV(csvBSB) of
+    --     Right(x) ->  tableB
+    --     Left parseError -> hPutStrLn stderr "Error:"
+    -- csvBSC <- readFile(appendCSV(last (take 3 (tableNames))))
+    -- case parseCSV(csvBSC) of
+    --     Right(x) -> tableC
+    --     Left parseError -> hPutStrLn stderr "Error:"
+    -- csvBSD <- readFile(appendCSV(last (take 4 (tableNames))))
+    -- case parseCSV(csvBSD) of
+    --     Right(x) -> tableD
+    --     Left parseError -> hPutStrLn stderr "Error:"
+    -- csvBSE <- readFile(appendCSV(last (take 5 (tableNames))))
+    -- case parseCSV(csvBSE) of
+    --     Right(x) -> tableE
+    --     Left parseError -> hPutStrLn stderr "Error:"
+    -- csvBSF <- readFile(appendCSV(last (take 6 (tableNames))))
+    -- case parseCSV(csvBSF) of
+    --     Right(x) -> tableF
+    --     Left parseError -> hPutStrLn stderr "Error:"
+
+
+    let tableA = case parseCSV(csvBSA) of 
+        Right(x) -> x
+        Left parseError -> hPutStrLn stderr "Error:"
+    let tableB = parseCSV(csvBSB)
+    let tableC = parseCSV(csvBSC)
+    let tableD = parseCSV(csvBSD)
+    let tableE = parseCSV(csvBSE)
+    let tableF = parseCSV(csvBSF)
+    let tables = tableA : tableB : tableC : tableD : tableE : tableF : []
+    
+    let bigTable = crossProd(tables)
     putStr("Execution completed!!!!!!!")
   
 {-==============================================================================-}
@@ -108,38 +144,27 @@ buildOpTree _ = EmptyOT (HERBInterpreter.Nothing)
 {-==============================================================================-}
 
 
-<<<<<<< HEAD
 readFiles :: [FilePath] -> IO (C.ByteString)
 readFiles = fmap C.concat . mapM C.readFile
-{-
+
 csvFile = Text.ParserCombinators.Parsec.endBy line eol
 line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
--}
+
 -- buildTables :: [String] -> [[[String]]]
 -- buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
-=======
-readFiles :: [FilePath] -> IO [String]
-readFiles = fmap B.concat . mapM B.readFile
 
--- -- csvFile = Text.ParserCombinators.Parsec.endBy line eol
--- -- line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
--- -- cell = many (noneOf ",\n")
--- -- eol = char '\n'
 
--- -- buildTables :: [String] -> [[[String]]]
--- -- buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
->>>>>>> 8f342a46cbe1aadfa6df7ba746757592893557d0
 
--- -- buildTable :: FilePath-> [[String]]
--- -- buildTable tableName = parseCSV(readFile tableName)
-
--- -- parseCSV :: String -> [[String]]
--- -- parseCSV input = parse csvFile
+parseCSV :: String -> Either ParseError [[String]]
+parseCSV input = parse csvFile "(unknown)" input
 
 -- -- parseCSVs :: [String] -> [[[String]]]
 -- -- -- parseCSVs (x:xs) = (parse (appendCSV x)) : parseCSVs xs
+
+appendCSV :: String -> FilePath
+appendCSV input = input ++ ".csv"
 
 -- appendCSV :: [String] -> [String]
 -- appendCSV (x:xs) | length xs == 0 = [(x ++ ".csv")]

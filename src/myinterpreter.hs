@@ -72,7 +72,14 @@ main = do
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let tableNames = extractPTableNames (pTree)
-    csvBSA <- readFile(appendCSV(last (take 1 (tableNames))))
+    --csvBSA <- readFile(appendCSV(last (take 1 (tableNames))))
+    let testA = "A.csv"
+    let testB = "B.csv"
+    let contA = readFile(testA)
+    let contB = readFile(testB)
+    let tableA = parse csvFile "(unknown)" contA
+    let tableB = parse csvFile "(unknown)" contB
+    
     -- case parseCSV(csvBSA) of
     --     Right(x) -> tableA
     --     Left parseError -> hPutStrLn stderr "Error:"
@@ -97,18 +104,21 @@ main = do
     --     Right(x) -> tableF
     --     Left parseError -> hPutStrLn stderr "Error:"
 
-
+--think this is close
+{-
     let tableA = case parseCSV(csvBSA) of 
-        Right(x) -> x
-        Left parseError -> hPutStrLn stderr "Error:"
+        Left (parseError) -> fail(parseError)
+        Right(x) -> return x
+    -}
+    {-
     let tableB = parseCSV(csvBSB)
     let tableC = parseCSV(csvBSC)
     let tableD = parseCSV(csvBSD)
     let tableE = parseCSV(csvBSE)
     let tableF = parseCSV(csvBSF)
     let tables = tableA : tableB : tableC : tableD : tableE : tableF : []
-    
-    let bigTable = crossProd(tables)
+    -}
+   -- let bigTable = crossProd(tables)
     putStr("Execution completed!!!!!!!")
   
 {-==============================================================================-}
@@ -143,7 +153,7 @@ buildOpTree _ = EmptyOT (HERBInterpreter.Nothing)
 {-=============================== CSV EXTRACTION ===============================-}
 {-==============================================================================-}
 
-
+{-
 readFiles :: [FilePath] -> IO (C.ByteString)
 readFiles = fmap C.concat . mapM C.readFile
 
@@ -151,14 +161,18 @@ csvFile = Text.ParserCombinators.Parsec.endBy line eol
 line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
-
+-}
 -- buildTables :: [String] -> [[[String]]]
 -- buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
 
 
-
+{-
 parseCSV :: String -> Either ParseError [[String]]
-parseCSV input = parse csvFile "(unknown)" input
+parseCSV y = case input of
+    "" -> Left ("ERROR: NO TABLE")
+    _ -> Right (parse csvFile "(unknown)" y)
+-}
+    
 
 -- -- parseCSVs :: [String] -> [[[String]]]
 -- -- -- parseCSVs (x:xs) = (parse (appendCSV x)) : parseCSVs xs

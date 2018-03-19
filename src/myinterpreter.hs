@@ -403,6 +403,7 @@ countVarNodes (CommaNode varN varTree) = 1 + countVarNodes varTree
 countVarNodes (SingleNode varN) = 1
 countVarNodes (EmptyVT empty) = 0
 
+
 extractPTableNames :: ParseTree -> [String]
 extractPTableNames (Marker (vars) (oTree)) = extractTableNames(getOpRelationNodesOut(oTree))
 extractPTableNames (MarkerNested (vars) (eTree)) = extractETableNames(eTree)

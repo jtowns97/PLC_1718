@@ -145,6 +145,17 @@ liftPrettyPrint answer = liftM2 prettyPrint answer
 -- liftPrettyPrint :: String -> IO (String)
 -- liftPrettyPrint answer = liftM2 prettyPrint answer
 
+--IO MONAD LIST COMBO
+combineIO a b = do
+    w <- a
+    x <- b
+    let out = [ y ++ z | y <- w, z <- x ]
+    return out  	
+m :: [[String]] -> IO [[String]]
+m xs = do return xs
+m2 :: [String] -> IO [String]
+m2 xs = do return xs
+
 
 
 

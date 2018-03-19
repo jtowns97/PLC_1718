@@ -238,11 +238,18 @@ evaluateExis :: ExistTree -> [String] -> Bool
 evaluateExis eTree strL = checkExistential( populateExisTree (sanitiseExisTree(eTree)) (strL) )
 
 checkRepeats :: [VarNode] -> Bool
+<<<<<<< HEAD
+checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length (getRepeats(  ((Vari (loc) (dat) (name)) : xs)  )) == length(  ((Vari (loc) (dat) (name)) : xs)  ) = 
+    ( checkAllDataSame( (matchNodeFromName( getRepeats( (  ((Vari (loc) (dat) (name)) : xs)  ) (1) ) name )) (dat) ) ) && (checkRepeats (xs))
+                                                where totalList =   ((Vari (loc) (dat) (name)) : xs)  
+
+=======
 checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length repeats == length totalList = checkAllDataSame (matches) (dat) && checkRepeats (xs)
                                                 where   totalList =   ((Vari (loc) (dat) (name)):xs)
                                                         repeats = getRepeats (totalList) 1
                                                         matches = matchNodeFromName repeats name
                                                         
+>>>>>>> 7d0e787fda29eb5ae6d0a1b7228ab3e72e644f22
 
 matchNodeFromName :: [VarNode] -> String -> [VarNode]
 matchNodeFromName [] _ = []

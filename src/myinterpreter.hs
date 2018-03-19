@@ -65,24 +65,14 @@ main = do
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
-<<<<<<< HEAD
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let tableNames = extractPTableNames (pTree)
-    --csvContents <- parseCSV(readFile tableName)
-    let tables = buildTables (tableNames)
+    --csvContents <- parseMultipleCSVs(tableNames)
+    tables <- buildTables (tableNames)
     let bigTable = crossProd(tables)
 
     putStr("Execution completed!!!!!!!")
-=======
-    let pTree = buildParseTree (alex)
-    let tableNames = extractTableNames (pTree)
-    let tables = liftBuildTables tableNames
-    let bigTable = crossProd(buildTables(tables))
-
-    putStr "Execution completed!!!!!!!" 
-    return
->>>>>>> b7806a4c3936f0b0c315d48f19257248f002419b
   
 {-==============================================================================-}
 {-================================= BUILDING ===================================-}
@@ -121,16 +111,21 @@ line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
 
-buildTables :: [String] -> Either ParseError  [[[String]]]
+buildTables :: [String] -> [[[String]]]
 buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
 
-appendCSV
-
-buildTable :: FilePath-> Either ParseError [[String]]
+buildTable :: FilePath-> [[String]]
 buildTable tableName = parseCSV(readFile tableName)
 
-parseCSV :: String -> Either ParseError [[String]]
-parseCSV input = parse csvFile "(unknown)" input
+parseCSV :: String -> [[String]]
+parseCSV input = parse csvFile
+
+parseMultipleCSV :: [String] -> [[[String]]]
+parseMultipleCSV listOfCSVNames = appendCSV listOfCSVNames
+
+appendCSV :: [String] -> [String]
+appendCSV (x:xs) | length xs == 0 = (x ++ ".csv")
+appendCSV (x:xs) = (x ++ ".csv") : appendCSV (xs)
 
 {-==============================================================================-}
 {-============================== TABLE OPERATIONS ==============================-}
@@ -166,19 +161,13 @@ getNthRow (x:xs) goal current | goal == current = x
 getNRowFromCrossProd :: [[String]] -> Int -> [String]
 getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
 
-<<<<<<< HEAD
--- input list of tables, returns tables of rows
-crossProd :: [[[String]]] -> [[[String]]]
-crossProd input = input
-=======
 --[Table] -> Table
 --[[Row]] -> [Row]
 --[[[String]]] -> [[String]]
-crossProd :: [[a]] -> [[a]]
+crossProd :: [[String]] -> [[String]]
 crossProd input = foldRows(cartProd(input))
->>>>>>> b7806a4c3936f0b0c315d48f19257248f002419b
 
-cartprod :: [[a]] -> [[a]]
+cartprod :: [[String]] -> [[String]]
 cartprod [] = [[]]
 cartprod (xs:xss) = [x:ys | x<- xs, ys <-yss]
                         where yss = cartprod xss

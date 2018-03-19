@@ -112,7 +112,7 @@ main = do
 {-============================== LIFTING TO MONADS =============================-}
 {-==============================================================================-}
  
-liftBuildParseTree :: [Token] -> ParseTree
+--liftBuildParseTree :: [Token] -> ParseTree
 liftBuildParseTree alex = liftM buildParseTree parseCalc(alex)
 -- liftEXECUTION 
 
@@ -128,7 +128,7 @@ liftCrossProduct tableNames = liftM crossProd tableNames
 liftExecuteHERB :: [[String]] -> ParseTree -> String
 liftExecuteHERB stack tableData = liftM(executeHERB (stack) (tableData))
 
-liftBuildTables :: [String] -> [Either ParseError [[String]]]
+--liftBuildTables :: [String] -> [Either ParseError [[String]]]
 liftBuildTables tabNames = liftM buildTables extractTableNames(pTree)
 
 liftPrettyPrint :: String -> IO String

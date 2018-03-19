@@ -84,11 +84,6 @@ main = do
     let parsedTableD = parseCSV'(tableD)
     let parsedTableE = parseCSV'(tableE)
     let parsedTableF = parseCSV'(tableF)
-
-    
-
-
-
     
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)

@@ -10,7 +10,7 @@ import Data.List.Split
 import Data.Typeable
 import Data.Maybe
 import Data.Ord
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Char8 as C
 
 {-==============================================================================-}
 {-=============================== DATA STRUCTURES ==============================-}
@@ -69,10 +69,10 @@ main = do
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let tableNames = extractPTableNames (pTree)
-    csvContents <- readFiles(appendCSV(tableNames))
+    csvBS <- readFiles(appendCSV(tableNames))
+    let csvContents = C.unpack(csvBS)
     --let tables =  buildTables (tableNames)
     let bigTable = crossProd(csvContents)
-
     putStr("Execution completed!!!!!!!")
   
 {-==============================================================================-}
@@ -108,14 +108,14 @@ buildOpTree _ = EmptyOT (HERBInterpreter.Nothing)
 {-==============================================================================-}
 
 
-readFiles :: [FilePath] -> IO B.ByteString
-readFiles = fmap B.concat . mapM B.readFile
-
+readFiles :: [FilePath] -> IO (C.ByteString)
+readFiles = fmap C.concat . mapM C.readFile
+{-
 csvFile = Text.ParserCombinators.Parsec.endBy line eol
 line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
-
+-}
 -- buildTables :: [String] -> [[[String]]]
 -- buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
 

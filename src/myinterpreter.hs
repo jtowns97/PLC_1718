@@ -65,13 +65,14 @@ main = do
     b <- readFile (head a)
     let content = head (splitOn "\n" b)
     let alex = alexScanTokens (content)
-    let pTree = buildParseTree (alex)
-    let tableNames = extractTableNames (pTree)
-    let tables = liftBuildTables tableNames
-    let bigTable crossProd(buildTables(tables))
+    let happy = parseCalc(alex)
+    let pTree = buildParseTree (happy)
+    let tableNames = extractPTableNames (pTree)
+    --csvContents <- parseCSV(readFile tableName)
+    let tables = buildTables (tableNames)
+    let bigTable = crossProd(tables)
 
     putStr("Execution completed!!!!!!!")
-    return
   
 {-==============================================================================-}
 {-================================= BUILDING ===================================-}
@@ -110,13 +111,15 @@ line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
 cell = many (noneOf ",\n")
 eol = char '\n'
 
-buildTables :: [String] -> [Either ParseError [[String]]] 
+buildTables :: [String] -> Either ParseError  [[[String]]]
 buildTables (x:xs) = (buildTable (x ++ ".csv")) : buildTables (xs)
+
+appendCSV
 
 buildTable :: FilePath-> Either ParseError [[String]]
 buildTable tableName = parseCSV(readFile tableName)
 
-parseCSV :: IO String -> Either ParseError [[String]]
+parseCSV :: String -> Either ParseError [[String]]
 parseCSV input = parse csvFile "(unknown)" input
 
 {-==============================================================================-}
@@ -155,7 +158,7 @@ getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
 
 -- input list of tables, returns tables of rows
 crossProd :: [[[String]]] -> [[[String]]]
-crossProd input = output
+crossProd input = input
 
 -- crossRows :: [[String]] -> [[String]] -> [(String,String)]
 -- crossRows xs ys =
@@ -396,6 +399,14 @@ countVarNodes :: VarTree -> Int
 countVarNodes (CommaNode varN varTree) = 1 + countVarNodes varTree
 countVarNodes (SingleNode varN) = 1
 countVarNodes (EmptyVT empty) = 0
+
+extractPTableNames :: ParseTree -> [String]
+extractPTableNames (Marker (vars) (oTree)) = extractTableNames(oTree)
+extractPTableNames (MarkerNested (vars) (eTree)) = extractETableNames(eTree)
+
+extractETableNames :: ExistTree -> [String]
+extractETableNames (ExistVar (vTree) (oTree)) = extractTableNames(oTree)
+extractETableNames (ExistNest (vTree) (eTree) (oTree)) = extractTableNames(oTree)
 
 extractTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodesOut, possibly needs to be reverse
 extractTableNames [] = []

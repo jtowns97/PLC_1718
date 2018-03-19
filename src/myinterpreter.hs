@@ -314,10 +314,38 @@ evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (
 
 evaluateExis :: ExistTree -> [String] -> Bool
 evaluateExis eTree strL = checkExistential( populateExisTree (sanitiseExisTree(eTree)) (strL) )
-                                                    
---ParseTree :: ParseTree a -> [String] -> (Bool, [VarNode])
---evaluateParseTree (Marker ordVars oTree)
---evaluateParseTree (MarkerNested eTree )
+
+
+checkRepeats :: [VarNode] -> Bool
+checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length (getRepeats(  ((Vari (loc) (dat) (name)) : xs)  )) == length(  ((Vari (loc) (dat) (name)) : xs)  ) = ( checkAllDataSame( (matchNodeFromName( getRepeats( (  ((Vari (loc) (dat) (name)) : xs)  ) (1) ) name )) (dat) ) ) && (checkRepeats (xs))
+                                                where totalList =   ((Vari (loc) (dat) (name)) : xs)  
+
+
+matchNodeFromName :: [VarNode] -> String -> [VarNode]
+matchNodeFromName [] _ = []
+matchNodeFromName ( (Vari (loc) (dat) (nameX)) : xs) name   | name == nameX = [(Vari (loc) (dat) (name))] ++ matchNodeFromName xs name
+                                                            | name /= nameX = matchNodeFromName xs name
+
+checkAllDataSame :: [VarNode] -> String -> Bool
+checkAllDataSame ((Vari (loc) (datA) (name)):xs) dat = ( dat == datA ) && ( checkAllDataSame xs dat)
+
+
+
+
+
+getRepeats :: [VarNode] -> Int ->  [VarNode] --return repeated namez
+--getRepeats [] = []
+--getRepeats [x,y] ind    | countInstancesInVarList x y
+getRepeats (x:xs) ind   | (ind <= length(x:xs)) && (countInstancesInVarList ((x:xs)!!ind) (x:xs) > 1) = [x] ++ getRepeats (x:xs) (ind+1)
+                        | (ind <= length(x:xs)) && (countInstancesInVarList ((x:xs)!!ind) (x:xs) == 1) = getRepeats (x:xs) (ind+1)
+
+countInstancesInVarList :: VarNode -> [VarNode] -> Int
+countInstancesInVarList vN [] = 0
+countInstancesInVarList vN (x:xs)   | (equateName vN x) == True = 1 + countInstancesInVarList (vN) (xs)
+                                    | (equateName vN x) == False = 0 + countInstancesInVarList (vN) (xs)
+
+equateName :: VarNode -> VarNode -> Bool
+equateName (Vari (loc) (dat) (name)) (Vari (locB) (datB) (nameB)) = ( (dat == datB) && (name == nameB) )
 
 evaluate :: OpTree -> Bool --evaluate opTree freeVarList
 evaluate (EquateNode (l) (r))  =  ( checkEquality (EquateNode (l) (r))) 

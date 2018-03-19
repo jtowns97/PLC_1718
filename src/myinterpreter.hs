@@ -287,8 +287,8 @@ filterTrue ((bool, vars):xs) | bool == False = filterTrue xs
 
 executeQuery :: [[String]] -> ParseTree -> [[VarNode]]
 executeQuery [[]] _ = [[]]
-executeQuery (x:xs) pTree   | (evaluateParseTree (pTree) (x)) == True = getTreeState(pTree) ++ executeQuery (xs) (pTree)
-                            | (evaluateParseTree (pTree) (x)) == False = executeQuery (xs) (pTree)
+executeQuery (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [getPTreeState(pTree) ++ executeQuery (xs) (pTree)]
+                                | (evaluateParseTree (pTree) (x)) == False = executeQuery (xs) (pTree)
 
 evaluateParseTree :: ParseTree -> [String] -> Bool
 evaluateParseTree (Marker ordVars oTree) rList          = evaluate (  populateTree (sanitiseOpTree(oTree)) (rList) (0) )
@@ -346,7 +346,13 @@ equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | na
 {-==============================================================================-}
 {-=========================== TREE & NODE OPERATIONS ===========================-}
 {-==============================================================================-}
+getPTreeState :: ParseTree -> [VarNode]
+getPTreeState (Marker (vars) (oTree)) = getTreeState (oTree)
+getPTreeState (MarkerNested (vars) (eTree) (oTree)) = getTreeState (oTree)
 
+getETreeState :: ExistTree -> [VarNode]
+getETreeState (ExisVar (vars) (oTree)) = getTreeState(oTree)
+getETreeState (ExisNest (vars) (eTree) (oTree)) = getTreeState(oTree)
 
 
 getTreeState :: OpTree -> [VarNode]

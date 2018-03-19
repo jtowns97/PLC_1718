@@ -1,4 +1,4 @@
-module MyInterpreter where
+module Main where
 import System.IO
 import System.Environment
 import Control.Monad
@@ -64,10 +64,13 @@ data TableBuild = E
 {-===================================== MAIN ===================================-}
 {-==============================================================================-}
 
-myinterpreter :: IO()
-myinterpreter = do 
-    (progName:_) <- getArgs
-    b <- readFile (progName)
+--main :: IO()
+main = do 
+    putStrLn ("**********Begin computation**************")
+    a <- getArgs
+    putStrLn (head a)
+   -- input1 <- getLine
+    b <- readFile (head a)
     let content = head (splitOn "\n" b)
 
     tableA <- readFile ("A.csv")
@@ -89,9 +92,16 @@ myinterpreter = do
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let tableNames = extractPTableNames (pTree)
-   -- let bigTable = crossProd(allTables)
-    putStr("Execution completed!!!!!!!")
+    --let bigTable = crossProd(allTables)
+   -- let answer = executeQuery (bigTable) (pTree)
+    print "answer"
+   -- let output = orderOutput (order) (answer)
+
+    
   
+
+   -- return putStr("Execution completed!!!!!!!")
+   -- return "someting"
 {-==============================================================================-}
 {-================================= BUILDING ===================================-}
 {-==============================================================================-}
@@ -115,7 +125,7 @@ buildOpTree (Relation tblN varis) = RelationNode (tblN) (assignVarTreeLoc (build
 --Below (TODO) add type checker for querA/B, checking its a VarTree
 buildOpTree (Equality querA querB) = (EquateNode (varToOpTree(buildVarTree(queryToVariables(querA)))) (varToOpTree(buildVarTree(queryToVariables(querB)))))
 buildOpTree (V varis) = VarOp (buildVarTree(varis))
-buildOpTree _ = EmptyOT (MyInterpreter.Nothing)
+buildOpTree _ = EmptyOT (Main.Nothing)
 
 --buildRelationalTree :: String -> VarTree -> OpTree
 --buildRelationalTree tblName vTree = (RelationNode (tblName) (assignVarTreeLoc (vTree) (tblName)))
@@ -237,20 +247,17 @@ evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (
 
 evaluateExis :: ExistTree -> [String] -> Bool
 evaluateExis eTree strL = checkExistential( populateExisTree (sanitiseExisTree(eTree)) (strL) )
-
+{-
 checkRepeats :: [VarNode] -> Bool
-<<<<<<< HEAD
 checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length (getRepeats(  ((Vari (loc) (dat) (name)) : xs)  )) == length(  ((Vari (loc) (dat) (name)) : xs)  ) = 
     ( checkAllDataSame( (matchNodeFromName( getRepeats( (  ((Vari (loc) (dat) (name)) : xs)  ) (1) ) name )) (dat) ) ) && (checkRepeats (xs))
                                                 where totalList =   ((Vari (loc) (dat) (name)) : xs)  
-
-=======
+-}
 checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length repeats == length totalList = checkAllDataSame (matches) (dat) && checkRepeats (xs)
                                                 where   totalList =   ((Vari (loc) (dat) (name)):xs)
                                                         repeats = getRepeats (totalList) 1
                                                         matches = matchNodeFromName repeats name
                                                         
->>>>>>> 7d0e787fda29eb5ae6d0a1b7228ab3e72e644f22
 
 matchNodeFromName :: [VarNode] -> String -> [VarNode]
 matchNodeFromName [] _ = []

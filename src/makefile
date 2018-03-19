@@ -1,5 +1,5 @@
-HERBInterpreter: Tokens.hs Grammar.hs HERBInterpreter.hs
-	 ghc HERBInterpreter.hs
+myinterpreter: HERBTokens.hs HERBGrammar.hs myinterpreter.hs
+	 ghc myinterpreter.hs
 HERBTokens.hs: HERBTokens.x
 		 alex HERBTokens.x
 HERBGrammar.hs: HERBGrammar.y

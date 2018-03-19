@@ -74,18 +74,18 @@ main = do
 
     tableA <- readFile ("A.csv")
     tableB <- readFile ("B.csv")
-    tableC <- readFile ("C.csv")
-    tableD <- readFile ("D.csv")
-    tableE <- readFile ("E.csv")
-    tableF <- readFile ("F.csv")
+    -- tableC <- readFile ("C.csv")
+    -- tableD <- readFile ("D.csv")
+    -- tableE <- readFile ("E.csv")
+    -- tableF <- readFile ("F.csv")
 
     let parsedTableA = parseCSV'(tableA)
     let parsedTableB = parseCSV'(tableB)
-    let parsedTableC = parseCSV'(tableC)
-    let parsedTableD = parseCSV'(tableD)
-    let parsedTableE = parseCSV'(tableE)
-    let parsedTableF = parseCSV'(tableF)
-    let allTables = parsedTableA : parsedTableB : parsedTableC : parsedTableD : parsedTableE : parsedTableF : []
+    -- let parsedTableC = parseCSV'(tableC)
+    -- let parsedTableD = parseCSV'(tableD)
+    -- let parsedTableE = parseCSV'(tableE)
+    -- let parsedTableF = parseCSV'(tableF)
+    let allTables = parsedTableA : parsedTableB : []--parsedTableC : parsedTableD : parsedTableE : parsedTableF : []
     
     let alex = alexScanTokens (content)
     let happy = parseCalc(alex)
@@ -94,8 +94,9 @@ main = do
     let tableNames = extractPTableNames (pTree)
     let bigTable = crossProd(allTables)
     let answer = executeQuery (bigTable) (pTree)
-    let output = orderOutput (lhsVar)
-
+    let output = orderOutput (lhsVar) (answer)
+    let stringOutput = extractTableData(output)
+    mapM_ putStrLn stringOutput
     putStr("Execution complete")
   
 
@@ -172,10 +173,15 @@ countRows input = countRowsFromCols (transpose input)
 countRowsFromCols :: [[String]] -> Int
 countRowsFromCols (x:xs) = length x
 
-getNthEl :: [[String]] -> Int -> Int -> [String]
-getNthEl [] _ _ = []
-getNthEl (x:xs) goal current | goal == current = x
-                             | goal /= current = getNthEl xs goal (current+1)
+getNthVNode :: Int -> [VarNode] -> Maybe VarNode
+getNthVNode _ []       = Data.Maybe.Nothing
+getNthVNode 1 (x : _)  = Just x
+getNthVNode n (_ : xs) = getNthVNode (n - 1) xs
+
+getNthElString :: [[String]] -> Int -> Int -> [String]
+getNthElString [] _ _ = []
+getNthElString (x:xs) goal current | goal == current = x
+                             | goal /= current = getNthElString xs goal (current+1)
 
 --INPUT ROWS                            
 getNthRow :: [[String]] -> Int -> Int -> [String]
@@ -250,6 +256,23 @@ filterTrue ((bool, vars):xs) | length xs == 0 = [[]]
 filterTrue ((bool, vars):xs) | bool == True = vars : filterTrue xs
 filterTrue ((bool, vars):xs) | bool == False = filterTrue xs
 
+extractData :: VarNode -> String
+extractData (Vari (loc) (dat) (name)) = dat
+
+-- takes tabletoString and changes all VarNodes to all the dat within using extractData.
+extractTableData :: [[VarNode]] -> [String]
+extractTableData [] = []
+extractTableData (x:xs) = [extractRowData(x)] ++ extractTableData (xs)
+
+--list of varN -> String
+
+-- varN -> String
+extractRowData :: [VarNode] -> String
+extractRowData [] = ""
+extractRowData (x:xs) = extractData(x) ++ extractRowData (xs)
+
+rowToString :: [String] -> String
+rowToString (x:xs) = x ++ "," ++ rowToString xs 
 
 {-==============================================================================-}
 {-=============================== MAIN EVALUATION ==============================-}
@@ -261,16 +284,17 @@ executeQuery (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [get
                                 | (evaluateParseTree (pTree) (x)) == False = executeQuery (xs) (pTree)
 
 evaluateParseTree :: ParseTree -> [String] -> Bool
-evaluateParseTree (Marker ordVars oTree) rList          = (checkRepeats(getTreeState(thisTree))) && (evaluate (thisTree))
+evaluateParseTree (Marker ordVars oTree) rList          = (areRepeats(getTreeState(thisTree))) && (evaluate (thisTree))
                                                         where thisTree = populateTree (sanitiseOpTree(oTree)) (rList) (0)
 evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList)
 
 evaluateExis :: ExistTree -> [String] -> Bool
-evaluateExis eTree strL = (checkRepeats(getETreeState(thisTree))) && (checkExistential(thisTree))
+evaluateExis eTree strL = (areRepeats(getETreeState(thisTree))) && (checkExistential(thisTree))
                         where thisTree = populateExisTree (sanitiseExisTree(eTree)) (strL)
 
-checkRepeats :: [VarNode] -> Bool
-checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length repeats == length totalList = checkAllDataSame (matches) (dat) && checkRepeats (xs)
+areRepeats :: [VarNode] -> Bool
+areRepeats [] = True
+areRepeats ( (Vari (loc) (dat) (name)) : xs) = checkAllDataSame (matches) (dat) && areRepeats (xs)
                                                 where   totalList =   ((Vari (loc) (dat) (name)):xs)
                                                         repeats = getRepeats (totalList) 1
                                                         matches = matchNodeFromName repeats name
@@ -282,17 +306,14 @@ matchNodeFromName ( (Vari (loc) (dat) (nameX)) : xs) name   | name == nameX = [(
                                                             | name /= nameX = matchNodeFromName xs name
 
 checkAllDataSame :: [VarNode] -> String -> Bool
+checkAllDataSame [] _= True
 checkAllDataSame ((Vari (loc) (datA) (name)):xs) dat = ( dat == datA ) && ( checkAllDataSame xs dat)
 
-
-
-
-
 getRepeats :: [VarNode] -> Int ->  [VarNode] --return repeated namez
---getRepeats [] = []
---getRepeats [x,y] ind    | countInstancesInVarList x y
-getRepeats (x:xs) ind   | (ind <= length(x:xs)) && (countInstancesInVarList ((x:xs)!!ind) (x:xs) > 1) = [x] ++ getRepeats (x:xs) (ind+1)
-                        | (ind <= length(x:xs)) && (countInstancesInVarList ((x:xs)!!ind) (x:xs) == 1) = getRepeats (x:xs) (ind+1)
+getRepeats [] _ = []
+getRepeats (x:xs) ind   | (ind <= length(x:xs)) && (countInstancesInVarList (fromJust(getNthVNode (ind) (x:xs) )) (x:xs) > 1) = [x] ++ getRepeats (x:xs) (ind+1)
+                        | (ind <= length(x:xs)) && (countInstancesInVarList (fromJust(getNthVNode (ind) (x:xs) )) (x:xs) == 1) = getRepeats (x:xs) (ind+1)
+                        | otherwise = [] -- should never be called
 
 countInstancesInVarList :: VarNode -> [VarNode] -> Int
 countInstancesInVarList vN [] = 0

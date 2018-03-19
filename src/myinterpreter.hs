@@ -238,11 +238,12 @@ evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (
 evaluateExis :: ExistTree -> [String] -> Bool
 evaluateExis eTree strL = checkExistential( populateExisTree (sanitiseExisTree(eTree)) (strL) )
 
-
 checkRepeats :: [VarNode] -> Bool
-checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length (getRepeats(  ((Vari (loc) (dat) (name)) : xs)  )) == length(  ((Vari (loc) (dat) (name)) : xs)  ) = ( checkAllDataSame( (matchNodeFromName( getRepeats( (  ((Vari (loc) (dat) (name)) : xs)  ) (1) ) name )) (dat) ) ) && (checkRepeats (xs))
-                                                where totalList =   ((Vari (loc) (dat) (name)) : xs)  
-
+checkRepeats ( (Vari (loc) (dat) (name)) : xs) | length repeats == length totalList = checkAllDataSame (matches) (dat) && checkRepeats (xs)
+                                                where   totalList =   ((Vari (loc) (dat) (name)):xs)
+                                                        repeats = getRepeats (totalList) 1
+                                                        matches = matchNodeFromName repeats name
+                                                        
 
 matchNodeFromName :: [VarNode] -> String -> [VarNode]
 matchNodeFromName [] _ = []

@@ -72,40 +72,25 @@ main = do
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let tableNames = extractPTableNames (pTree)
-    csvBSA <- readFile(appendCSV(last (take 1 (tableNames))))
-    -- case parseCSV(csvBSA) of
-    --     Right(x) -> tableA
-    --     Left parseError -> hPutStrLn stderr "Error:"
-    -- csvBSB <- readFile(appendCSV(last (take 2 (tableNames))))
-    -- case parseCSV(csvBSB) of
-    --     Right(x) ->  tableB
-    --     Left parseError -> hPutStrLn stderr "Error:"
-    -- csvBSC <- readFile(appendCSV(last (take 3 (tableNames))))
-    -- case parseCSV(csvBSC) of
-    --     Right(x) -> tableC
-    --     Left parseError -> hPutStrLn stderr "Error:"
-    -- csvBSD <- readFile(appendCSV(last (take 4 (tableNames))))
-    -- case parseCSV(csvBSD) of
-    --     Right(x) -> tableD
-    --     Left parseError -> hPutStrLn stderr "Error:"
-    -- csvBSE <- readFile(appendCSV(last (take 5 (tableNames))))
-    -- case parseCSV(csvBSE) of
-    --     Right(x) -> tableE
-    --     Left parseError -> hPutStrLn stderr "Error:"
-    -- csvBSF <- readFile(appendCSV(last (take 6 (tableNames))))
-    -- case parseCSV(csvBSF) of
-    --     Right(x) -> tableF
-    --     Left parseError -> hPutStrLn stderr "Error:"
 
+    tblA <- readFile "A.csv"
+    let tableA = parse csvFile "(unknown)" tblA
 
-    let tableA = case parseCSV(csvBSA) of 
-        Right(x) -> x
-        Left parseError -> hPutStrLn stderr "Error:"
-    let tableB = parseCSV(csvBSB)
-    let tableC = parseCSV(csvBSC)
-    let tableD = parseCSV(csvBSD)
-    let tableE = parseCSV(csvBSE)
-    let tableF = parseCSV(csvBSF)
+    tblB <- readFile "B.csv"
+    let tableB = parse csvFile "(unknown)" tblB
+
+    tblC <- readFile "C.csv"
+    let tableC = parse csvFile "(unknown)" tblB
+    
+    tblD <- readFile "D.csv"
+    let tableD = parse csvFile "(unknown)" tblB
+
+    tblE <- readFile "E.csv"
+    let tableE = parse csvFile "(unknown)" tblB
+
+    tblF <- readFile "F.csv"
+    let tableF = parse csvFile "(unknown)" tblB
+
     let tables = tableA : tableB : tableC : tableD : tableE : tableF : []
     
     let bigTable = crossProd(tables)
@@ -207,7 +192,7 @@ getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
 --[Table] -> Table
 --[[Row]] -> [Row]
 --[[[String]]] -> [[String]]
-crossProd :: [[[String]]] -> [[String]]
+crossProd :: [Either ParseError [[[String]]]] -> [[String]]
 crossProd input = foldRows(cartprod(input))
 
 cartprod :: [[[String]]] -> [[[String]]]
@@ -508,3 +493,44 @@ treeToNode (CommaNode (node) (remainingTree)) = error "Variable tree contains mu
 -- Blindly assumes OpTree contains a VarTree containing only one VarNode.
 convertOpToVarNode :: OpTree -> VarNode
 convertOpToVarNode (VarOp (vTree)) = treeToNode (vTree)
+
+
+{-
+    -- csvBSA <- readFile(appendCSV(last (take 1 (tableNames))))
+    -- case parseCSV(csvBSA) of
+    --     Right(x) -> tableA
+    --     Left parseError -> hPutStrLn stderr "Error:"
+    -- csvBSB <- readFile(appendCSV(last (take 2 (tableNames))))
+    -- case parseCSV(csvBSB) of
+    --     Right(x) ->  tableB
+    --     Left parseError -> hPutStrLn stderr "Error:"
+    -- csvBSC <- readFile(appendCSV(last (take 3 (tableNames))))
+    -- case parseCSV(csvBSC) of
+    --     Right(x) -> tableC
+    --     Left parseError -> hPutStrLn stderr "Error:"
+    -- csvBSD <- readFile(appendCSV(last (take 4 (tableNames))))
+    -- case parseCSV(csvBSD) of
+    --     Right(x) -> tableD
+    --     Left parseError -> hPutStrLn stderr "Error:"
+    -- csvBSE <- readFile(appendCSV(last (take 5 (tableNames))))
+    -- case parseCSV(csvBSE) of
+    --     Right(x) -> tableE
+    --     Left parseError -> hPutStrLn stderr "Error:"
+    -- csvBSF <- readFile(appendCSV(last (take 6 (tableNames))))
+    -- case parseCSV(csvBSF) of
+    --     Right(x) -> tableF
+    --     Left parseError -> hPutStrLn stderr "Error:"
+
+
+
+
+
+
+
+
+
+
+
+
+
+    -}

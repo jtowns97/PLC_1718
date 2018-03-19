@@ -48,7 +48,7 @@ Query : Query "^" Query                                 { Conjunction $1 $3}
      
 { 
 parseError :: [Token] -> a
-parseError token = error "Parse error on Token: " ++ read tokenPosn token
+parseError token = error "Parse error"
 
 data Exp = Evaluate Variables Query
     | Eval Variables Existential

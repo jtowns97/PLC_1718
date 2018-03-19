@@ -184,15 +184,24 @@ getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
 --[[Row]] -> [Row]
 --[[[String]]] -> [[String]]
 crossProd :: [[[String]]] -> [[String]]
-crossProd input = foldRows(cartprod(input))
+crossProd input = foldRows'(cartprod(input))
 
 cartprod :: [[[String]]] -> [[[String]]]
 cartprod [] = [[]]
 cartprod (xs:xss) = [x:ys | x<- xs, ys <-yss]
                         where yss = cartprod xss
 
-foldRows :: [[[String]]] -> [[String]]
-foldRows [[[string]]] = foldr (++) [[]] [[[string]]]
+-- String is a cell
+-- [String] is a row
+-- [[String]] is a table
+-- [[[String]]] is multiple tables.
+foldRows' :: [[[String]]] -> [[String]]
+foldRows' [] = []
+foldRows' (((x:xs):xss):xsss) = ((x:xs):xss) ++ foldRows' xsss
+
+-- foldRows :: [[[String]]] -> [[String]]
+-- foldRows [] = []
+-- foldRows [table] = foldr (++) [] [table]
 
 doesListExistInOpTree :: [VarNode] -> OpTree -> Bool
 doesListExistInOpTree (x:xs) oTree = ( doesExistInOpTree (x) (oTree) ) && ( doesListExistInOpTree (xs) (oTree) )
@@ -214,7 +223,9 @@ getOrderOfVars (Marker (list) (opTree)) = list
 getOrderOfVars (MarkerNested (list) (existTree)) = list
 getOrderOfVars (EmptyPT (emptyTree)) = []
 
+--              ORDER OF VARS   TABLE IN     TABLE OUT, REARRANGED COLUMNS
 orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]] -- Outputs list of rows (i.e. one table)
+orderOutput [] _ = []
 orderOutput (o:os) (list) = [orderOutput' o list] ++ orderOutput os list
 
 --              LHS ORDER      filterTrueOutput            TRUE ROWS
@@ -223,6 +234,7 @@ orderOutput' o [] = []
 orderOutput' o (t:ts) = orderOutput'' (o) (t) ++ orderOutput' (o) (ts)
 
 orderOutput'' :: VarNode -> [VarNode] -> [VarNode]
+orderOutput'' v []     = []
 orderOutput'' v (w:ws) | equateNodesName v w == True = w : orderOutput'' v ws
 orderOutput'' v (w:ws) | equateNodesName v w == False = orderOutput'' v ws
 
@@ -254,7 +266,7 @@ filterTrue ((bool, vars):xs) | bool == False = filterTrue xs
 {-==============================================================================-}
 
 executeQuery :: [[String]] -> ParseTree -> [[VarNode]]
-executeQuery [[]] _ = [[]]
+executeQuery [] _ = []
 executeQuery (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [getPTreeState(pTree)] ++ executeQuery (xs) (pTree)
                                 | (evaluateParseTree (pTree) (x)) == False = executeQuery (xs) (pTree)
 

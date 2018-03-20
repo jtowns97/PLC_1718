@@ -79,8 +79,9 @@ main = do
     let lhsVar = getOrderOfVars(pTree)
     let bigTable = crossMulti(allTables)
     -- All works and as expected up to here.
+    putStr("Starting query")
     let answer = executeQuery (bigTable) (pTree)
-
+    putStr("Query executed")
     mapM_ putStrLn (tableToString(answer))
 
    -- return putStr("Execution completed!!!!!!!")
@@ -236,19 +237,15 @@ getOrderOfVars (Marker (list) (opTree)) = list
 getOrderOfVars (MarkerNested (list) (existTree)) = list
 getOrderOfVars (EmptyPT (emptyTree)) = []
 
-order :: [VarNode] -> [String]
-order [] = []
-order (x:xs) = extractData x : order xs
-
 --              ORDER OF VARS   ROW IN     ROW OUT, REARRANGED COLUMNS
-orderRow :: [VarNode] -> [VarNode] -> [VarNode] -- Outputs list of rows (i.e. one table)
+orderRow :: [String] -> [VarNode] -> [String] -- Outputs list of rows (i.e. one table)
 orderRow [] _ = []
 orderRow (o:os) list = orderRow' o list ++ orderRow os list
 
-orderRow' :: VarNode -> [VarNode] -> [VarNode]
+orderRow' :: String -> [VarNode] -> [String]
 orderRow' v []     = []
-orderRow' v (w:ws) | equateNodesName v w == True = w : orderRow' v ws
-orderRow' v (w:ws) | equateNodesName v w == False = orderRow' v ws
+orderRow' v (w:ws) | v == extractName(w) = extractData(w) : orderRow' v ws
+orderRow' v (w:ws) | v /= extractName (w) = orderRow' v ws
 
 filterTrue :: [(Bool, [VarNode])] -> [[VarNode]]
 filterTrue ((bool, vars):xs) | length xs == 0 = [[]]
@@ -257,6 +254,12 @@ filterTrue ((bool, vars):xs) | bool == False = filterTrue xs
 
 extractData :: VarNode -> String
 extractData (Vari (loc) (dat) (name)) = dat
+
+extractName :: VarNode -> String
+extractName (Vari (loc) (dat) (name)) = name
+
+extractLoc :: VarNode -> String
+extractLoc (Vari (loc) (dat) (name)) = loc
 
 -- takes tabletoString and changes all VarNodes to all the dat within using extractData.
 extractTableData :: [[VarNode]] -> [String]
@@ -295,28 +298,32 @@ rowToString (x:xs) = x ++ "," ++ rowToString xs
 {-=============================== MAIN EVALUATION ==============================-}
 {-==============================================================================-}
 
---              ORDER OF VARS   ROW IN     ROW OUT, REARRANGED COLUMNS
-
+--              ALL ROWS    EXPRESSION      OUTPUT
 executeQuery :: [[String]] -> ParseTree -> [[String]] -- Elliott: Changed data type here; NB: orderRow(ordVars)([x]) <--- may need this in replacement of [x] for later
 executeQuery [] _ = [] --                                                                  getAssignPTreeState(pTree, [String]) -> [VarNode] NB: this calls populateTRee etc
-executeQuery (x:xs) (Marker ordVars oTree)          | (evaluateParseTree pTree (x)) == True = [order(assignReturnPTState (pTree))] ++ executeQuery (xs) (pTree)
+executeQuery (x:xs) (Marker ordVars oTree)          | (evaluateParseTree pTree (x)) == True = [] : (orderRow (getOrdVars(pTree)) pop) : executeQuery (xs) (pTree)
                                                     | (evaluateParseTree pTree (x)) == False = executeQuery (xs) (pTree)
-                                                    where pTree = (Marker ordVars oTree)
-executeQuery (x:xs) (MarkerNested ordVars eTree)    | (evaluateParseTree pTree (x)) == True = [order(assignReturnPTState (pTree))] ++ executeQuery (xs) (pTree)
+                                                    where   pTree = (Marker ordVars oTree)
+                                                            pop = assignReturnPTState pTree x
+executeQuery (x:xs) (MarkerNested ordVars eTree)    | (evaluateParseTree pTree (x)) == True = [] : (orderRow (getOrdVars(pTree)) pop) : executeQuery (xs) (pTree)
                                                     | (evaluateParseTree pTree (x)) == False = executeQuery (xs) (pTree)
-                                                    where pTree = (MarkerNested ordVars eTree)
+                                                    where   pTree = (MarkerNested ordVars eTree)
+                                                            pop = assignReturnPTState pTree x
 
 -----JAMES CHECK HERE PLEASE ----------
 -----NB FOR YOU JAMES HERE ARE THE METHODS I MADE FOR ABOVE-------
 
-order :: [VarNode] -> [String]
-order [] = []
-order (x:xs) = extractData x : order xs
+assignReturnPTState :: ParseTree -> [String] -> [VarNode]
+assignReturnPTState (Marker (vars) (oTree)) strings= getTreeState((populateTree (sanitiseOpTree(oTree)) (strings) 0))
+assignReturnPTState (MarkerNested (vars) (eTree)) strings = getETreeState(populateExisTree (sanitiseExisTree(eTree)) (strings))
 
-assignReturnPTState :: ParseTree -> [VarNode]
-assignReturnPTState (Marker (vars) (oTree)) = getTreeState((populateTree oTree (getVarNames(vars)) 0))
-assignReturnPTState (MarkerNested (vars) (eTree)) = getETreeState(populateExisTree eTree (getVarNames(vars)))
+getOrdVars :: ParseTree -> [String]
+getOrdVars (Marker (vars) (oTree)) = getOrdVars' vars
+getOrdVars (MarkerNested (vars) (eTree)) = getOrdVars' vars
 
+getOrdVars' :: [VarNode] -> [String]
+getOrdVars' [] = []
+getOrdVars' (x:xs) = extractName x : getOrdVars' xs
 -----------------------------------------------------------
 
 evaluateParseTree :: ParseTree -> [String] -> Bool
@@ -409,10 +416,6 @@ getPTreeState (Marker (vars) (oTree)) = getTreeState (oTree)
 getPTreeState (MarkerNested (vars) (eTree) ) = getETreeState (eTree)
 
 --assignReturnPTState
-assignReturnPTState :: ParseTree -> [VarNode]
-assignReturnPTState (Marker (vars) (oTree)) = getTreeState((populateTree oTree (getVarNames(vars)) 0))
-assignReturnPTState (MarkerNested (vars) (eTree)) = getETreeState(populateExisTree eTree (getVarNames(vars)))
-
 getVarNames :: [VarNode] -> [String]
 getVarNames [] = [] 
 getVarNames [(Vari (loc) (dat) (name))] = [dat]

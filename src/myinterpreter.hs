@@ -308,26 +308,30 @@ rowToString (x:xs) = x ++ "," ++ rowToString xs
 {-=============================== MAIN EVALUATION ==============================-}
 {-==============================================================================-}
 
-executeQuery :: [[String]] -> ParseTree -> [[String]] -- Elliott: Changed data type here
+executeQuery :: [[String]] -> ParseTree -> [[String]] -- Elliott: Changed data type here; NB: orderOutput(ordVars)([x]) <--- may need this in replacement of [x] for later
 executeQuery [] _ = []
-executeQuery (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [x] ++ executeQuery (xs) (pTree)
-                                | (evaluateParseTree (pTree) (x)) == False = executeQuery (xs) (pTree)
+executeQuery (x:xs) (Marker ordVars oTree)          | (evaluateParseTree (Marker ordVars oTree) (x)) == True = [x] ++ executeQuery (xs) (pTree)
+                                                    | (evaluateParseTree (Marker ordVars oTree) (x)) == False = executeQuery (xs) (pTree)
+                                                    where pTree = (Marker ordVars oTree)
+executeQuery (x:xs) (MarkerNested ordVars eTree)    | (evaluateParseTree (MarkerNested ordVars eTree) (x)) == True = [x] ++ executeQuery (xs) (pTree)
+                                                    | (evaluateParseTree (MarkerNested ordVars eTree) (x)) == False = executeQuery (xs) (pTree)
+                                                    where pTree = (MarkerNested ordVars eTree)
 
 evaluateParseTree :: ParseTree -> [String] -> Bool
-evaluateParseTree (Marker ordVars oTree) rList          = (areRepeats(getTreeState(thisTree))) && (evaluate (thisTree))
+evaluateParseTree (Marker ordVars oTree) rList          = (areRepeats(getTreeState(thisTree)) 0) && (evaluate (thisTree))
                                                         where thisTree = populateTree (sanitiseOpTree(oTree)) (rList) (0)
 evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList)
 
 evaluateExis :: ExistTree -> [String] -> Bool
-evaluateExis eTree strL = (areRepeats(getETreeState(thisTree))) && (checkExistential(thisTree))
+evaluateExis eTree strL = (areRepeats(getETreeState(thisTree))0) && (checkExistential(thisTree))
                         where thisTree = populateExisTree (sanitiseExisTree(eTree)) (strL)
 
-areRepeats :: [VarNode] -> Bool
-areRepeats [] = True
-areRepeats ( (Vari (loc) (dat) (name)) : xs) = checkAllDataSame (matches) (dat) && areRepeats (xs)
-                                                where   totalList =   ((Vari (loc) (dat) (name)):xs)
-                                                        repeats = getRepeats (totalList) 1
-                                                        matches = matchNodeFromName repeats name
+areRepeats :: [VarNode] -> Int -> Bool
+areRepeats [] _ = True
+areRepeats ( (Vari (loc) (dat) (name)) : xs) ind    = checkAllDataSame (matches) (dat) && (areRepeats (totalList) (ind+1))
+                                                    where   totalList =   ((Vari (loc) (dat) (name)):xs)
+                                                            repeats = getRepeats (totalList) (ind+1)
+                                                            matches = matchNodeFromName repeats name
                                                         
 
 matchNodeFromName :: [VarNode] -> String -> [VarNode]

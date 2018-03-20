@@ -309,7 +309,7 @@ rowToString (x:xs) = x ++ "," ++ rowToString xs
 {-==============================================================================-}
 
 executeQuery :: [[String]] -> ParseTree -> [[String]] -- Elliott: Changed data type here; NB: orderOutput(ordVars)([x]) <--- may need this in replacement of [x] for later
-executeQuery [] _ = []
+executeQuery [] _ = [] --                                                                  getAssignPTreeState(pTree, [String]) -> [VarNode] NB: this calls populateTRee etc
 executeQuery (x:xs) (Marker ordVars oTree)          | (evaluateParseTree (Marker ordVars oTree) (x)) == True = [x] ++ executeQuery (xs) (pTree)
                                                     | (evaluateParseTree (Marker ordVars oTree) (x)) == False = executeQuery (xs) (pTree)
                                                     where pTree = (Marker ordVars oTree)

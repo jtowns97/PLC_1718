@@ -62,7 +62,6 @@ data EmptyTree = Nothing
 {-==============================================================================-}
 {-===================================== MAIN ===================================-}
 {-==============================================================================-}
-
 --main :: IO()
 main = do 
     print ("**********Begin computation**************")
@@ -95,9 +94,9 @@ main = do
     let bigTable = crossMulti(allTables)
     mapM_ putStrLn ([show (bigTable)])
     let answer = executeQuery (bigTable) (pTree)
-    let output = orderOutput (lhsVar) (answer)
-    let stringOutput = extractTableData(output)
-    mapM_ putStrLn stringOutput
+    --let output = orderOutput (lhsVar) (answer) -- MUST NOW TAKE A [[String]] INSTEAD
+    let stringOutput = answer
+    --mapM_ putStrLn stringOutput
     putStr("Execution complete")
   
 
@@ -328,6 +327,7 @@ tableToString [a,b] = [] : rowToString a : rowToString b : []
 tableToString (x:xs) = [] : rowToString x : tableToString xs
 
 rowToString :: [String] -> String
+rowToString [] = []
 --rowToString [] = ""
 rowToString [a] = a
 rowToString [a,b] = a ++ "," ++ b
@@ -337,26 +337,30 @@ rowToString (x:xs) = x ++ "," ++ rowToString xs
 {-=============================== MAIN EVALUATION ==============================-}
 {-==============================================================================-}
 
-executeQuery :: [[String]] -> ParseTree -> [[VarNode]]
-executeQuery [] _ = []
-executeQuery (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [getPTreeState(pTree)] ++ executeQuery (xs) (pTree)
-                                | (evaluateParseTree (pTree) (x)) == False = executeQuery (xs) (pTree)
+executeQuery :: [[String]] -> ParseTree -> [[String]] -- Elliott: Changed data type here; NB: orderOutput(ordVars)([x]) <--- may need this in replacement of [x] for later
+executeQuery [] _ = [] --                                                                  getAssignPTreeState(pTree, [String]) -> [VarNode] NB: this calls populateTRee etc
+executeQuery (x:xs) (Marker ordVars oTree)          | (evaluateParseTree (Marker ordVars oTree) (x)) == True = [x] ++ executeQuery (xs) (pTree)
+                                                    | (evaluateParseTree (Marker ordVars oTree) (x)) == False = executeQuery (xs) (pTree)
+                                                    where pTree = (Marker ordVars oTree)
+executeQuery (x:xs) (MarkerNested ordVars eTree)    | (evaluateParseTree (MarkerNested ordVars eTree) (x)) == True = [x] ++ executeQuery (xs) (pTree)
+                                                    | (evaluateParseTree (MarkerNested ordVars eTree) (x)) == False = executeQuery (xs) (pTree)
+                                                    where pTree = (MarkerNested ordVars eTree)
 
 evaluateParseTree :: ParseTree -> [String] -> Bool
-evaluateParseTree (Marker ordVars oTree) rList          = (areRepeats(getTreeState(thisTree))) && (evaluate (thisTree))
+evaluateParseTree (Marker ordVars oTree) rList          = (areRepeats(getTreeState(thisTree)) 0) && (evaluate (thisTree))
                                                         where thisTree = populateTree (sanitiseOpTree(oTree)) (rList) (0)
 evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList)
 
 evaluateExis :: ExistTree -> [String] -> Bool
-evaluateExis eTree strL = (areRepeats(getETreeState(thisTree))) && (checkExistential(thisTree))
+evaluateExis eTree strL = (areRepeats(getETreeState(thisTree))0) && (checkExistential(thisTree))
                         where thisTree = populateExisTree (sanitiseExisTree(eTree)) (strL)
 
-areRepeats :: [VarNode] -> Bool
-areRepeats [] = True
-areRepeats ( (Vari (loc) (dat) (name)) : xs) = checkAllDataSame (matches) (dat) && areRepeats (xs)
-                                                where   totalList =   ((Vari (loc) (dat) (name)):xs)
-                                                        repeats = getRepeats (totalList) 1
-                                                        matches = matchNodeFromName repeats name
+areRepeats :: [VarNode] -> Int -> Bool
+areRepeats [] _ = True
+areRepeats ( (Vari (loc) (dat) (name)) : xs) ind    = checkAllDataSame (matches) (dat) && (areRepeats (totalList) (ind+1))
+                                                    where   totalList =   ((Vari (loc) (dat) (name)):xs)
+                                                            repeats = getRepeats (totalList) (ind+1)
+                                                            matches = matchNodeFromName repeats name
                                                         
 
 matchNodeFromName :: [VarNode] -> String -> [VarNode]
@@ -463,10 +467,10 @@ getTreeState (EmptyOT (emptyTree)) = []
 
 populateTree :: OpTree -> [String] -> Int -> OpTree
 populateTree (VarOp (vTree)) rList ind                      = (VarOp (populateVarTree (vTree) (rList) (ind)))
-populateTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (populateTree (querA) (rList) (ind)) (populateTree (querB) (rList) (popsA+ind) ) )
-                                                    where   popsA = countPopNodes (querA)
-populateTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (populateTree(querX) (rList) (ind)) (populateTree(querY) (rList) (popsX+ind)) )
-                                                    where   popsX = countPopNodes (querX)
+populateTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (populateTree (querA) (rList) (ind+popsC)) (populateTree (querB) (rList) (popsC+ind) ) )
+                                                    where   popsC = countPopNodes (querA) + countPopNodes (querB)
+populateTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (populateTree(querX) (rList) (popsX+ind)) (populateTree(querY) (rList) (popsX+ind)) )
+                                                    where   popsX = countPopNodes (querX) + countPopNodes (querY)
 populateTree (RelationNode (tbl) (vTree)) rList ind         = populateRelation (RelationNode (tbl) (vTree)) rList ind
                                                     
 --populateParseTree :: ParseTree -> [String] ->
@@ -497,13 +501,13 @@ countPopulations (VarOp (vTree))                | isTreePopulated (vTree) == Tru
                                                 | isTreePopulated (vTree) == False = 0
 -}
 populateRelation :: OpTree -> [String] -> Int -> OpTree
-populateRelation (RelationNode (tblName) (vTree)) rList ind  | isTreePopulated (vTree) == False = (RelationNode (tblName) (populateVarTree (vTree) rList (ind) )) --Somethings gone wrong maybe?
-
+populateRelation (RelationNode (tblName) (vTree)) rList ind     | isTreePopulated (vTree) == False = (RelationNode (tblName) (populateVarTree (vTree) rList (ind) )) --Somethings gone wrong maybe?
+                                                                | otherwise = (RelationNode (tblName) (vTree))
 populateVarTree :: VarTree -> [String] -> Int -> VarTree
-populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) vList | isNodePopulated (Vari (loc) (dat) (name)) == False = (SingleNode (Vari (loc) (generateNextVarData (x:xs) (vList)) (name) ))
-populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) vList | isNodePopulated (Vari (loc) (dat) (name)) == True = (SingleNode (Vari (loc) (dat) (name)))
-populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) vList  | isNodePopulated (Vari (loc) (dat) (name)) == False = ( CommaNode (Vari (loc) (generateNextVarData (x:xs) (vList)) (name)) ( populateVarTree (remTree) (x:xs) (vList) ) )
-populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) vList  | isNodePopulated (Vari (loc) (dat) (name)) == True = (SingleNode (Vari (loc) (dat) (name)))
+populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) ind | isNodePopulated (Vari (loc) (dat) (name)) == False = (SingleNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name) ))
+populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) ind | isNodePopulated (Vari (loc) (dat) (name)) == True = (SingleNode (Vari (loc) (dat) (name)))
+populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind  | isNodePopulated (Vari (loc) (dat) (name)) == False = ( CommaNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name)) ( populateVarTree (remTree) (x:xs) (ind+1) ) )
+populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind  | isNodePopulated (Vari (loc) (dat) (name)) == True = (CommaNode (Vari (loc) (dat) (name)) (remTree))
 
 -- doesNameExistInVList :: String -> [VarNode] -> Bool
 -- doesNameExistInVList _  (x:xs) [] = False
@@ -513,7 +517,8 @@ populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) vList  
 --If name already exists, assign variable with same name to the next unassigned 
 --Add syntax error here?
 generateNextVarData :: [String] -> Int -> String
-generateNextVarData (x:xs) ind = ( (x:xs)!!(ind + 1) ) --possibly unsafe
+generateNextVarData (x:xs) ind  | ind < length(x:xs) = ( (x:xs)!!(ind + 1) ) --possibly unsafe
+                                | ind >= length(x:xs) = "THIS IS AN ERROR AND SHOULD NOT BE HERE"
 
 -- getDataMatchingName :: String -> [VarNode] -> VarNode
 
@@ -559,8 +564,8 @@ countPopNodesInVT (SingleNode varN) = (if(checkNodePop varN) then 1 else 0)
 countPopNodesInVT (EmptyVT empty) = 0
 
 checkNodePop :: VarNode -> Bool
-checkNodePop (Vari loc dat name) | dat /= "*" = False
-checkNodePop (Vari loc dat name) | dat == "*" = True
+checkNodePop (Vari loc dat name) | dat /= "*" = True
+checkNodePop (Vari loc dat name) | dat == "*" = False
 
 countVarNodes :: VarTree -> Int
 countVarNodes (CommaNode varN varTree) = 1 + countVarNodes varTree

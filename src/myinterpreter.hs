@@ -92,7 +92,8 @@ main = do
     let pTree = buildParseTree (happy)
     let lhsVar = getOrderOfVars(pTree)
     let tableNames = extractPTableNames (pTree)
-    let bigTable = crossProd(allTables)
+    let bigTable = crossMulti(allTables)
+    mapM_ putStrLn ([show (bigTable)])
     let answer = executeQuery (bigTable) (pTree)
     let output = orderOutput (lhsVar) (answer)
     let stringOutput = extractTableData(output)
@@ -196,13 +197,31 @@ getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
 --[Table] -> Table
 --[[Row]] -> [Row]
 --[[[String]]] -> [[String]]
-crossProd :: [[[String]]] -> [[String]]
-crossProd input = foldRows'(cartprod(input))
 
-cartprod :: [[[String]]] -> [[[String]]]
-cartprod [] = [[]]
-cartprod (xs:xss) = [x:ys | x<- xs, ys <-yss]
-                        where yss = cartprod xss
+--Input multiple tables to cross product all.
+--          ALL TABLES      REMAINING TABLES       OUTPUT
+crossMulti :: [[[String]]] -> [[String]]
+crossMulti [] = []
+crossMulti [tableA] = tableA
+crossMulti [tableA, tableB] = crossTwo tableA tableB
+crossMulti (tableA:tableB:ts) = crossMulti(firstTwo:ts)
+    where firstTwo = crossTwo tableA tableB
+
+--Cross two tables.
+crossTwo :: [[String]] -> [[String]] -> [[String]]
+crossTwo _ [] = []
+crossTwo [] _ = []
+crossTwo (rowA:as) (rowB:bs) = pairRowToTable (rowA) (rowB:bs) ++ crossTwo as (rowB:bs)
+
+--Cross a row to an entire table.
+pairRowToTable :: [String] -> [[String]] -> [[String]]
+pairRowToTable _ [] = []
+pairRowToTable rowA (rowB:bs) = [pairRow (rowA) (rowB)] ++ pairRowToTable (rowA) (bs)
+
+pairRow :: [String] -> [String] -> [String]
+pairRow [] _ = []
+pairRow _ [] = []
+pairRow rowA rowB = rowA ++ rowB
 
 -- String is a cell
 -- [String] is a row
@@ -271,7 +290,18 @@ extractRowData :: [VarNode] -> String
 extractRowData [] = ""
 extractRowData (x:xs) = extractData(x) ++ extractRowData (xs)
 
+-- Input list of list of cells
+-- Output a list of rows (cells combined using below function)
+tableToString :: [[String]] -> [String]
+--tableToString [] = []
+tableToString [a] = [] : rowToString a : []
+tableToString [a,b] = [] : rowToString a : rowToString b : []
+tableToString (x:xs) = [] : rowToString x : tableToString xs
+
 rowToString :: [String] -> String
+--rowToString [] = ""
+rowToString [a] = a
+rowToString [a,b] = a ++ "," ++ b
 rowToString (x:xs) = x ++ "," ++ rowToString xs 
 
 {-==============================================================================-}

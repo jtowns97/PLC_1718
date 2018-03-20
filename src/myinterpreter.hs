@@ -94,9 +94,9 @@ main = do
     let bigTable = crossMulti(allTables)
     mapM_ putStrLn ([show (bigTable)])
     let answer = executeQuery (bigTable) (pTree)
-    let output = orderOutput (lhsVar) (answer)
-    let stringOutput = extractTableData(output)
-    mapM_ putStrLn stringOutput
+    --let output = orderOutput (lhsVar) (answer) -- MUST NOW TAKE A [[String]] INSTEAD
+    let stringOutput = answer
+    --mapM_ putStrLn stringOutput
     putStr("Execution complete")
   
 
@@ -298,22 +298,19 @@ tableToString [a,b] = [] : rowToString a : rowToString b : []
 tableToString (x:xs) = [] : rowToString x : tableToString xs
 
 rowToString :: [String] -> String
-<<<<<<< HEAD
 rowToString [] = []
-=======
 --rowToString [] = ""
 rowToString [a] = a
 rowToString [a,b] = a ++ "," ++ b
->>>>>>> 2af3b7ba3b730a9283d1d84ab1b4576b78c82265
 rowToString (x:xs) = x ++ "," ++ rowToString xs 
 
 {-==============================================================================-}
 {-=============================== MAIN EVALUATION ==============================-}
 {-==============================================================================-}
 
-executeQuery :: [[String]] -> ParseTree -> [[VarNode]]
+executeQuery :: [[String]] -> ParseTree -> [[String]] -- Elliott: Changed data type here
 executeQuery [] _ = []
-executeQuery (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [getPTreeState(pTree)] ++ executeQuery (xs) (pTree)
+executeQuery (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [x] ++ executeQuery (xs) (pTree)
                                 | (evaluateParseTree (pTree) (x)) == False = executeQuery (xs) (pTree)
 
 evaluateParseTree :: ParseTree -> [String] -> Bool

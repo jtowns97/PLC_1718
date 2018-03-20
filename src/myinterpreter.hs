@@ -135,9 +135,38 @@ buildOpTree _ = EmptyOT (Main.Nothing)
 {-=============================== CSV EXTRACTION ===============================-}
 {-==============================================================================-}
 
-csvFile = Text.ParserCombinators.Parsec.endBy line eol
-line = Text.ParserCombinators.Parsec.sepBy cell (char ',')
-cell = many (noneOf ",\n")
+csvFile :: GenParser Char st [[String]]
+csvFile = (many line) <* eof
+
+-- Each line contains 1 or more cells, separated by a comma
+line :: GenParser Char st [String]
+line = 
+    do result <- cells
+       eol                       -- end of line
+       return result
+       
+-- Build up a list of cells.  Try to parse the first cell, then figure out 
+-- what ends the cell.
+cells :: GenParser Char st [String]
+cells = 
+    do first <- cellContent
+       next <- remainingCells
+       return (first : next)
+
+-- The cell either ends with a comma, indicating that 1 or more cells follow,
+-- or it doesn't, indicating that we're at the end of the cells for this line
+remainingCells :: GenParser Char st [String]
+remainingCells =
+    (char ',' >> cells)            -- Found comma?  More cells coming
+    <|> (return [])                -- No comma?  Return [], no more cells
+
+-- Each cell contains 0 or more characters, which must not be a comma or
+-- EOL
+cellContent :: GenParser Char st String
+cellContent = 
+    many (noneOf ",\n")
+-- The end of line character is \n
+eol :: GenParser Char st Char
 eol = char '\n'
 
 parseCSV' :: String -> [[String]]
@@ -150,7 +179,7 @@ fromRight (Right x) = x
 appendCSV :: String -> FilePath
 appendCSV input = input ++ ".csv"
 
-{-==============================================================================-}
+{-======    ========================================================================-}
 {-============================== TABLE OPERATIONS ==============================-}
 {-==============================================================================-}
 {-
@@ -401,6 +430,15 @@ equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | na
 getPTreeState :: ParseTree -> [VarNode]
 getPTreeState (Marker (vars) (oTree)) = getTreeState (oTree)
 getPTreeState (MarkerNested (vars) (eTree) ) = getETreeState (eTree)
+
+assignReturnPTState :: ParseTree -> [VarNode]
+assignReturnPTState (Marker (vars) (oTree)) = getTreeState((populateTree oTree (getVarNames(vars)) 0))
+assignReturnPTState (MarkerNested (vars) (eTree)) = getETreeState(populateExisTree eTree (getVarNames(vars)))
+
+getVarNames :: [VarNode] -> [String]
+getVarNames [] = [] 
+getVarNames [(Vari (loc) (dat) (name))] = [dat]
+getVarNames (Vari (loc) (dat) (name):vs) = dat : getVarNames vs
 
 getETreeState :: ExistTree -> [VarNode]
 getETreeState (ExistVar (vars) (oTree)) = getTreeState(oTree)

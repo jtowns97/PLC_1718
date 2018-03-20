@@ -64,41 +64,24 @@ data EmptyTree = Nothing
 {-==============================================================================-}
 --main :: IO()
 main = do 
-    print ("**********Begin computation**************")
     a <- getArgs
-    putStrLn (head a)
-   -- input1 <- getLine
     b <- readFile (head a)
+    contentA <- readContents("A.csv")
+    contentB <- readContents("B.csv")
+
+    let tableA = buildTable(contentA)
+    let tableB = buildTable(contentB)
+    let allTables = tableA : tableB : []
     let content = head (splitOn "\n" b)
-
-    tableA <- readFile ("A.csv")
-    tableB <- readFile ("B.csv")
-    -- tableC <- readFile ("C.csv")
-    -- tableD <- readFile ("D.csv")
-    -- tableE <- readFile ("E.csv")
-    -- tableF <- readFile ("F.csv")
-
-    let parsedTableA = parseCSV'(tableA)
-    let parsedTableB = parseCSV'(tableB)
-    -- let parsedTableC = parseCSV'(tableC)
-    -- let parsedTableD = parseCSV'(tableD)
-    -- let parsedTableE = parseCSV'(tableE)
-    -- let parsedTableF = parseCSV'(tableF)
-    let allTables = parsedTableA : parsedTableB : []--parsedTableC : parsedTableD : parsedTableE : parsedTableF : []
-    
     let alex = alexScanTokens (content)
     let happy = parseCalc(alex)
     let pTree = buildParseTree (happy)
     let lhsVar = getOrderOfVars(pTree)
-    let tableNames = extractPTableNames (pTree)
     let bigTable = crossMulti(allTables)
-    mapM_ putStrLn ([show (bigTable)])
+    -- All works and as expected up to here.
     let answer = executeQuery (bigTable) (pTree)
-    --let output = orderOutput (lhsVar) (answer) -- MUST NOW TAKE A [[String]] INSTEAD
-    let stringOutput = answer
-    --mapM_ putStrLn stringOutput
-    putStr("Execution complete")
-  
+
+    mapM_ putStrLn (tableToString(answer))
 
    -- return putStr("Execution completed!!!!!!!")
    -- return "someting"
@@ -134,50 +117,20 @@ buildOpTree _ = EmptyOT (Main.Nothing)
 {-=============================== CSV EXTRACTION ===============================-}
 {-==============================================================================-}
 
-csvFile :: GenParser Char st [[String]]
-csvFile = (many line) <* eof
+-- For more than two databases.
+-- readMulti :: String -> IO [[String]]
+-- readMulti x = do
+--     readContents ([(take 1 x)] ++ ".csv")
 
--- Each line contains 1 or more cells, separated by a comma
-line :: GenParser Char st [String]
-line = 
-    do result <- cells
-       eol                       -- end of line
-       return result
-       
--- Build up a list of cells.  Try to parse the first cell, then figure out 
--- what ends the cell.
-cells :: GenParser Char st [String]
-cells = 
-    do first <- cellContent
-       next <- remainingCells
-       return (first : next)
+readContents :: String -> IO [[String]]
+readContents filepath = do
+    contents <- readFile (filepath)
+    let lines = chunksOf 1 (splitOn "\n" contents)
+    return lines
 
--- The cell either ends with a comma, indicating that 1 or more cells follow,
--- or it doesn't, indicating that we're at the end of the cells for this line
-remainingCells :: GenParser Char st [String]
-remainingCells =
-    (char ',' >> cells)            -- Found comma?  More cells coming
-    <|> (return [])                -- No comma?  Return [], no more cells
-
--- Each cell contains 0 or more characters, which must not be a comma or
--- EOL
-cellContent :: GenParser Char st String
-cellContent = 
-    many (noneOf ",\n")
--- The end of line character is \n
-eol :: GenParser Char st Char
-eol = char '\n'
-
-parseCSV' :: String -> [[String]]
-parseCSV' fileThatIsRead = fromRight(parse csvFile "(unknown)" fileThatIsRead)   
-
-fromRight :: Either a b -> b
-fromRight (Left _)  = error "ParseError" -- yuck
-fromRight (Right x) = x
-
-appendCSV :: String -> FilePath
-appendCSV input = input ++ ".csv"
-
+buildTable :: [[String]] -> [[String]]
+buildTable [] = []
+buildTable ((x:xs):xss) = (splitOn "," x) : buildTable xss 
 {-======    ========================================================================-}
 {-============================== TABLE OPERATIONS ==============================-}
 {-==============================================================================-}
@@ -283,20 +236,19 @@ getOrderOfVars (Marker (list) (opTree)) = list
 getOrderOfVars (MarkerNested (list) (existTree)) = list
 getOrderOfVars (EmptyPT (emptyTree)) = []
 
---              ORDER OF VARS   TABLE IN     TABLE OUT, REARRANGED COLUMNS
-orderOutput :: [VarNode] -> [[VarNode]] -> [[VarNode]] -- Outputs list of rows (i.e. one table)
-orderOutput [] _ = []
-orderOutput (o:os) (list) = [orderOutput' o list] ++ orderOutput os list
+order :: [VarNode] -> [String]
+order [] = []
+order (x:xs) = extractData x : order xs
 
---              LHS ORDER      filterTrueOutput            TRUE ROWS
-orderOutput' :: VarNode -> [[VarNode]] -> [VarNode]
-orderOutput' o [] = []
-orderOutput' o (t:ts) = orderOutput'' (o) (t) ++ orderOutput' (o) (ts)
+--              ORDER OF VARS   ROW IN     ROW OUT, REARRANGED COLUMNS
+orderRow :: [VarNode] -> [VarNode] -> [VarNode] -- Outputs list of rows (i.e. one table)
+orderRow [] _ = []
+orderRow (o:os) list = orderRow' o list ++ orderRow os list
 
-orderOutput'' :: VarNode -> [VarNode] -> [VarNode]
-orderOutput'' v []     = []
-orderOutput'' v (w:ws) | equateNodesName v w == True = w : orderOutput'' v ws
-orderOutput'' v (w:ws) | equateNodesName v w == False = orderOutput'' v ws
+orderRow' :: VarNode -> [VarNode] -> [VarNode]
+orderRow' v []     = []
+orderRow' v (w:ws) | equateNodesName v w == True = w : orderRow' v ws
+orderRow' v (w:ws) | equateNodesName v w == False = orderRow' v ws
 
 filterTrue :: [(Bool, [VarNode])] -> [[VarNode]]
 filterTrue ((bool, vars):xs) | length xs == 0 = [[]]
@@ -312,7 +264,13 @@ extractTableData [] = []
 extractTableData (x:xs) = [extractRowData(x)] ++ extractTableData (xs)
 
 --list of varN -> String
+extractVNodeData :: [[VarNode]] -> [[String]]
+extractVNodeData [] = []
+extractVNodeData ((x:xs):xss) = extractVNodeData' (x:xs) : extractVNodeData xss
 
+extractVNodeData' :: [VarNode] -> [String]
+extractVNodeData' [] = []
+extractVNodeData' (x:xs) = [] : extractData(x) : extractRowData (xs) : []
 -- varN -> String
 extractRowData :: [VarNode] -> String
 extractRowData [] = ""
@@ -321,13 +279,13 @@ extractRowData (x:xs) = extractData(x) ++ extractRowData (xs)
 -- Input list of list of cells
 -- Output a list of rows (cells combined using below function)
 tableToString :: [[String]] -> [String]
---tableToString [] = []
+tableToString [] = []
 tableToString [a] = [] : rowToString a : []
 tableToString [a,b] = [] : rowToString a : rowToString b : []
 tableToString (x:xs) = [] : rowToString x : tableToString xs
 
 rowToString :: [String] -> String
-rowToString [] = []
+rowToString [] = ""
 --rowToString [] = ""
 rowToString [a] = a
 rowToString [a,b] = a ++ "," ++ b
@@ -337,13 +295,15 @@ rowToString (x:xs) = x ++ "," ++ rowToString xs
 {-=============================== MAIN EVALUATION ==============================-}
 {-==============================================================================-}
 
-executeQuery :: [[String]] -> ParseTree -> [[String]] -- Elliott: Changed data type here; NB: orderOutput(ordVars)([x]) <--- may need this in replacement of [x] for later
+--              ORDER OF VARS   ROW IN     ROW OUT, REARRANGED COLUMNS
+
+executeQuery :: [[String]] -> ParseTree -> [[String]] -- Elliott: Changed data type here; NB: orderRow(ordVars)([x]) <--- may need this in replacement of [x] for later
 executeQuery [] _ = [] --                                                                  getAssignPTreeState(pTree, [String]) -> [VarNode] NB: this calls populateTRee etc
-executeQuery (x:xs) (Marker ordVars oTree)          | (evaluateParseTree (Marker ordVars oTree) (x)) == True = [x] ++ executeQuery (xs) (pTree)
-                                                    | (evaluateParseTree (Marker ordVars oTree) (x)) == False = executeQuery (xs) (pTree)
+executeQuery (x:xs) (Marker ordVars oTree)          | (evaluateParseTree pTree (x)) == True = [order(assignReturnPTState (pTree))] ++ executeQuery (xs) (pTree)
+                                                    | (evaluateParseTree pTree (x)) == False = executeQuery (xs) (pTree)
                                                     where pTree = (Marker ordVars oTree)
-executeQuery (x:xs) (MarkerNested ordVars eTree)    | (evaluateParseTree (MarkerNested ordVars eTree) (x)) == True = [x] ++ executeQuery (xs) (pTree)
-                                                    | (evaluateParseTree (MarkerNested ordVars eTree) (x)) == False = executeQuery (xs) (pTree)
+executeQuery (x:xs) (MarkerNested ordVars eTree)    | (evaluateParseTree pTree (x)) == True = [order(assignReturnPTState (pTree))] ++ executeQuery (xs) (pTree)
+                                                    | (evaluateParseTree pTree (x)) == False = executeQuery (xs) (pTree)
                                                     where pTree = (MarkerNested ordVars eTree)
 
 evaluateParseTree :: ParseTree -> [String] -> Bool
@@ -573,17 +533,17 @@ countVarNodes (SingleNode varN) = 1
 countVarNodes (EmptyVT empty) = 0
 
 
-extractPTableNames :: ParseTree -> [String]
+extractPTableNames :: ParseTree -> String
 extractPTableNames (Marker (vars) (oTree)) = extractTableNames(getOpRelationNodesOut(oTree))
 extractPTableNames (MarkerNested (vars) (eTree)) = extractETableNames(eTree)
 
-extractETableNames :: ExistTree -> [String]
+extractETableNames :: ExistTree -> String
 extractETableNames (ExistVar (vTree) (oTree)) = extractTableNames(getOpRelationNodesOut(oTree))
 extractETableNames (ExistNest (vTree) (eTree) (oTree)) = extractTableNames(getOpRelationNodesOut(oTree))
 
-extractTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodesOut, possibly needs to be reverse
-extractTableNames [] = []
-extractTableNames ( (RelationNode (tbl) (vTree)) :xs) = (tbl) : extractTableNames xs
+extractTableNames :: [OpTree] -> String -- takes output from liftRelationNodesOut, possibly needs to be reverse
+extractTableNames [] = ""
+extractTableNames ( (RelationNode (tbl) (vTree)) :xs) = (tbl) ++ extractTableNames xs
 
 assignVarTreeLoc :: VarTree -> String -> VarTree
 assignVarTreeLoc (SingleNode (Vari (loc) (dat) (name))) x = (SingleNode (Vari (x) (dat) (name)))

@@ -306,6 +306,19 @@ executeQuery (x:xs) (MarkerNested ordVars eTree)    | (evaluateParseTree pTree (
                                                     | (evaluateParseTree pTree (x)) == False = executeQuery (xs) (pTree)
                                                     where pTree = (MarkerNested ordVars eTree)
 
+-----JAMES CHECK HERE PLEASE ----------
+-----NB FOR YOU JAMES HERE ARE THE METHODS I MADE FOR ABOVE-------
+
+order :: [VarNode] -> [String]
+order [] = []
+order (x:xs) = extractData x : order xs
+
+assignReturnPTState :: ParseTree -> [VarNode]
+assignReturnPTState (Marker (vars) (oTree)) = getTreeState((populateTree oTree (getVarNames(vars)) 0))
+assignReturnPTState (MarkerNested (vars) (eTree)) = getETreeState(populateExisTree eTree (getVarNames(vars)))
+
+-----------------------------------------------------------
+
 evaluateParseTree :: ParseTree -> [String] -> Bool
 evaluateParseTree (Marker ordVars oTree) rList          = (areRepeats(getTreeState(thisTree)) 0) && (evaluate (thisTree))
                                                         where thisTree = populateTree (sanitiseOpTree(oTree)) (rList) (0)
@@ -395,6 +408,7 @@ getPTreeState :: ParseTree -> [VarNode]
 getPTreeState (Marker (vars) (oTree)) = getTreeState (oTree)
 getPTreeState (MarkerNested (vars) (eTree) ) = getETreeState (eTree)
 
+--assignReturnPTState
 assignReturnPTState :: ParseTree -> [VarNode]
 assignReturnPTState (Marker (vars) (oTree)) = getTreeState((populateTree oTree (getVarNames(vars)) 0))
 assignReturnPTState (MarkerNested (vars) (eTree)) = getETreeState(populateExisTree eTree (getVarNames(vars)))

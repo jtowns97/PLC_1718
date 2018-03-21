@@ -69,6 +69,7 @@ main = do
     contentA <- readContents("A.csv")
     contentB <- readContents("B.csv")
 
+    putStr("I am running")
     let tableA = buildTable(contentA)
     let tableB = buildTable(contentB)
     let allTables = tableA : tableB : []
@@ -79,11 +80,14 @@ main = do
     let lhsVar = getOrderOfVars(pTree)
     let bigTable = crossMulti(allTables)
     -- All works and as expected up to here.
-    putStr("Starting query")
+    putStr("I dont always hang")
     let answer = executeQuery (bigTable) (pTree)
-    putStr("Query executed")
-    mapM_ putStrLn (tableToString(answer))
-
+    let output = prettyPrint pTree answer
+    printElements output
+    --putStr("I do always hang")
+    
+    
+    --OR THIS
    -- return putStr("Execution completed!!!!!!!")
    -- return "someting"
 {-==============================================================================-}
@@ -237,7 +241,11 @@ getOrderOfVars (Marker (list) (opTree)) = list
 getOrderOfVars (MarkerNested (list) (existTree)) = list
 getOrderOfVars (EmptyPT (emptyTree)) = []
 
---              ORDER OF VARS   ROW IN     ROW OUT, REARRANGED COLUMNS
+orderTable :: [String] -> [[VarNode]] -> [[String]]
+orderTable [] _ = []
+orderTable order (row:rs) = orderRow order row : orderTable order rs
+
+--          ORDER OF VARS   ROW IN     ROW OUT, REARRANGED COLUMNS
 orderRow :: [String] -> [VarNode] -> [String] -- Outputs list of rows (i.e. one table)
 orderRow [] _ = []
 orderRow (o:os) list = orderRow' o list ++ orderRow os list
@@ -290,7 +298,7 @@ tableToString (x:xs) = [] : rowToString x : tableToString xs
 rowToString :: [String] -> String
 rowToString [] = ""
 --rowToString [] = ""
-rowToString [a] = a
+rowToString [a] = a ++ "\n"
 rowToString [a,b] = a ++ "," ++ b
 rowToString (x:xs) = x ++ "," ++ rowToString xs 
 
@@ -298,24 +306,30 @@ rowToString (x:xs) = x ++ "," ++ rowToString xs
 {-=============================== MAIN EVALUATION ==============================-}
 {-==============================================================================-}
 
---              ALL ROWS    EXPRESSION      OUTPUT
-executeQuery :: [[String]] -> ParseTree -> [[String]] -- Elliott: Changed data type here; NB: orderRow(ordVars)([x]) <--- may need this in replacement of [x] for later
-executeQuery [] _ = [] --                                                                  getAssignPTreeState(pTree, [String]) -> [VarNode] NB: this calls populateTRee etc
-executeQuery (x:xs) (Marker ordVars oTree)          | (evaluateParseTree pTree (x)) == True = [] : (orderRow (getOrdVars(pTree)) pop) : executeQuery (xs) (pTree)
-                                                    | (evaluateParseTree pTree (x)) == False = executeQuery (xs) (pTree)
-                                                    where   pTree = (Marker ordVars oTree)
-                                                            pop = assignReturnPTState pTree x
-executeQuery (x:xs) (MarkerNested ordVars eTree)    | (evaluateParseTree pTree (x)) == True = [] : (orderRow (getOrdVars(pTree)) pop) : executeQuery (xs) (pTree)
-                                                    | (evaluateParseTree pTree (x)) == False = executeQuery (xs) (pTree)
-                                                    where   pTree = (MarkerNested ordVars eTree)
-                                                            pop = assignReturnPTState pTree x
+printElements :: [String] -> IO ()
+printElements [] = putStr("")
+printElements (x:xs) = do   putStrLn x
+                            printElements xs
+--          extractOrderVars    Table       Output
+prettyPrint :: ParseTree -> [[VarNode]] -> [String]
+prettyPrint pTree table = tableToString(orderTable order table)
+                        where order = getOrdVars pTree
 
------JAMES CHECK HERE PLEASE ----------
+--              TABLE -> EXP -> ORDERED TABLE OUTPUT
+executeQuery :: [[String]] -> ParseTree -> [[VarNode]] -- Elliott: Changed data type here
+executeQuery [] _ = []
+--executeQuery (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [getPTreeState(pTree)] ++ executeQuery (xs) (pTree)
+executeQuery (row:remainingRows) (pTree)    | (evaluateParseTree (pTree) (row)) == True   = output
+                                            | (evaluateParseTree (pTree) (row)) == False  = executeQuery (remainingRows) (pTree)
+                                            where   output = populatedRow : executeQuery (remainingRows) (pTree)
+                                                    populatedRow = assignPTState pTree row
+
 -----NB FOR YOU JAMES HERE ARE THE METHODS I MADE FOR ABOVE-------
 
-assignReturnPTState :: ParseTree -> [String] -> [VarNode]
-assignReturnPTState (Marker (vars) (oTree)) strings= getTreeState((populateTree (sanitiseOpTree(oTree)) (strings) 0))
-assignReturnPTState (MarkerNested (vars) (eTree)) strings = getETreeState(populateExisTree (sanitiseExisTree(eTree)) (strings))
+--                      EXP         ROW         LIST OF VNODES
+assignPTState :: ParseTree -> [String] -> [VarNode]
+assignPTState (Marker (vars) (oTree)) strings= getTreeState((populateTree (sanitiseOpTree(oTree)) (strings) 0))
+assignPTState (MarkerNested (vars) (eTree)) strings = getETreeState(populateExisTree (sanitiseExisTree(eTree)) (strings))
 
 getOrdVars :: ParseTree -> [String]
 getOrdVars (Marker (vars) (oTree)) = getOrdVars' vars
@@ -415,7 +429,7 @@ getPTreeState :: ParseTree -> [VarNode]
 getPTreeState (Marker (vars) (oTree)) = getTreeState (oTree)
 getPTreeState (MarkerNested (vars) (eTree) ) = getETreeState (eTree)
 
---assignReturnPTState
+--assignPTState
 getVarNames :: [VarNode] -> [String]
 getVarNames [] = [] 
 getVarNames [(Vari (loc) (dat) (name))] = [dat]

@@ -370,7 +370,7 @@ data Exp = Evaluate Variables Query
     | EvalExisExt Variables Existential Query
     deriving Show
 
-data Variables = Comma Variables Variables
+data Variables = Comma String Variables
     | VarSingle String
     deriving Show
 

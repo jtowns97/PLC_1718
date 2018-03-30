@@ -24,16 +24,15 @@ action_1 (6) = happyGoto action_2
 action_1 _ = happyFail
 
 action_2 (20) = happyShift action_8
-action_2 (21) = happyShift action_7
 action_2 _ = happyFail
 
+action_3 (21) = happyShift action_7
 action_3 _ = happyReduce_7
 
 action_4 (22) = happyAccept
 action_4 _ = happyFail
 
 action_5 (20) = happyShift action_6
-action_5 (21) = happyShift action_7
 action_5 _ = happyFail
 
 action_6 (9) = happyShift action_10
@@ -81,7 +80,6 @@ action_15 (6) = happyGoto action_16
 action_15 _ = happyFail
 
 action_16 (14) = happyShift action_28
-action_16 (21) = happyShift action_7
 action_16 _ = happyFail
 
 action_17 (16) = happyShift action_19
@@ -91,7 +89,6 @@ action_17 (19) = happyShift action_22
 action_17 _ = happyReduce_3
 
 action_18 (15) = happyShift action_27
-action_18 (21) = happyShift action_7
 action_18 _ = happyFail
 
 action_19 (9) = happyShift action_10
@@ -236,7 +233,7 @@ happyReduction_5 (_ `HappyStk`
 happyReduce_6 = happySpecReduce_3  6 happyReduction_6
 happyReduction_6 (HappyAbsSyn6  happy_var_3)
 	_
-	(HappyAbsSyn6  happy_var_1)
+	(HappyTerminal (TokenVar _ happy_var_1))
 	 =  HappyAbsSyn6
 		 (Comma happy_var_1 happy_var_3
 	)

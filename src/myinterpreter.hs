@@ -295,7 +295,7 @@ module Main where
     rowToString (x:xs) = x ++ "," ++ rowToString xs 
 
     assignPTState :: ParseTree -> [String] -> [VarNode]
-    assignPTState (Marker (vars) (oTree)) strings= getTreeState((populateTree (sanitiseOpTree(oTree)) (strings) 0))
+    assignPTState (Marker (vars) (oTree)) strings = getTreeState((populateTree (sanitiseOpTree(oTree)) (strings) 0))
     assignPTState (MarkerNested (vars) (eTree)) strings = getETreeState(populateExisTree (sanitiseExisTree(eTree)) (strings))
 
     executeQuery :: [[String]] -> ParseTree -> [[VarNode]] -- Elliott: Changed data type here

@@ -1,3 +1,7 @@
+{-# LANGUAGE TemplateHaskell, ViewPatterns, PartialTypeSignatures #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
+
+--{-# OPTIONS -F -pgmF debug-pp #-}
 module Main where
     import System.IO
     import System.Environment
@@ -12,6 +16,7 @@ module Main where
     import Data.Typeable
     import Data.Maybe
     import Data.Ord
+   -- import Debug
     import qualified Data.ByteString.Char8 as C
     
     
@@ -295,11 +300,14 @@ module Main where
 
     executeQuery :: [[String]] -> ParseTree -> [[VarNode]] -- Elliott: Changed data type here
     executeQuery [] _ = []
-    executeQuery (row:remainingRows) (pTree)    | (evaluateParseTree (pTree) (row)) == True   = output
+    executeQuery (row:remainingRows) (pTree)    | (evaluateParseTree (pTree) (row)) == True   = output ++ executeQuery (remainingRows) (pTree)
                                                 | (evaluateParseTree (pTree) (row)) == False  = executeQuery (remainingRows) (pTree)
                                                 where   output = populatedRow : executeQuery (remainingRows) (pTree)
                                                         populatedRow = assignPTState pTree row
 
+
+
+    --Whats this saying elliott idk wat it does. Needed?
     executeQuery''''' :: [[String]] -> ParseTree -> [[String]] -- Elliott: Changed data type here
     executeQuery''''' [] _ = []
     executeQuery''''' (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [x] ++ executeQuery''''' (xs) (pTree)

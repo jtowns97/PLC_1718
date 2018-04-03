@@ -21,9 +21,11 @@ description:         Please see the README on Github at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
+- debug
 
 library:
   source-dirs: src
+# build-tool-depends: debug-pp:debug-pp
 
 executables:
   my-project-exe:

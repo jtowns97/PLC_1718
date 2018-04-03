@@ -26,3 +26,17 @@ populateTree ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("
 
 --Works?:
 getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))) )
+
+
+
+--areRepeats debugging:
+
+--getRepeats (WORKS)
+getRepeats (getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("James") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("James") ("x1"))))) )) (1)
+--Output = [Vari "A" "James" "x1",Vari "A" "James" "x1"]
+getRepeats (getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("James") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("Towns") ("x2"))))) )) (1)
+
+
+--WORKS
+matchNodeFromName [Vari "A" "James" "x1",Vari "A" "James" "x1"] "x1"  
+

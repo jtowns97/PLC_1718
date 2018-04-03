@@ -16,7 +16,7 @@ module Main where
     import Data.Typeable
     import Data.Maybe
     import Data.Ord
-   -- import Debug
+    import Debug
     import qualified Data.ByteString.Char8 as C
     
     
@@ -324,10 +324,11 @@ module Main where
     evaluateExis :: ExistTree -> [String] -> Bool
     evaluateExis eTree strL = (areRepeats(getETreeState(thisTree)) 0) && (checkExistential(thisTree))
                             where thisTree = populateExisTree (sanitiseExisTree(eTree)) (strL)
-    
+    --Are all nodes in list . NB ************* Not sure of ">", ">=" ie what combination *******************
     areRepeats :: [VarNode] -> Int -> Bool
-    areRepeats [] _ = True
-    areRepeats ( (Vari (loc) (dat) (name)) : xs) ind    = checkAllDataSame (matches) (dat) && (areRepeats (totalList) (ind+1))
+    areRepeats [] _ = True --Is this ever called??
+    areRepeats ( (Vari (loc) (dat) (name)) : xs) ind    | length totalList <= ind =  checkAllDataSame (matches) (dat) && (areRepeats (totalList) (ind+1))
+                                                        | length totalList > ind = checkAllDataSame (matches) (dat)
                                                         where   repeats = getRepeats (totalList) (ind+1)
                                                                 matches = matchNodeFromName repeats name   
                                                                 totalList = ( (Vari (loc) (dat) (name)) : xs)

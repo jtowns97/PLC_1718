@@ -13,16 +13,21 @@ evaluateParseTree (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") 
 
 --HANG OCCURS HERE
 areRepeats(getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))) )) 0
+areRepeats(getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("James") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("James") ("x1"))))) )) 0
+areRepeats(getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("James") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("James") ("x2"))))) )) 0
 
 --Should be true: (WORKS)
 evaluate (    populateTree ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2")))))) ["James","Towns"] (0)     )
 --Should be false: (WORKS)
 evaluate((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))))
 
-
+--Dont work right
 populateTree (sanitiseOpTree((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))))) (["James","Towns"]) (0)
 
 populateTree ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2")))))) ["James","Towns"] (0)
+
+--Error here. Indexing
+populateVarTree (CommaNode (Vari "A" "*" "x1") (CommaNode (Vari "A" "*" "x2") (SingleNode (Vari "A" "*" "x3")))) ["1a", "2b", "3c"] 0
 
 --Works?:
 getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))) )
@@ -39,4 +44,11 @@ getRepeats (getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari (
 
 --WORKS
 matchNodeFromName [Vari "A" "James" "x1",Vari "A" "James" "x1"] "x1"  
+
+
+
+checkAllDataSame ([Vari "A" "James" "x1",Vari "A" "James" "x1"]) ("James")
+
+
+
 

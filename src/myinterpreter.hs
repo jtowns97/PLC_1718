@@ -16,8 +16,15 @@ module Main where
     import Data.Typeable
     import Data.Maybe
     import Data.Ord
-    import Debug
+    import Debug.Trace
     import qualified Data.ByteString.Char8 as C
+
+
+    {-==============================================================================-}
+    {-================================== DEBUGGING =================================-}
+    {-==============================================================================-}
+
+
     
     
     {-==============================================================================-}
@@ -146,6 +153,11 @@ module Main where
     {-==============================================================================-}
     {-============================== TABLE OPERATIONS ==============================-}
     {-==============================================================================-}
+
+    getNthElement :: Int -> [String] -> String
+    getNthElement _ [] = "THIS IS AN ERROR IN getNthElement" --remove this
+    getNthElement 1 (x : _) = x
+    getNthElement ind (_:xs) = getNthElement (ind - 1) xs
     
     getNthVNode :: Int -> [VarNode] -> Maybe VarNode
     getNthVNode _ []       = Data.Maybe.Nothing
@@ -332,6 +344,9 @@ module Main where
                                                         where   repeats = getRepeats (totalList) (ind+1)
                                                                 matches = matchNodeFromName repeats name   
                                                                 totalList = ( (Vari (loc) (dat) (name)) : xs)
+
+    --Rewritten areRepeats
+    --checkRepeats :: [VarNode] -> 
     
     matchNodeFromName :: [VarNode] -> String -> [VarNode]
     matchNodeFromName [] _ = []
@@ -436,7 +451,7 @@ module Main where
                                                         
     --populateParseTree :: ParseTree -> [String] ->
     
-    populateExisTree :: ExistTree -> [String] -> ExistTree
+    populateExisTree :: ExistTree -> [String] ->  ExistTree
     populateExisTree (ExistVar (vTree) (oTree)) rList = (ExistVar (populateVarTree (vTree) (rList) (0) ) (populateTree (oTree) (rList) (0) ))
     populateExisTree (ExistNest (vTree) (eTree) (oTree)) rList = (ExistNest (populateVarTree (vTree) (rList) (0) ) (populateExisTree (eTree) (rList) ) (populateTree (oTree) (rList) (0)))
     
@@ -468,7 +483,7 @@ module Main where
     populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) ind | isNodePopulated (Vari (loc) (dat) (name)) == False = (SingleNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name) ))
     populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) ind | isNodePopulated (Vari (loc) (dat) (name)) == True = (SingleNode (Vari (loc) (dat) (name)))
     populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind  | isNodePopulated (Vari (loc) (dat) (name)) == False = ( CommaNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name)) ( populateVarTree (remTree) (x:xs) (ind+1) ) )
-    populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind  | isNodePopulated (Vari (loc) (dat) (name)) == True = (CommaNode (Vari (loc) (dat) (name)) (remTree))
+    populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind  | isNodePopulated (Vari (loc) (dat) (name)) == True = (CommaNode (Vari (loc) (dat) (name)) (remTree)) --add recursive call here
     
     -- doesNameExistInVList :: String -> [VarNode] -> Bool
     -- doesNameExistInVList _  (x:xs) [] = False
@@ -477,10 +492,15 @@ module Main where
     
     --If name already exists, assign variable with same name to the next unassigned 
     --Add syntax error here?
+    {- OLD nextVar
     generateNextVarData :: [String] -> Int -> String
-    generateNextVarData (x:xs) ind  | ind < length(x:xs) = ( (x:xs)!!(ind + 1) ) --possibly unsafe
+    generateNextVarData (x:xs) ind  | ind < length(x:xs) = ( (x:xs)!!(ind + 1) ) --possibly unsafe, maybe use getNth
                                     | ind >= length(x:xs) = "THIS IS AN ERROR AND SHOULD NOT BE HERE"
-    
+    -}
+    generateNextVarData :: [String] -> Int -> String
+    generateNextVarData (x:xs) ind  | ind < length(x:xs) = ( getNthElement (ind+1) (x:xs) ) --possibly unsafe, maybe use getNth
+                                    | ind >= length(x:xs) = "THIS IS AN ERROR AND SHOULD NOT BE HERE (genNextVar)"
+
     -- getDataMatchingName :: String -> [VarNode] -> VarNode
     
     -- doesVarNameExist :: [VarNode] -> String -> Bool

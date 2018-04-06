@@ -452,6 +452,19 @@ module Main where
 
     getPopTotal :: OpTree -> OpTree -> Int
     getPopTotal querP querQ = countPopNodes (querP) + countPopNodes (querQ)
+
+
+
+    -- ::::::populateTree attempt 2::::::
+    popTree :: OpTree -> [String] -> Int -> OpTree
+    popTree (VarOp (vTree)) rList ind                      = popSubTree $ (VarOp (vTree)) (rList) (ind)
+    popTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (popSubTree (querA) (rList) (ind + (getPopTotal querA querB))) (populateTree (querB) (rList) (ind + (getPopTotal querA querB)) ) )
+    popTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (popSubTree(querX) (rList) (ind + (getPopTotal querX querY))) (populateTree(querY) (rList) (ind + (getPopTotal querX querY))) )
+    popTree (RelationNode (tbl) (vTree)) rList ind         = popSubTree $ (RelationNode (tbl) (vTree)) (rList) (ind)
+-- wat do when multiple conjunctions etc?? come back here
+    popSubTree :: OpTree -> [String] -> Int -> OpTree
+    popSubTree (VarOp (vTree)) rList ind  = (VarOp (populateVarTree (vTree) (rList) (ind)))
+    -- ::::::::::::::::::::::::::::::::::
                                                         
     --populateParseTree :: ParseTree -> [String] ->
     

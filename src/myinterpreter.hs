@@ -440,14 +440,18 @@ module Main where
     -- getTreeStateEx ExistNest (VarTree) (ExistTree)
     -- getTreeStateEx EmptyET (EmptyTree)
     
-    
+    --Issues: 1 : When VarOp is met, works fine. However with multiple vTrees spread across conjunctionNode etc, it cant remember the "index" value across diff trees
+    --Issues:   : Order of execution means getPopTotal is called BEFORE populateTree so will return 0 and hence fuck up the multi tree issue..i think
     populateTree :: OpTree -> [String] -> Int -> OpTree
     populateTree (VarOp (vTree)) rList ind                      = (VarOp (populateVarTree (vTree) (rList) (ind)))
-    populateTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (populateTree (querA) (rList) (ind+popsC)) (populateTree (querB) (rList) (popsC+ind) ) )
-                                                        where   popsC = countPopNodes (querA) + countPopNodes (querB)
-    populateTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (populateTree(querX) (rList) (popsX+ind)) (populateTree(querY) (rList) (popsX+ind)) )
-                                                        where   popsX = countPopNodes (querX) + countPopNodes (querY)
+    populateTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (populateTree (querA) (rList) (ind + (getPopTotal querA querB))) (populateTree (querB) (rList) (ind + (getPopTotal querA querB)) ) )
+                                                       -- where   popsC = countPopNodes (querA) + countPopNodes (querB)
+    populateTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (populateTree(querX) (rList) (ind + (getPopTotal querX querY))) (populateTree(querY) (rList) (ind + (getPopTotal querX querY))) )
+                                                     --   where   popsX = countPopNodes (querX) + countPopNodes (querY)
     populateTree (RelationNode (tbl) (vTree)) rList ind         = populateRelation (RelationNode (tbl) (vTree)) rList ind
+
+    getPopTotal :: OpTree -> OpTree -> Int
+    getPopTotal querP querQ = countPopNodes (querP) + countPopNodes (querQ)
                                                         
     --populateParseTree :: ParseTree -> [String] ->
     

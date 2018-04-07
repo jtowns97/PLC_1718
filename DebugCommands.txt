@@ -4,11 +4,17 @@
 (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))))  )
 --OpTree example
 (ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2")))))
+--Equate example
+(EquateNode (VarOp (SingleNode ((Vari "A" "J" "x1")))) (VarOp (SingleNode ((Vari "B" "J" "x2")) ) ) )
+--VarTree example
+(CommaNode (Vari "A" "*" "x1") (CommaNode (Vari "A" "*" "x2") (SingleNode (Vari "A" "*" "x3"))))
 
 
 executeQuery [["James", "Towns"],["Perrine","Lindsay"]] (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))))  )
 
 evaluateParseTree (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))))  ) (["James","Towns"])
+
+evaluateParseTree (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) (EquateNode (VarOp (SingleNode ((Vari "A" "J" "x1")))) (VarOp (SingleNode ((Vari "B" "J" "x2")) ) ) )  ) (["James","Towns"])
 
 
 --HANG OCCURS HERE
@@ -26,7 +32,7 @@ populateTree (sanitiseOpTree((ConjunctionNode(RelationNode("A")(SingleNode (Vari
 
 populateTree ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2")))))) ["James","Towns"] (0)
 
---Error here. Indexing
+--Error here. Indexing. fixed
 populateVarTree (CommaNode (Vari "A" "*" "x1") (CommaNode (Vari "A" "*" "x2") (SingleNode (Vari "A" "*" "x3")))) ["1a", "2b", "3c"] 0
 
 --Works?:

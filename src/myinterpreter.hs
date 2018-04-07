@@ -328,19 +328,21 @@ module Main where
 
     -- getNodeFromRow :: 
     
-    evaluateParseTree :: ParseTree -> [String] -> Bool
-    evaluateParseTree (Marker ordVars oTree) rList          = (areRepeats(getTreeState(thisTree)) 0) && (evaluate (thisTree))
-                                                            where thisTree = populateTree (sanitiseOpTree(oTree)) (rList) (0)
+    evaluateParseTree :: ParseTree -> [String] -> Bool --(areRepeats(getTreeState(thisTree)) 0) && <-- add back to below line as condition
+    evaluateParseTree (Marker ordVars oTree) rList          =  (evaluate (thisTree))
+                                                            where thisTree = popTree (sanitiseOpTree(oTree)) (rList) (0)
     evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList)
+                                                            --where thisTree = popTree (sanitiseExTree(oTree)) (rList) (0) ****TODO****
     
     evaluateExis :: ExistTree -> [String] -> Bool
     evaluateExis eTree strL = (areRepeats(getETreeState(thisTree)) 0) && (checkExistential(thisTree))
                             where thisTree = populateExisTree (sanitiseExisTree(eTree)) (strL)
+
     --Are all nodes in list . NB ************* Not sure of ">", ">=" ie what combination *******************
     areRepeats :: [VarNode] -> Int -> Bool
     areRepeats [] _ = True --Is this ever called??
-    areRepeats ( (Vari (loc) (dat) (name)) : xs) ind    | length totalList <= ind =  checkAllDataSame (matches) (dat) && (areRepeats (totalList) (ind+1))
-                                                        | length totalList > ind = checkAllDataSame (matches) (dat)
+    areRepeats ( (Vari (loc) (dat) (name)) : xs) ind    | length totalList < ind =  checkAllDataSame (matches) (dat) && (areRepeats (totalList) (ind+1))
+                                                        | length totalList >= ind = checkAllDataSame (matches) (dat)
                                                         where   repeats = getRepeats (totalList) (ind+1)
                                                                 matches = matchNodeFromName repeats name   
                                                                 totalList = ( (Vari (loc) (dat) (name)) : xs)
@@ -462,13 +464,10 @@ module Main where
     popTree (VarOp (vTree)) rList ind                      = popSubTree  (VarOp (vTree)) (rList) (ind)
     popTree (ConjunctionNode (querA) (querB)) rList ind    | isOpTreePopulated (querA) == False = (ConjunctionNode (popSubTree (querA) (rList) (ind + (getPopTotal querA querB))) (populateTree (querB) (rList) (ind + (countNodes (querA))) ) )
                                                            | isOpTreePopulated (querA) == True =  (ConjunctionNode (querA) (popSubTree (querB) (rList) (ind + countNodes (querA)) )) -- These guards to be added to equate case as well if works
-    popTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (popSubTree (querX) (rList) (ind + (getPopTotal querX querY))) (populateTree(querY) (rList) (ind + (getPopTotal querX querY))) )
+    popTree (EquateNode (querX) (querY)) rList ind         | isOpTreePopulated (querX) == False =  (EquateNode (popSubTree (querX) (rList) (ind)) (populateTree(querY) (rList) (ind + (countNodes (querY) ))) )
+                                                           | isOpTreePopulated (querX) == True = (EquateNode (querX) (popSubTree (querY) (rList) (ind + (countNodes(querX))))) 
     popTree (RelationNode (tbl) (vTree)) rList ind         = popSubTree  (RelationNode (tbl) (vTree)) (rList) (ind)
 
-
-
--- wat do in case at RIGHT subtree at end of tree? ie stopping condition
--- wat do when multiple conjunctions etc?? come back here -- think this will be ok
 
     popSubTree :: OpTree -> [String] -> Int -> OpTree
     popSubTree (EquateNode (querX) (querY)) rList ind       = popTree  (EquateNode (querX) (querY)) (rList) (ind)

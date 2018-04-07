@@ -455,12 +455,13 @@ module Main where
 
 
 
-    -- ::::::::::::::::::::::::::::::::::::::::::::::populateTree attempt 2:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    -- :::::::::::::::::::::::::::::::::::::::::::::: populateTree attempt 2 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
     popTree :: OpTree -> [String] -> Int -> OpTree
     popTree (VarOp (vTree)) rList ind                      = popSubTree  (VarOp (vTree)) (rList) (ind)
-    popTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (popSubTree (querA) (rList) (ind + (getPopTotal querA querB))) (populateTree (querB) (rList) (ind + (getPopTotal querA querB)) ) )
+    popTree (ConjunctionNode (querA) (querB)) rList ind    | isOpTreePopulated (querA) == False = (ConjunctionNode (popSubTree (querA) (rList) (ind + (getPopTotal querA querB))) (populateTree (querB) (rList) (ind + (getPopTotal querA querB)) ) )
+                                                           | isOpTreePopulated (querA) == True =  (ConjunctionNode (querA) (popSubTree (querB) (rList) (ind + countPopNodes (querA)) )) -- These guards to be added to equate case as well if works
     popTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (popSubTree (querX) (rList) (ind + (getPopTotal querX querY))) (populateTree(querY) (rList) (ind + (getPopTotal querX querY))) )
     popTree (RelationNode (tbl) (vTree)) rList ind         = popSubTree  (RelationNode (tbl) (vTree)) (rList) (ind)
 
@@ -468,6 +469,7 @@ module Main where
 
 -- wat do in case at RIGHT subtree at end of tree? ie stopping condition
 -- wat do when multiple conjunctions etc?? come back here -- think this will be ok
+
     popSubTree :: OpTree -> [String] -> Int -> OpTree
     popSubTree (EquateNode (querX) (querY)) rList ind       = popTree  (EquateNode (querX) (querY)) (rList) (ind)
     popSubTree (ConjunctionNode (querA) (querB)) rList ind  = popTree  (ConjunctionNode (querA) (querB)) (rList) (ind)
@@ -533,10 +535,16 @@ module Main where
     -- getDataMatchingName :: String -> [VarNode] -> VarNode
     
     -- doesVarNameExist :: [VarNode] -> String -> Bool
-    
+    isOpTreePopulated :: OpTree -> Bool
+    isOpTreePopulated (VarOp (vTree))                   = isTreePopulated (vTree)
+    isOpTreePopulated (RelationNode (tbl) (vTree))      = isTreePopulated (vTree)
+    isOpTreePopulated (EquateNode (querX) (querY))      = isOpTreePopulated (querX) && isOpTreePopulated (querY)
+    isOpTreePopulated (ConjunctionNode (querA) (querB)) = isOpTreePopulated (querA) && isOpTreePopulated (querB)
+
+
     isTreePopulated :: VarTree -> Bool
     isTreePopulated (SingleNode vNode) = isNodePopulated vNode
-    isTreePopulated (CommaNode vNode remTree) = isNodePopulated vNode && isTreeAssigned remTree 
+    isTreePopulated (CommaNode vNode remTree) = isNodePopulated vNode && isTreePopulated remTree 
     
     isNodePopulated :: VarNode -> Bool
     isNodePopulated (Vari (loc) (dat) (name))       | dat == "*"  = False-- Represents unassiged null value 

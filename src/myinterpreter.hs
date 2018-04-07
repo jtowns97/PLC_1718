@@ -460,8 +460,8 @@ module Main where
 
     popTree :: OpTree -> [String] -> Int -> OpTree
     popTree (VarOp (vTree)) rList ind                      = popSubTree  (VarOp (vTree)) (rList) (ind)
-    popTree (ConjunctionNode (querA) (querB)) rList ind    | isOpTreePopulated (querA) == False = (ConjunctionNode (popSubTree (querA) (rList) (ind + (getPopTotal querA querB))) (populateTree (querB) (rList) (ind + (getPopTotal querA querB)) ) )
-                                                           | isOpTreePopulated (querA) == True =  (ConjunctionNode (querA) (popSubTree (querB) (rList) (ind + countPopNodes (querA)) )) -- These guards to be added to equate case as well if works
+    popTree (ConjunctionNode (querA) (querB)) rList ind    | isOpTreePopulated (querA) == False = (ConjunctionNode (popSubTree (querA) (rList) (ind + (getPopTotal querA querB))) (populateTree (querB) (rList) (ind + (countNodes (querA))) ) )
+                                                           | isOpTreePopulated (querA) == True =  (ConjunctionNode (querA) (popSubTree (querB) (rList) (ind + countNodes (querA)) )) -- These guards to be added to equate case as well if works
     popTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (popSubTree (querX) (rList) (ind + (getPopTotal querX querY))) (populateTree(querY) (rList) (ind + (getPopTotal querX querY))) )
     popTree (RelationNode (tbl) (vTree)) rList ind         = popSubTree  (RelationNode (tbl) (vTree)) (rList) (ind)
 
@@ -566,6 +566,18 @@ module Main where
     varToOpTree (SingleNode varN) = (VarOp (SingleNode varN))
     varToOpTree (EmptyVT emptyT) = (VarOp (EmptyVT emptyT))
     
+
+    countNodes :: OpTree -> Int
+    countNodes (ConjunctionNode (querA) (querB)) = countNodes (querA) + countNodes (querB)
+    countNodes (EquateNode (querA) (querB))      = countNodes (querA) + countNodes (querB)
+    countNodes (RelationNode (lbl) (vTree))      = countNodesV (vTree)
+    countNodes (VarOp (vTree))                   = countNodesV (vTree)
+
+    countNodesV :: VarTree -> Int
+    countNodesV (SingleNode (vNode)) = 1
+    countNodesV (CommaNode (vNode) (remTree)) = 1 + countNodesV (remTree)
+
+
     countPopNodes :: OpTree -> Int
     countPopNodes (ConjunctionNode (opTree) (opTreeX)) = countPopNodes opTree + countPopNodes opTreeX
     countPopNodes (RelationNode (string) (varTree)) = countPopNodesInVT varTree

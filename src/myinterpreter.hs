@@ -455,16 +455,28 @@ module Main where
 
 
 
-    -- ::::::populateTree attempt 2::::::
+    -- ::::::::::::::::::::::::::::::::::::::::::::::populateTree attempt 2:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
     popTree :: OpTree -> [String] -> Int -> OpTree
-    popTree (VarOp (vTree)) rList ind                      = popSubTree $ (VarOp (vTree)) (rList) (ind)
+    popTree (VarOp (vTree)) rList ind                      = popSubTree  (VarOp (vTree)) (rList) (ind)
     popTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (popSubTree (querA) (rList) (ind + (getPopTotal querA querB))) (populateTree (querB) (rList) (ind + (getPopTotal querA querB)) ) )
-    popTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (popSubTree(querX) (rList) (ind + (getPopTotal querX querY))) (populateTree(querY) (rList) (ind + (getPopTotal querX querY))) )
-    popTree (RelationNode (tbl) (vTree)) rList ind         = popSubTree $ (RelationNode (tbl) (vTree)) (rList) (ind)
--- wat do when multiple conjunctions etc?? come back here
+    popTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (popSubTree (querX) (rList) (ind + (getPopTotal querX querY))) (populateTree(querY) (rList) (ind + (getPopTotal querX querY))) )
+    popTree (RelationNode (tbl) (vTree)) rList ind         = popSubTree  (RelationNode (tbl) (vTree)) (rList) (ind)
+
+
+
+-- wat do in case at RIGHT subtree at end of tree? ie stopping condition
+-- wat do when multiple conjunctions etc?? come back here -- think this will be ok
     popSubTree :: OpTree -> [String] -> Int -> OpTree
-    popSubTree (VarOp (vTree)) rList ind  = (VarOp (populateVarTree (vTree) (rList) (ind)))
-    -- ::::::::::::::::::::::::::::::::::
+    popSubTree (EquateNode (querX) (querY)) rList ind       = popTree  (EquateNode (querX) (querY)) (rList) (ind)
+    popSubTree (ConjunctionNode (querA) (querB)) rList ind  = popTree  (ConjunctionNode (querA) (querB)) (rList) (ind)
+    popSubTree (VarOp (vTree)) rList ind                    = (VarOp (populateVarTree (vTree) (rList) (ind)))
+    popSubTree (RelationNode (tbl) (vTree)) rList ind       = (RelationNode (tbl) (populateVarTree (vTree) (rList) (ind)))
+   
+   
+   
+    -- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
                                                         
     --populateParseTree :: ParseTree -> [String] ->
     

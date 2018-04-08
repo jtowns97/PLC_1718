@@ -328,35 +328,30 @@ module Main where
 
     -- getNodeFromRow :: 
     
-    evaluateParseTree :: ParseTree -> [String] -> Bool --(areRepeats(getTreeState(thisTree)) 0) && <-- add back to below line as condition
-    evaluateParseTree (Marker ordVars oTree) rList          =  (evaluate (thisTree))
-                                                            where thisTree = popTree (sanitiseOpTree(oTree)) (rList) (0)
+    evaluateParseTree :: ParseTree -> [String] -> Bool
+    evaluateParseTree (Marker ordVars oTree) rList          = (areRepeats(getTreeState(thisTree)) 0) && (evaluate (thisTree))
+                                                            where thisTree = populateTree (sanitiseOpTree(oTree)) (rList) (0)
     evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList)
-                                                            --where thisTree = popTree (sanitiseExTree(oTree)) (rList) (0) ****TODO****
     
     evaluateExis :: ExistTree -> [String] -> Bool
     evaluateExis eTree strL = (areRepeats(getETreeState(thisTree)) 0) && (checkExistential(thisTree))
                             where thisTree = populateExisTree (sanitiseExisTree(eTree)) (strL)
-
     --Are all nodes in list . NB ************* Not sure of ">", ">=" ie what combination *******************
     areRepeats :: [VarNode] -> Int -> Bool
     areRepeats [] _ = True --Is this ever called??
-    areRepeats ( (Vari (loc) (dat) (name)) : xs) ind    | length totalList < ind =  checkAllDataSame (matches) (dat) && (areRepeats (totalList) (ind+1))
-                                                        | length totalList >= ind = checkAllDataSame (matches) (dat)
+    areRepeats ( (Vari (loc) (dat) (name)) : xs) ind    | length totalList <= ind =  checkAllDataSame (matches) (dat) && (areRepeats (totalList) (ind+1))
+                                                        | length totalList > ind = checkAllDataSame (matches) (dat)
                                                         where   repeats = getRepeats (totalList) (ind+1)
                                                                 matches = matchNodeFromName repeats name   
                                                                 totalList = ( (Vari (loc) (dat) (name)) : xs)
-
-    --Rewritten areRepeats
-    --checkRepeats :: [VarNode] -> 
-    
+                                                                    
     matchNodeFromName :: [VarNode] -> String -> [VarNode]
     matchNodeFromName [] _ = []
     matchNodeFromName ( (Vari (loc) (dat) (nameX)) : xs) name   | name == nameX = [(Vari (loc) (dat) (name))] ++ matchNodeFromName xs name
                                                                 | name /= nameX = matchNodeFromName xs name
     
     checkAllDataSame :: [VarNode] -> String -> Bool
-    checkAllDataSame [] _= True
+    checkAllDataSame [] _ = False
     checkAllDataSame ((Vari (loc) (datA) (name)):xs) dat = ( dat == datA ) && ( checkAllDataSame xs dat)
     
     getRepeats :: [VarNode] -> Int ->  [VarNode] --return repeated namez
@@ -365,6 +360,29 @@ module Main where
                             | (ind <= length(x:xs)) && (countInstancesInVarList (fromJust(getNthVNode (ind) (x:xs) )) (x:xs) == 1) = getRepeats (x:xs) (ind+1)
                             | otherwise = [] -- should never be called
     
+    --Takes a list of varnodes
+    -- Checks every varnode to every varnode and sees if the data within varnode matches only when name matches.
+    -- True when all varnodes have matching values where data and name
+    --Rewritten areRepeats
+
+    checkRepeats :: [VarNode] -> Bool
+    checkRepeats (Vari (loc) (dat) (name):vs) = checkRepeats' (Vari (loc) (dat) (name)) vs && checkRepeats vs
+
+    checkRepeats' :: VarNode -> [VarNode] -> Bool
+    checkRepeats' (Vari (loc) (dat) (name)) (Vari (locL) (datL) (nameL):vs) = equateDataAndName ((Vari (loc) (dat) (name)) (Vari (locL) (datL) (nameL)) && checkRepeats' (Var (loc) (dat) (name)) vs
+
+    groupRepeats :: [VarNode] -> [[VarNode]]
+    groupRepeats (Vari (loc) (dat) (name):vs) 
+
+    getOneName :: [VarNode] -> [VarNode]
+    getOneName ((Vari (loc) (dat) (name)):vs) = returnIfName name vs
+
+    returnIfName :: String -> [VarNode] -> [VarNode]
+    returnIfName name (v:vs) = returnIfName name vs ++ returnIfName' name v
+
+    returnIfName' :: String -> VarNode -> VarNode
+    returnIfName' name (Vari (loc) (dat) (nameX)) = (if (name == nameX) then (Vari (loc) (dat) (nameX)))
+
     countInstancesInVarList :: VarNode -> [VarNode] -> Int
     countInstancesInVarList vN [] = 0
     countInstancesInVarList vN (x:xs)   | (equateName vN x) == True = 1 + countInstancesInVarList (vN) (xs)
@@ -457,18 +475,19 @@ module Main where
 
 
 
-    -- :::::::::::::::::::::::::::::::::::::::::::::: populateTree attempt 2 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    -- ::::::::::::::::::::::::::::::::::::::::::::::populateTree attempt 2:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
     popTree :: OpTree -> [String] -> Int -> OpTree
     popTree (VarOp (vTree)) rList ind                      = popSubTree  (VarOp (vTree)) (rList) (ind)
-    popTree (ConjunctionNode (querA) (querB)) rList ind    | isOpTreePopulated (querA) == False = (ConjunctionNode (popSubTree (querA) (rList) (ind + (getPopTotal querA querB))) (populateTree (querB) (rList) (ind + (countNodes (querA))) ) )
-                                                           | isOpTreePopulated (querA) == True =  (ConjunctionNode (querA) (popSubTree (querB) (rList) (ind + countNodes (querA)) )) -- These guards to be added to equate case as well if works
-    popTree (EquateNode (querX) (querY)) rList ind         | isOpTreePopulated (querX) == False =  (EquateNode (popSubTree (querX) (rList) (ind)) (populateTree(querY) (rList) (ind + (countNodes (querY) ))) )
-                                                           | isOpTreePopulated (querX) == True = (EquateNode (querX) (popSubTree (querY) (rList) (ind + (countNodes(querX))))) 
+    popTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (popSubTree (querA) (rList) (ind + (getPopTotal querA querB))) (populateTree (querB) (rList) (ind + (getPopTotal querA querB)) ) )
+    popTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (popSubTree (querX) (rList) (ind + (getPopTotal querX querY))) (populateTree(querY) (rList) (ind + (getPopTotal querX querY))) )
     popTree (RelationNode (tbl) (vTree)) rList ind         = popSubTree  (RelationNode (tbl) (vTree)) (rList) (ind)
 
 
+
+-- wat do in case at RIGHT subtree at end of tree? ie stopping condition
+-- wat do when multiple conjunctions etc?? come back here -- think this will be ok
     popSubTree :: OpTree -> [String] -> Int -> OpTree
     popSubTree (EquateNode (querX) (querY)) rList ind       = popTree  (EquateNode (querX) (querY)) (rList) (ind)
     popSubTree (ConjunctionNode (querA) (querB)) rList ind  = popTree  (ConjunctionNode (querA) (querB)) (rList) (ind)
@@ -534,16 +553,10 @@ module Main where
     -- getDataMatchingName :: String -> [VarNode] -> VarNode
     
     -- doesVarNameExist :: [VarNode] -> String -> Bool
-    isOpTreePopulated :: OpTree -> Bool
-    isOpTreePopulated (VarOp (vTree))                   = isTreePopulated (vTree)
-    isOpTreePopulated (RelationNode (tbl) (vTree))      = isTreePopulated (vTree)
-    isOpTreePopulated (EquateNode (querX) (querY))      = isOpTreePopulated (querX) && isOpTreePopulated (querY)
-    isOpTreePopulated (ConjunctionNode (querA) (querB)) = isOpTreePopulated (querA) && isOpTreePopulated (querB)
-
-
+    
     isTreePopulated :: VarTree -> Bool
     isTreePopulated (SingleNode vNode) = isNodePopulated vNode
-    isTreePopulated (CommaNode vNode remTree) = isNodePopulated vNode && isTreePopulated remTree 
+    isTreePopulated (CommaNode vNode remTree) = isNodePopulated vNode && isTreePopulatedn  remTree 
     
     isNodePopulated :: VarNode -> Bool
     isNodePopulated (Vari (loc) (dat) (name))       | dat == "*"  = False-- Represents unassiged null value 
@@ -565,18 +578,6 @@ module Main where
     varToOpTree (SingleNode varN) = (VarOp (SingleNode varN))
     varToOpTree (EmptyVT emptyT) = (VarOp (EmptyVT emptyT))
     
-
-    countNodes :: OpTree -> Int
-    countNodes (ConjunctionNode (querA) (querB)) = countNodes (querA) + countNodes (querB)
-    countNodes (EquateNode (querA) (querB))      = countNodes (querA) + countNodes (querB)
-    countNodes (RelationNode (lbl) (vTree))      = countNodesV (vTree)
-    countNodes (VarOp (vTree))                   = countNodesV (vTree)
-
-    countNodesV :: VarTree -> Int
-    countNodesV (SingleNode (vNode)) = 1
-    countNodesV (CommaNode (vNode) (remTree)) = 1 + countNodesV (remTree)
-
-
     countPopNodes :: OpTree -> Int
     countPopNodes (ConjunctionNode (opTree) (opTreeX)) = countPopNodes opTree + countPopNodes opTreeX
     countPopNodes (RelationNode (string) (varTree)) = countPopNodesInVT varTree

@@ -307,7 +307,7 @@ module Main where
     rowToString (x:xs) = x ++ "," ++ rowToString xs 
 
     assignPTState :: ParseTree -> [String] -> [VarNode]
-    assignPTState (Marker (vars) (oTree)) strings = getTreeState((populateTree (sanitiseOpTree(oTree)) (strings) 0))
+    assignPTState (Marker (vars) (oTree)) strings = getTreeState((popTree (sanitiseOpTree(oTree)) (strings) 0))
     assignPTState (MarkerNested (vars) (eTree)) strings = getETreeState(populateExisTree (sanitiseExisTree(eTree)) (strings))
 
     executeQuery :: [[String]] -> ParseTree -> [[VarNode]] -- Elliott: Changed data type here
@@ -338,13 +338,18 @@ module Main where
                             where thisTree = populateExisTree (sanitiseExisTree(eTree)) (strL)
     --Are all nodes in list . NB ************* Not sure of ">", ">=" ie what combination *******************
     areRepeats :: [VarNode] -> Int -> Bool
-    areRepeats [] _ = True --Is this ever called??
-    areRepeats ( (Vari (loc) (dat) (name)) : xs) ind    | length totalList <= ind =  checkAllDataSame (matches) (dat) && (areRepeats (totalList) (ind+1))
-                                                        | length totalList > ind = checkAllDataSame (matches) (dat)
-                                                        where   repeats = getRepeats (totalList) (ind+1)
-                                                                matches = matchNodeFromName repeats name   
+    areRepeats [] _ = False --Is this ever called?? -> Nope
+    areRepeats ( (Vari (loc) (dat) (name)) : xs) ind    | ind < length totalList =  checkAllDataSame (totalList) (dat)-- && (areRepeats (totalList) (ind+1))
+                                                        | ind >= length totalList = checkAllDataSame (totalList) (dat)
+                                                        where   repeats = getRepeats (totalList) (1)
+                                                               -- matches = matchNodeFromName repeats name   
                                                                 totalList = ( (Vari (loc) (dat) (name)) : xs)
-                                                                    
+
+    --Rewritten areRepeats
+    --checkRepeats :: [VarNode] -> 
+
+    --groupRepeats :: [VarNode] 
+    
     matchNodeFromName :: [VarNode] -> String -> [VarNode]
     matchNodeFromName [] _ = []
     matchNodeFromName ( (Vari (loc) (dat) (nameX)) : xs) name   | name == nameX = [(Vari (loc) (dat) (name))] ++ matchNodeFromName xs name
@@ -501,8 +506,8 @@ module Main where
     --populateParseTree :: ParseTree -> [String] ->
     
     populateExisTree :: ExistTree -> [String] ->  ExistTree
-    populateExisTree (ExistVar (vTree) (oTree)) rList = (ExistVar (populateVarTree (vTree) (rList) (0) ) (populateTree (oTree) (rList) (0) ))
-    populateExisTree (ExistNest (vTree) (eTree) (oTree)) rList = (ExistNest (populateVarTree (vTree) (rList) (0) ) (populateExisTree (eTree) (rList) ) (populateTree (oTree) (rList) (0)))
+    populateExisTree (ExistVar (vTree) (oTree)) rList = (ExistVar (populateVarTree (vTree) (rList) (0) ) (popTree (oTree) (rList) (0) ))
+    populateExisTree (ExistNest (vTree) (eTree) (oTree)) rList = (ExistNest (populateVarTree (vTree) (rList) (0) ) (populateExisTree (eTree) (rList) ) (popTree (oTree) (rList) (0)))
     
     sanitiseExisTree :: ExistTree -> ExistTree
     sanitiseExisTree (ExistVar (vTree) (oTree)) = (ExistVar (sanitiseVarTree(vTree)) (sanitiseOpTree(oTree)))

@@ -249,6 +249,9 @@ module Main where
     extractData :: VarNode -> String
     extractData (Vari (loc) (dat) (name)) = dat
     
+    extractName :: VarNode -> String
+    extractName (Vari (loc) (dat) (name)) = name
+    
     -- takes tabletoString and changes all VarNodes to all the dat within using extractData.
     extractTableData :: [[VarNode]] -> [String]
     extractTableData [] = []
@@ -376,17 +379,9 @@ module Main where
     checkRepeats' :: VarNode -> [VarNode] -> Bool
     checkRepeats' (Vari (loc) (dat) (name)) (Vari (locL) (datL) (nameL):vs) = equateDataAndName ((Vari (loc) (dat) (name)) (Vari (locL) (datL) (nameL)) && checkRepeats' (Var (loc) (dat) (name)) vs
 
+    --Current attempt, deleted other bs auxilary functions
     groupRepeats :: [VarNode] -> [[VarNode]]
-    groupRepeats (Vari (loc) (dat) (name):vs) 
-
-    getOneName :: [VarNode] -> [VarNode]
-    getOneName ((Vari (loc) (dat) (name)):vs) = returnIfName name vs
-
-    returnIfName :: String -> [VarNode] -> [VarNode]
-    returnIfName name (v:vs) = returnIfName name vs ++ returnIfName' name v
-
-    returnIfName' :: String -> VarNode -> VarNode
-    returnIfName' name (Vari (loc) (dat) (nameX)) = (if (name == nameX) then (Vari (loc) (dat) (nameX)))
+    groupRepeats (v:vs) = groupBy ((Vari (lA) (dA) (nA)) (Vari (lB) (dB) (nB)) -> (nA == nB)) (v:vs) 
 
     countInstancesInVarList :: VarNode -> [VarNode] -> Int
     countInstancesInVarList vN [] = 0

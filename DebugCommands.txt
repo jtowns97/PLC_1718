@@ -48,6 +48,15 @@ getRepeats (getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari (
 getRepeats (getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("James") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("Towns") ("x2"))))) )) (1)
 
 
+--GROUP REPEATS:
+groupRepeats [(Vari "A" "James" "x1"), (Vari "B" "Elliott" "x1"), (Vari "C" "Tom" "x2"), (Vari "C" "Jake" "x3"), (Vari "B" "Cian" "x2)]
+--Output [[(Vari "A" "James" "x1"), (Vari "B" "Elliott" "x1")],[(Vari "C" "Tom" "x2"),(Vari "B" "Cian" "x2)]]
+
+equalityTest [(Vari "TRUETEST" "B" "x1"), (Vari "TRUETEST" "C" "x1")]
+--Output TRUE
+equalityTest [(Vari "FALSETEST" "B" "x1"), (Vari "FALSETEST" "C" "x2")]
+--Output FALSE
+
 --WORKS
 matchNodeFromName [Vari "A" "James" "x1",Vari "A" "James" "x1"] "x1"  
 

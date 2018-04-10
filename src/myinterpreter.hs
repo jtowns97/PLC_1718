@@ -383,15 +383,20 @@ module Main where
     -- True when all varnodes have matching values where data and name
     --Rewritten areRepeats
 
-    checkRepeats :: [VarNode] -> Bool
-    checkRepeats (Vari (loc) (dat) (name):vs) = checkRepeats' (Vari (loc) (dat) (name)) vs && checkRepeats vs
+    -- checkRepeats :: [VarNode] -> Bool
+    -- checkRepeats (Vari (loc) (dat) (name):vs) = checkRepeats' (Vari (loc) (dat) (name)) vs && checkRepeats vs
 
-    checkRepeats' :: VarNode -> [VarNode] -> Bool
-    checkRepeats' (Vari (loc) (dat) (name)) (Vari (locL) (datL) (nameL):vs) = equateDataAndName ((Vari (loc) (dat) (name)) (Vari (locL) (datL) (nameL)) && checkRepeats' (Var (loc) (dat) (name)) vs
+    -- checkRepeats' :: VarNode -> [VarNode] -> Bool
+    -- checkRepeats' (Vari (loc) (dat) (name)) (Vari (locL) (datL) (nameL):vs) = equateDataAndName ((Vari (loc) (dat) (name)) (Vari (locL) (datL) (nameL))) && checkRepeats' (Var (loc) (dat) (name)) vs
 
     --Current attempt, deleted other bs auxilary functions
     groupRepeats :: [VarNode] -> [[VarNode]]
-    groupRepeats (v:vs) = groupBy ((Vari (lA) (dA) (nA)) (Vari (lB) (dB) (nB)) -> (nA == nB)) (v:vs) 
+    groupRepeats (v:vs) = groupBy (equalityTest) (v:vs) 
+
+    equalityTest :: VarNode -> VarNode -> Bool
+    equalityTest (Vari (lA) (dA) (nA)) (Vari (lB) (dB) (nB)) | nA == nB = True
+    equalityTest (Vari (lA) (dA) (nA)) (Vari (lB) (dB) (nB)) | nA /= nB = False
+
 
     countInstancesInVarList :: VarNode -> [VarNode] -> Int
     countInstancesInVarList vN [] = 0
@@ -566,7 +571,7 @@ module Main where
     
     isTreePopulated :: VarTree -> Bool
     isTreePopulated (SingleNode vNode) = isNodePopulated vNode
-    isTreePopulated (CommaNode vNode remTree) = isNodePopulated vNode && isTreePopulatedn  remTree 
+    isTreePopulated (CommaNode vNode remTree) = isNodePopulated vNode && isTreePopulated  remTree 
     
     isNodePopulated :: VarNode -> Bool
     isNodePopulated (Vari (loc) (dat) (name))       | dat == "*"  = False-- Represents unassiged null value 

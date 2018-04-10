@@ -1,6 +1,7 @@
 {-# LANGUAGE TemplateHaskell, ViewPatterns, PartialTypeSignatures #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
+
 --{-# OPTIONS -F -pgmF debug-pp #-}
 module Main where
     import System.IO
@@ -18,6 +19,7 @@ module Main where
     import Data.Ord
     import Debug.Trace
     import qualified Data.ByteString.Char8 as C
+    import GHC.Exts
 
 
     {-==============================================================================-}
@@ -396,11 +398,11 @@ module Main where
 
     --Current attempt, deleted other bs auxilary functions
     groupRepeats :: [VarNode] -> [[VarNode]]
-    groupRepeats (v:vs) = groupBy (equalityTest) (v:vs) 
+    groupRepeats (v:vs) = groupWith (extractName) (v:vs) 
 
     equalityTest :: VarNode -> VarNode -> Bool
     equalityTest (Vari (lA) (dA) (nA)) (Vari (lB) (dB) (nB)) | nA == nB = True
-    equalityTest (Vari (lA) (dA) (nA)) (Vari (lB) (dB) (nB)) | nA /= nB = False
+                                                             | nA /= nB = False
 
 
     countInstancesInVarList :: VarNode -> [VarNode] -> Int

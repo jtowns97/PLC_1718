@@ -351,22 +351,19 @@ module Main where
     --Rewritten areRepeats
     checkRepeats :: [[VarNode]] -> Bool
     checkRepeats [] = True
-    checkRepeats (x:xs) | length xs > 1 = checkAllDataSame x && checkRepeats xs
-                        | length xs == 1 = checkAllDataSame xs
+    --checkRepeats (x:xs) | length xs > 1 = checkAllDataSame x && checkRepeats xs
+    --                    | length xs == 1 = checkAllDataSame xs
 
     filterRepeats :: [[VarNode]] -> [[VarNode]]
     filterRepeats [] = []
-    filterRepeats (x:xs)    | length x > 1 = x ++ filterRepeats xs
-                            | length x == 1 = filterRepeats xs
-
-
-
-    --groupRepeats :: [VarNode] 
+    --filterRepeats (x:xs)    | length x > 1 = x ++ filterRepeats xs
+    --                        | length x == 1 = filterRepeats xs
     
-    matchNodeFromName :: [VarNode] -> String -> [VarNode]
-    matchNodeFromName [] _ = []
-    matchNodeFromName ( (Vari (loc) (dat) (nameX)) : xs) name   | name == nameX = [(Vari (loc) (dat) (name))] ++ matchNodeFromName xs name
-                                                                | name /= nameX = matchNodeFromName xs name
+    --ISNT USED
+    -- matchNodeFromName :: [VarNode] -> String -> [VarNode]
+    -- matchNodeFromName [] _ = []
+    -- matchNodeFromName ( (Vari (loc) (dat) (nameX)) : xs) name   | name == nameX = [(Vari (loc) (dat) (name))] ++ matchNodeFromName xs name
+    --                                                             | name /= nameX = matchNodeFromName xs name
     
     checkAllDataSame :: [VarNode] -> String -> Bool
     checkAllDataSame [] _ = False

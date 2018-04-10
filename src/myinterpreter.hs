@@ -351,24 +351,32 @@ module Main where
     --Rewritten areRepeats
     checkRepeats :: [[VarNode]] -> Bool
     checkRepeats [] = True
-    --checkRepeats (x:xs) | length xs > 1 = checkAllDataSame x && checkRepeats xs
-    --                    | length xs == 1 = checkAllDataSame xs
+    checkRepeats (x:xs) = isAllDataSame x && checkRepeats xs
+
 
     filterRepeats :: [[VarNode]] -> [[VarNode]]
     filterRepeats [] = []
-    --filterRepeats (x:xs)    | length x > 1 = x ++ filterRepeats xs
-    --                        | length x == 1 = filterRepeats xs
+    filterRepeats (x:xs)    | length x > 1 = [x] ++ filterRepeats xs
+                            | length x == 1 = filterRepeats xs
     
     --ISNT USED
     -- matchNodeFromName :: [VarNode] -> String -> [VarNode]
     -- matchNodeFromName [] _ = []
     -- matchNodeFromName ( (Vari (loc) (dat) (nameX)) : xs) name   | name == nameX = [(Vari (loc) (dat) (name))] ++ matchNodeFromName xs name
     --                                                             | name /= nameX = matchNodeFromName xs name
-    
+
+    isAllDataSame :: [VarNode] -> Bool --New higher order for ease of use (fixes checkrepeats comp error)
+    isAllDataSame [] = checkAllDataSame [] "irrelevant"
+    isAllDataSame ((Vari (loc) (dat) (name)):xs) = checkAllDataSame ((Vari (loc) (dat) (name)):xs) dat
+
+
     checkAllDataSame :: [VarNode] -> String -> Bool
-    checkAllDataSame [] _ = False
+    checkAllDataSame [] _ = True
     checkAllDataSame ((Vari (loc) (datA) (name)):xs) dat = ( dat == datA ) && ( checkAllDataSame xs dat)
     
+
+
+
     getRepeats :: [VarNode] -> Int ->  [VarNode] --return repeated namez
     getRepeats [] _ = []
     getRepeats (x:xs) ind   | (ind <= length(x:xs)) && (countInstancesInVarList (fromJust(getNthVNode (ind) (x:xs) )) (x:xs) > 1) = [x] ++ getRepeats (x:xs) (ind+1)

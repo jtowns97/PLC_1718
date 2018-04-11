@@ -47,7 +47,7 @@ getRepeats (getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari (
 --Output = [Vari "A" "James" "x1",Vari "A" "James" "x1"]
 getRepeats (getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("James") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("Towns") ("x2"))))) )) (1)
 
-
+filterRepeats (groupRepeats [(Vari "A" "James" "x1"), (Vari "B" "Elliott" "x1"), (Vari "B" "Cian" "x2"), (Vari "C" "Jake" "x3"), (Vari "C" "Tom" "x2")]
 --GROUP REPEATS:
 groupRepeats [(Vari "A" "James" "x1"), (Vari "B" "Elliott" "x1"), (Vari "C" "Tom" "x2"), (Vari "B" "Cian" "x2"), (Vari "C" "Jake" "x3")]
 

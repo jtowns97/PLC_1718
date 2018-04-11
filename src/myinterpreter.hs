@@ -334,7 +334,7 @@ module Main where
     -- getNodeFromRow :: 
     
     evaluateParseTree :: ParseTree -> [String] -> Bool
-    evaluateParseTree (Marker ordVars oTree) rList          = (areRepeats(getTreeState(thisTree)) 0) && (evaluate (thisTree))
+    evaluateParseTree (Marker ordVars oTree) rList          = checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) && (evaluate (thisTree))
                                                             where thisTree = populateTree (sanitiseOpTree(oTree)) (rList) (0)
     evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList)
     
@@ -378,16 +378,32 @@ module Main where
     
 
 
-
+--unsure if this is needed at all now
     getRepeats :: [VarNode] -> Int ->  [VarNode] --return repeated namez
     getRepeats [] _ = []
     getRepeats (x:xs) ind   | (ind <= length(x:xs)) && (countInstancesInVarList (fromJust(getNthVNode (ind) (x:xs) )) (x:xs) > 1) = [x] ++ getRepeats (x:xs) (ind+1)
                             | (ind <= length(x:xs)) && (countInstancesInVarList (fromJust(getNthVNode (ind) (x:xs) )) (x:xs) == 1) = getRepeats (x:xs) (ind+1)
                             | otherwise = [] -- should never be called
+    
+    --Takes a list of varnodes
+    -- Checks every varnode to every varnode and sees if the data within varnode matches only when name matches.
+    -- True when all varnodes have matching values where data and name
+    --Rewritten areRepeats
+
+    -- checkRepeats :: [VarNode] -> Bool
+    -- checkRepeats (Vari (loc) (dat) (name):vs) = checkRepeats' (Vari (loc) (dat) (name)) vs && checkRepeats vs
+
+    -- checkRepeats' :: VarNode -> [VarNode] -> Bool
+    -- checkRepeats' (Vari (loc) (dat) (name)) (Vari (locL) (datL) (nameL):vs) = equateDataAndName ((Vari (loc) (dat) (name)) (Vari (locL) (datL) (nameL))) && checkRepeats' (Var (loc) (dat) (name)) vs
 
     --Current attempt, deleted other bs auxilary functions
     groupRepeats :: [VarNode] -> [[VarNode]]
     groupRepeats (v:vs) = groupWith (extractName) (v:vs) 
+
+    equalityTest :: VarNode -> VarNode -> Bool
+    equalityTest (Vari (lA) (dA) (nA)) (Vari (lB) (dB) (nB)) | nA == nB = True
+                                                             | nA /= nB = False
+
 
     countInstancesInVarList :: VarNode -> [VarNode] -> Int
     countInstancesInVarList vN [] = 0

@@ -533,7 +533,9 @@ module Main where
     sanitiseOpTree :: OpTree -> OpTree
     sanitiseOpTree (RelationNode (tblName) (vTree)) = (RelationNode (tblName) (sanitiseVarTree(vTree)))
     sanitiseOpTree (VarOp (vT)) = (VarOp (sanitiseVarTree(vT)))
-    sanitiseOpTree op = op
+    sanitiseOpTree (ConjunctionNode (querA) (querB)) = (ConjunctionNode (sanitiseOpTree (querA)) (sanitiseOpTree(querB)) )
+    sanitiseOpTree (EquateNode (querX) (querY)) = (EquateNode (sanitiseOpTree (querX)) (sanitiseOpTree (querY)) )
+   
     
     sanitiseVarTree :: VarTree -> VarTree
     sanitiseVarTree (SingleNode ( Vari (loc) (dat) (name) ) ) = (  SingleNode (  Vari (loc) ("*") (name)  )  )

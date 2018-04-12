@@ -317,10 +317,10 @@ module Main where
 
     executeQuery :: [[String]] -> ParseTree -> [[VarNode]] -- Elliott: Changed data type here
     executeQuery [] _ = []
-    executeQuery (row:remainingRows) (pTree)    | (evaluateParseTree (pTree) (row)) == True   = output ++ executeQuery (remainingRows) (pTree)
+    executeQuery (row:remainingRows) (pTree)    | (evaluateParseTree (pTree) (row)) == True   = [output] ++ executeQuery (remainingRows) (pTree)
                                                 | (evaluateParseTree (pTree) (row)) == False  = executeQuery (remainingRows) (pTree)
-                                                where   output = populatedRow : executeQuery (remainingRows) (pTree)
-                                                        populatedRow = assignPTState pTree row
+                                                where   output = assignPTState pTree row -- : executeQuery (remainingRows) (pTree)
+                                                       
 
 
 
@@ -333,9 +333,9 @@ module Main where
 
     -- getNodeFromRow :: 
     
-    evaluateParseTree :: ParseTree -> [String] -> Bool --checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) && 
-    evaluateParseTree (Marker ordVars oTree) rList          = (evaluate (thisTree))
-                                                            where thisTree = populateTree (sanitiseOpTree(oTree)) (rList) (0)
+    evaluateParseTree :: ParseTree -> [String] -> Bool --
+    evaluateParseTree (Marker ordVars oTree) rList          = checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) &&  (evaluate (thisTree))
+                                                            where thisTree = popTree (sanitiseOpTree(oTree)) (rList) (0)
     evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList)
     
     evaluateExis :: ExistTree -> [String] -> Bool

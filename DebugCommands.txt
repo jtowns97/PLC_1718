@@ -23,6 +23,8 @@ evaluateParseTree (Marker ([(Vari "*" "*" "x1" ),(Vari "*" "*" "x2" )]) (EquateN
 
 executeQuery [["James", "Towns"],["Perrine","Lindsay"]] (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))))  )
 
+executeQuery [["James", "Towns"],["Perrine","Lindsay"]] (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) (EquateNode (SingleNode (Vari ("A") ("*") ("x1")))  (SingleNode (Vari ("B") ("*") ("x2")))) )
+
 evaluateParseTree (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))))  ) (["James","Towns"])
 
 evaluateParseTree (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) (EquateNode (VarOp (SingleNode ((Vari "A" "*" "x1")))) (VarOp (SingleNode ((Vari "B" "*" "x2")) ) ) )  ) (["James","Towns"])

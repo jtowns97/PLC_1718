@@ -86,7 +86,7 @@ module Main where
         let pTree = buildParseTree (happy)
         let lhsVar = getOrderOfVars (pTree)
 
-        contentA <- readContents("A.csv")
+        contentA <- readContents("A.csv") --What if the CSV isnt A or B? ie P or Q?
         contentB <- readContents("B.csv")
         let allTables = (buildTable(contentA)) : (buildTable(contentB)) : []
 

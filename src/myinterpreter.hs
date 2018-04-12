@@ -333,8 +333,8 @@ module Main where
 
     -- getNodeFromRow :: 
     
-    evaluateParseTree :: ParseTree -> [String] -> Bool
-    evaluateParseTree (Marker ordVars oTree) rList          = checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) && (evaluate (thisTree))
+    evaluateParseTree :: ParseTree -> [String] -> Bool --checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) && 
+    evaluateParseTree (Marker ordVars oTree) rList          = (evaluate (thisTree))
                                                             where thisTree = populateTree (sanitiseOpTree(oTree)) (rList) (0)
     evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList)
     
@@ -481,7 +481,7 @@ module Main where
     -- getTreeStateEx ExistVar (VarTree) (OpTree) 
     -- getTreeStateEx ExistNest (VarTree) (ExistTree)
     -- getTreeStateEx EmptyET (EmptyTree)
-    
+    {-
     --Issues: 1 : When VarOp is met, works fine. However with multiple vTrees spread across conjunctionNode etc, it cant remember the "index" value across diff trees
     --Issues:   : Order of execution means getPopTotal is called BEFORE populateTree so will return 0 and hence fuck up the multi tree issue..i think
     populateTree :: OpTree -> [String] -> Int -> OpTree
@@ -491,7 +491,7 @@ module Main where
     populateTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (populateTree(querX) (rList) (ind + (getPopTotal querX querY))) (populateTree(querY) (rList) (ind + (getPopTotal querX querY))) )
                                                      --   where   popsX = countPopNodes (querX) + countPopNodes (querY)
     populateTree (RelationNode (tbl) (vTree)) rList ind         = populateRelation (RelationNode (tbl) (vTree)) rList ind
-
+    -}
     getPopTotal :: OpTree -> OpTree -> Int
     getPopTotal querP querQ = countPopNodes (querP) + countPopNodes (querQ)
 
@@ -502,8 +502,8 @@ module Main where
 
     popTree :: OpTree -> [String] -> Int -> OpTree
     popTree (VarOp (vTree)) rList ind                      = popSubTree  (VarOp (vTree)) (rList) (ind)
-    popTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (popSubTree (querA) (rList) (ind + (getPopTotal querA querB))) (populateTree (querB) (rList) (ind + (getPopTotal querA querB)) ) )
-    popTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (popSubTree (querX) (rList) (ind + (getPopTotal querX querY))) (populateTree(querY) (rList) (ind + (getPopTotal querX querY))) )
+    popTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (popSubTree (querA) (rList) (ind)) (popTree (querB) (rList) (ind + (countNodes querA)) ) )
+    popTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (popSubTree (querX) (rList) (ind)) (popTree(querY) (rList) (ind + (countNodes querX))) )
     popTree (RelationNode (tbl) (vTree)) rList ind         = popSubTree  (RelationNode (tbl) (vTree)) (rList) (ind)
 
 
@@ -515,6 +515,19 @@ module Main where
     popSubTree (ConjunctionNode (querA) (querB)) rList ind  = popTree  (ConjunctionNode (querA) (querB)) (rList) (ind)
     popSubTree (VarOp (vTree)) rList ind                    = (VarOp (populateVarTree (vTree) (rList) (ind)))
     popSubTree (RelationNode (tbl) (vTree)) rList ind       = (RelationNode (tbl) (populateVarTree (vTree) (rList) (ind)))
+
+
+
+
+    countNodes :: OpTree -> Int
+    countNodes (ConjunctionNode (querA) (querB)) = countNodes (querA) + countNodes (querB)
+    countNodes (EquateNode (querA) (querB))      = countNodes (querA) + countNodes (querB)
+    countNodes (RelationNode (lbl) (vTree))      = countNodesV (vTree)
+    countNodes (VarOp (vTree))                   = countNodesV (vTree)
+
+    countNodesV :: VarTree -> Int
+    countNodesV (SingleNode (vNode)) = 1
+    countNodesV (CommaNode (vNode) (remTree)) = 1 + countNodesV (remTree)
    
    
    

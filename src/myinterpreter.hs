@@ -94,14 +94,9 @@ module Main where
         let tableNames = extractPTableNames (pTree)
 
         let bigTable = crossMulti(allTables)
-        --mapM_ putStrLn ([show (bigTable)])
         let answer = executeQuery (bigTable) (pTree)
         let output = readyOutput ( extractOutput (orderTable (lhsVar) (answer)))
-        putStrLn("No hang")
-        --let stringOutput = answer
-        mapM_ putStrLn output
-        --putStr("Execution complete")
-      
+        mapM_ putStrLn output      
     
        -- return putStr("Execution completed!!!!!!!")
        -- return "someting"
@@ -291,7 +286,7 @@ module Main where
     extractOutput' (v:vs) = extractData v : extractOutput' vs 
 
     orderTable :: [VarNode] -> [[VarNode]] -> [[VarNode]]
-    orderTable [] _ = []
+    orderTable _ [] = []
     orderTable order (row:rs) = orderRow order row : orderTable order rs
 
     --              ORDER OF VARS   ROW IN     ROW OUT, REARRANGED COLUMNS
@@ -307,7 +302,6 @@ module Main where
     rowToString :: [String] -> String
     rowToString [] = ""
     rowToString [a] = a
-    rowToString [a] = a ++ "\n"
     rowToString [a,b] = a ++ "," ++ b
     rowToString (x:xs) = x ++ "," ++ rowToString xs 
 

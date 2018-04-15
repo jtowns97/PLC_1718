@@ -86,16 +86,17 @@ module Main where
         let pTree = buildParseTree (happy)
         let lhsVar = getOrderOfVars (pTree)
 
-        contentA <- readContents("A.csv") --What if the CSV isnt A or B? ie P or Q?
-        contentB <- readContents("B.csv")
+        tableNames <- extractTableNames (pTree)
+        contentA <- readContents(if (length tableNames /= 0) then firstName) --What if the CSV isnt A or B? ie P or Q?
+        contentB <- readContents("B")
         let allTables = (buildTable(contentA)) : (buildTable(contentB)) : []
 
         -- For future implementation where contentA-N and allTables is built dynamically.
-        let tableNames = extractPTableNames (pTree)
-
+        let tableNames = extractTableNames (pTree)
         let bigTable = crossMulti(allTables)
         let answer = executeQuery (bigTable) (pTree)
         let output = readyOutput ( extractOutput (orderTable (lhsVar) (answer)))
+        putStr("_____________________")
         mapM_ putStrLn output      
     
        -- return putStr("Execution completed!!!!!!!")
@@ -104,6 +105,7 @@ module Main where
     {-================================= BUILDING ===================================-}
     {-==============================================================================-}
     
+
     buildParseTree :: Exp -> ParseTree
     buildParseTree (Evaluate (vars) (query)) = Marker (traverseDFVar(buildVarTree(vars)))  (buildOpTree(query))
     buildParseTree (Eval vars exis) = MarkerNested (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis))
@@ -137,9 +139,10 @@ module Main where
     -- readMulti x = do
     --        readContents ([(take 1 x)] ++ ".csv")
 
+    readMultipleContents String -> IO [[String]]
     readContents :: String -> IO [[String]]
     readContents filepath = do
-        contents <- readFile (filepath)
+        contents <- readFile (filepath ++ ".csv")
         let lines = chunksOf 1 (splitOn "\n" contents)
         return lines
 
@@ -633,18 +636,23 @@ module Main where
     countVarNodes (SingleNode varN) = 1
     countVarNodes (EmptyVT empty) = 0
     
+    charToString :: Char -> String
+    charToString = (:[])
+
+    extractTableNames :: ParseTree -> [String]
+    extractTableNames pTree = map (++ ".csv") (map charToString (map head (extractPTableNames pTree)))
     
     extractPTableNames :: ParseTree -> [String]
-    extractPTableNames (Marker (vars) (oTree)) = extractTableNames(getOpRelationNodesOut(oTree))
+    extractPTableNames (Marker (vars) (oTree)) = extractOTableNames(getOpRelationNodesOut(oTree))
     extractPTableNames (MarkerNested (vars) (eTree)) = extractETableNames(eTree)
     
     extractETableNames :: ExistTree -> [String]
-    extractETableNames (ExistVar (vTree) (oTree)) = extractTableNames(getOpRelationNodesOut(oTree))
-    extractETableNames (ExistNest (vTree) (eTree) (oTree)) = extractTableNames(getOpRelationNodesOut(oTree))
+    extractETableNames (ExistVar (vTree) (oTree)) = extractOTableNames(getOpRelationNodesOut(oTree))
+    extractETableNames (ExistNest (vTree) (eTree) (oTree)) = extractOTableNames(getOpRelationNodesOut(oTree))
     
-    extractTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodesOut, possibly needs to be reverse
-    extractTableNames [] = []
-    extractTableNames ( (RelationNode (tbl) (vTree)) :xs) = (tbl) : extractTableNames xs
+    extractOTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodesOut, possibly needs to be reverse
+    extractOTableNames [] = []
+    extractOTableNames ( (RelationNode (tbl) (vTree)) :xs) = (tbl) : extractOTableNames xs
     
     assignVarTreeLoc :: VarTree -> String -> VarTree
     assignVarTreeLoc (SingleNode (Vari (loc) (dat) (name))) x = (SingleNode (Vari (x) (dat) (name)))

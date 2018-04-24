@@ -85,13 +85,11 @@ module Main where
         let happy = parseCalc (alex)
         let pTree = buildParseTree (happy)
         let lhsVar = getOrderOfVars (pTree)
-
-        tableNames <- extractTableNames (pTree)
+        let tableNames <- extractTableNames (pTree)
         allContents <- extractContents readContents tableNames
         let allTables = (buildTable(contentA)) : (buildTable(contentB)) : []
 
         -- For future implementation where contentA-N and allTables is built dynamically.
-        let tableNames = extractTableNames (pTree)
         let bigTable = crossMulti(allTables)
         let answer = executeQuery (bigTable) (pTree)
         let output = readyOutput ( extractOutput (orderTable (lhsVar) (answer)))

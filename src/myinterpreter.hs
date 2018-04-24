@@ -87,7 +87,8 @@ module Main where
         let lhsVar = getOrderOfVars (pTree)
 
         tableNames <- extractTableNames (pTree)
-        contentA <- readContents(if (length tableNames /= 0) then firstName) --What if the CSV isnt A or B? ie P or Q?
+        contentA <- readContents(if (length tableNames /= 0) then firstName) -- Look here JT, firstName was gonna be from the tablesName list
+        -- and then shrink the list, but cant do this functionally - am thinking about this in the wrong way. What do you think?
         contentB <- readContents("B")
         let allTables = (buildTable(contentA)) : (buildTable(contentB)) : []
 

@@ -100,6 +100,28 @@ module Main where
         putStr("_____________________")
         mapM_ putStrLn output      
     
+
+        extractContents :: (String -> IO [[String]]) -> [String] -> IO [[[String]]]
+        extractContents f [] = []
+        extractContents f (tableName:xs) = [ f  (if(length (tableName:xs) /= 0) then tableName)] ++ extractContents f (xs)
+
+
+
+        removeDups :: [[VarNode]] -> [VarNode]
+        removeDups [] = []
+        removeDups (x:xs) = removeDups' groupRepeats x ++ removeDups xs
+
+        removeDups' :: [[VarNode]] -> [VarNode]
+        removeDups' [] = []
+        removeDups' (x:xs) =  head x ++ removeDups' xs
+
+
+
+
+
+
+
+
        -- return putStr("Execution completed!!!!!!!")
        -- return "someting"
     {-==============================================================================-}

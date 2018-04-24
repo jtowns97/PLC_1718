@@ -87,9 +87,7 @@ module Main where
         let lhsVar = getOrderOfVars (pTree)
 
         tableNames <- extractTableNames (pTree)
-        contentA <- readContents(if (length tableNames /= 0) then firstName) -- Look here JT, firstName was gonna be from the tablesName list
-        -- and then shrink the list, but cant do this functionally - am thinking about this in the wrong way. What do you think?
-        contentB <- readContents("B")
+        allContents <- extractContents readContents tableNames
         let allTables = (buildTable(contentA)) : (buildTable(contentB)) : []
 
         -- For future implementation where contentA-N and allTables is built dynamically.
@@ -99,31 +97,7 @@ module Main where
         let output = readyOutput ( extractOutput (orderTable (lhsVar) (answer)))
         putStr("_____________________")
         mapM_ putStrLn output      
-    
 
-        extractContents :: (String -> IO [[String]]) -> [String] -> IO [[[String]]]
-        extractContents f [] = []
-        extractContents f (tableName:xs) = [ f  (if(length (tableName:xs) /= 0) then tableName)] ++ extractContents f (xs)
-
-
-
-        removeDups :: [[VarNode]] -> [VarNode]
-        removeDups [] = []
-        removeDups (x:xs) = removeDups' groupRepeats x ++ removeDups xs
-
-        removeDups' :: [[VarNode]] -> [VarNode]
-        removeDups' [] = []
-        removeDups' (x:xs) =  head x ++ removeDups' xs
-
-
-
-
-
-
-
-
-       -- return putStr("Execution completed!!!!!!!")
-       -- return "someting"
     {-==============================================================================-}
     {-================================= BUILDING ===================================-}
     {-==============================================================================-}
@@ -132,7 +106,6 @@ module Main where
     buildParseTree :: Exp -> ParseTree
     buildParseTree (Evaluate (vars) (query)) = Marker (traverseDFVar(buildVarTree(vars)))  (buildOpTree(query))
     buildParseTree (Eval vars exis) = MarkerNested (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis))
-    --buildParseTree (EvalExisExt vars exis quer) = MarkerExtended (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (buildOpTree(quer))
     
     buildVarTree :: Variables -> VarTree
     buildVarTree (VarSingle strName) = SingleNode (Vari ("*") ("*") (strName))
@@ -156,13 +129,7 @@ module Main where
     {-==============================================================================-}
     {-=============================== CSV EXTRACTION ===============================-}
     {-==============================================================================-}
-    
-    -- For more than two databases.
-    -- readMulti :: String -> IO [[String]]
-    -- readMulti x = do
-    --        readContents ([(take 1 x)] ++ ".csv")
 
-    readMultipleContents String -> IO [[String]]
     readContents :: String -> IO [[String]]
     readContents filepath = do
         contents <- readFile (filepath ++ ".csv")
@@ -172,6 +139,18 @@ module Main where
     buildTable :: [[String]] -> [[String]]
     buildTable [] = []
     buildTable ((x:xs):xss) = (splitOn "," x) : buildTable xss 
+
+    extractContents :: (String -> IO [[String]]) -> [String] -> IO [[[String]]]
+    extractContents f [] = []
+    extractContents f (tableName:xs) = [ f  (if(length (tableName:xs) /= 0) then tableName)] ++ extractContents f (xs)
+
+    removeDups :: [[VarNode]] -> [VarNode]
+    removeDups [] = []
+    removeDups (x:xs) = removeDups' groupRepeats x ++ removeDups xs
+
+    removeDups' :: [[VarNode]] -> [VarNode]
+    removeDups' [] = []
+    removeDups' (x:xs) =  head x ++ removeDups' xs
     
     {-==============================================================================-}
     {-============================== TABLE OPERATIONS ==============================-}

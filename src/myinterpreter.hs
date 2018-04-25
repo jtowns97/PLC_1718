@@ -85,9 +85,9 @@ module Main where
         let happy = parseCalc (alex)
         let pTree = buildParseTree (happy)
         let lhsVar = getOrderOfVars (pTree)
-        let tableNames <- extractTableNames (pTree)
+        let tableNames = extractTableNames (pTree)
         allContents <- extractContents readContents tableNames
-        let allTables = (buildTable(contentA)) : (buildTable(contentB)) : []
+        let allTables = fmap buildTable allContents
 
         -- For future implementation where contentA-N and allTables is built dynamically.
         let bigTable = crossMulti(allTables)
@@ -139,16 +139,22 @@ module Main where
     buildTable ((x:xs):xss) = (splitOn "," x) : buildTable xss 
 
     extractContents :: (String -> IO [[String]]) -> [String] -> IO [[[String]]]
-    extractContents f [] = []
-    extractContents f (tableName:xs) = [ f  (if(length (tableName:xs) /= 0) then tableName)] ++ extractContents f (xs)
+    extractContents f [] = return []
+   -- extractContents f (tableName:xs) = [ f  (if(length (tableName:xs) /= 0) then tableName else "*")] ++ extractContents f (xs)
+    extractContents f (tableName:xs) = do
+        table <- f tableName 
+        rest <- extractContents f (xs)
+        return $! table : rest
 
-    removeDups :: [[VarNode]] -> [VarNode]
-    removeDups [] = []
-    removeDups (x:xs) = removeDups' groupRepeats x ++ removeDups xs
+
+    
+    removeDups :: [[VarNode]] -> [[VarNode]]
+    removeDups [] = [[]]
+    removeDups (x:xs) = [removeDups' (groupRepeats x)] ++ removeDups xs
 
     removeDups' :: [[VarNode]] -> [VarNode]
     removeDups' [] = []
-    removeDups' (x:xs) =  head x ++ removeDups' xs
+    removeDups' (x:xs) =  [head x] ++ removeDups' xs
     
     {-==============================================================================-}
     {-============================== TABLE OPERATIONS ==============================-}

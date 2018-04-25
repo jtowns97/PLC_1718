@@ -646,8 +646,16 @@ module Main where
     charToString = (:[])
 
     extractTableNames :: ParseTree -> [String]
-    extractTableNames pTree = map (++ ".csv") (map charToString (map head (extractPTableNames pTree)))
+    extractTableNames pTree = extractDups(map (++ ".csv") (map charToString (map head (extractPTableNames pTree))))
     
+    -- Removes multiple instances of table names. Only need to read the file once.
+    extractDups :: Eq String => [String] -> [String]
+    extractDups = rdHelper []
+        where rdHelper seen [] = seen
+              rdHelper seen (x:xs)
+                  | x `elem` seen = rdHelper seen xs
+                  | otherwise = rdHelper (seen ++ [x]) xs
+
     extractPTableNames :: ParseTree -> [String]
     extractPTableNames (Marker (vars) (oTree)) = extractOTableNames(getOpRelationNodesOut(oTree))
     extractPTableNames (MarkerNested (vars) (eTree)) = extractETableNames(eTree)

@@ -51,7 +51,7 @@ populateVarTree (CommaNode (Vari "A" "*" "x1") (CommaNode (Vari "A" "*" "x2") (S
 --Works?:
 getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))) )
 
-
+checkExistential (CommaNode (Vari "A" "*" "x1") (CommaNode (Vari "A" "*" "x2") (SingleNode (Vari "A" "*" "x3"))))
 
 --areRepeats debugging:
 

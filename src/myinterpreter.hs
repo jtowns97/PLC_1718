@@ -26,16 +26,22 @@ module Main where
     {-==================================== TODO ====================================-}
     {-==============================================================================-}
 
-    
+
     --Begin testing existential cases
     --Make assignTree functions smarter: Differentiate when varName & tableN are different, eg in cases of R(...) ^ R (...), or cases like A(...) ^ B (...) ^ A(...)
     --3 page user manual
     --Informative error messages/type system
-    --Rework Exis to allow (x1,x2,x3)E.(Query)
+    --Rework Exis to allow (x1,x2,x3)E.(Query) - ALREADY DONE
     --PR6: Account for empty input files
     --PR10: Potential issue: Scope of var assignments when checking pairs (checkRepeats/groupRepeats)
     --Add functionality to define empty input file and cause function to add this null value to the xProd table for evaluation
-   
+
+    --possible getRelationData function? Would return all current assignments from a given table as a row
+    --Remove ambiguity with exis cases (as in pr6) so we get the correct semantics and convert to a form our interpreter can read (exis on left)
+    -- WE MIGHT NEED TO MOVE EXIS BACK INTO QUERY :( :( :( ...
+    -- ... SEE PR6: Our interpreter pTree structure must account for an exis being anywhere in a query, but we could convert all to left maybe?
+
+    --getRelationState :: 
    
     {-==============================================================================-}
     {-=============================== DATA STRUCTURES ==============================-}
@@ -74,6 +80,7 @@ module Main where
     -- PARSE TREE
     data ParseTree = Marker ([VarNode]) (OpTree)
         | MarkerNested ([VarNode]) (ExistTree)
+      --  | MarkerExisExtended ([VarNode]) (ExistTree) (OpTree) --Added to account for PR6 issues UPDT: probs wont work
         | EmptyPT (EmptyTree)
         deriving Show
       --  (1,10,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
@@ -656,8 +663,8 @@ module Main where
     extractTableNames :: ParseTree -> [String]
     extractTableNames pTree = extractDups(map (++ ".csv") (map charToString (map head (extractPTableNames pTree))))
     
-    -- Removes multiple instances of table names. Only need to read the file once.
-    extractDups :: Eq String => [String] -> [String]
+    -- Removes multiple instances of table names. Only need to read the file once. [Removed : Eq String => on type sig]
+    extractDups :: [String] -> [String]
     extractDups = rdHelper []
         where rdHelper seen [] = seen
               rdHelper seen (x:xs)

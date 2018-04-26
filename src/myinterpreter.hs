@@ -35,13 +35,16 @@ module Main where
     --PR6: Account for empty input files
     --PR10: Potential issue: Scope of var assignments when checking pairs (checkRepeats/groupRepeats)
     --Add functionality to define empty input file and cause function to add this null value to the xProd table for evaluation
-
+    -- Deal with empty tree cases for pTrees and oTrees
     --possible getRelationData function? Would return all current assignments from a given table as a row
     --Remove ambiguity with exis cases (as in pr6) so we get the correct semantics and convert to a form our interpreter can read (exis on left)
     -- WE MIGHT NEED TO MOVE EXIS BACK INTO QUERY :( :( :( ...
     -- ... SEE PR6: Our interpreter pTree structure must account for an exis being anywhere in a query, but we could convert all to left maybe?
-
+    -- Evaluate exis
     --getRelationState :: 
+
+    --EXIS REFORMAT LEFT TO DO:
+    --executeQuery, populateTree (smart), checkExistetial, evalutateExis
    
     {-==============================================================================-}
     {-=============================== DATA STRUCTURES ==============================-}
@@ -67,19 +70,14 @@ module Main where
         | BoolNode (Bool)
         | VarOp (VarTree)
         | EmptyOT (EmptyTree)
+        | ExistVar (VarTree) (OpTree)
         deriving Show
-    
-    -- Seperate exisitential operator.
-    -- EXISITENTIAL TREE ***TODO** add case for nested eTree
-    data ExistTree = ExistVar (VarTree) (OpTree) 
-        | ExistNest (VarTree) (ExistTree) (OpTree)
-        | EmptyET (EmptyTree)
-        deriving Show
-    -- ***TODO*** ADD NESTED EXISTENTIAL
+
+    -- (EXIS REFORMAT) : Is EmptyPT ever actually needed?
     -- All expressions available within language.
     -- PARSE TREE
     data ParseTree = Marker ([VarNode]) (OpTree)
-        | MarkerNested ([VarNode]) (ExistTree)
+        -- | MarkerNested ([VarNode]) (ExistTree)
       --  | MarkerExisExtended ([VarNode]) (ExistTree) (OpTree) --Added to account for PR6 issues UPDT: probs wont work
         | EmptyPT (EmptyTree)
         deriving Show
@@ -118,15 +116,13 @@ module Main where
 
     buildParseTree :: Exp -> ParseTree
     buildParseTree (Evaluate (vars) (query)) = Marker (traverseDFVar(buildVarTree(vars)))  (buildOpTree(query))
-    buildParseTree (Eval vars exis) = MarkerNested (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis))
+    --buildParseTree (Eval vars exis) = MarkerNested (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (EXIS REFORMAT)
     
     buildVarTree :: Variables -> VarTree
     buildVarTree (VarSingle strName) = SingleNode (Vari ("*") ("*") (strName))
     buildVarTree (Comma (string) remVars) = CommaNode (Vari ("*") ("*") (string)) (buildVarTree remVars)
 
-    buildExisTree :: Existential -> ExistTree 
-    buildExisTree (ExistentialSingle (vars) (quer)) = (ExistVar (buildVarTree(vars)) (buildOpTree (quer)))
-    buildExisTree (ExistentialNested (vars) (exisNest) (quer)) = (ExistNest (buildVarTree(vars)) (buildExisTree (exisNest)) (buildOpTree(quer)))
+
     
     buildOpTree :: Query -> OpTree 
     buildOpTree (Conjunction querA querB) = ConjunctionNode (buildOpTree querA) (buildOpTree querB)
@@ -134,6 +130,7 @@ module Main where
     --Below (TODO) add type checker for querA/B, checking its a VarTree
     buildOpTree (Equality querA querB) = (EquateNode (varToOpTree(buildVarTree(queryToVariables(querA)))) (varToOpTree(buildVarTree(queryToVariables(querB)))))
     buildOpTree (V varis) = VarOp (buildVarTree(varis))
+    buildOpTree (ExistentialSingle vTree oTree) = (ExistVar (buildVarTree(vars)) (buildOpTree (quer))) --(EXIS REFORMAT)
     buildOpTree _ = EmptyOT (Main.Nothing)
     
     --buildRelationalTree :: String -> VarTree -> OpTree
@@ -250,7 +247,9 @@ module Main where
     doesExistInOpTree (node) (RelationNode (string) (varTree)) = doesExistInVarTree node varTree
     doesExistInOpTree (node) (EquateNode (opTree) (opTreeX)) =  doesExistInOpTree node opTree || doesExistInOpTree node opTreeX
     doesExistInOpTree (node) (VarOp (varTree)) = doesExistInVarTree node varTree
-    
+    doesExistInOpTree (node) (ExistVar (vTree) (oTree)) = doesExistInOpTree node oTree --(EXIS REFORMAT) possibly not right depends on purpose of this function
+   --I feel like above line should actually ignore this and call checkExistential on the oTree? Maybe?
+
     doesExistInVarTree :: VarNode -> VarTree -> Bool
     doesExistInVarTree (node) (CommaNode (varNode) (varTree)) = equateNodesDatAndName node varNode || doesExistInVarTree node varTree
     doesExistInVarTree (node) (SingleNode (varNode)) = equateNodesDatAndName node varNode
@@ -258,7 +257,7 @@ module Main where
     
     getOrderOfVars :: ParseTree -> [VarNode]
     getOrderOfVars (Marker (list) (opTree)) = list
-    getOrderOfVars (MarkerNested (list) (existTree)) = list
+    --getOrderOfVars (MarkerNested (list) (existTree)) = list (EXIS REFORMAT)
     getOrderOfVars (EmptyPT (emptyTree)) = []
     
     
@@ -331,7 +330,7 @@ module Main where
 
     assignPTState :: ParseTree -> [String] -> [VarNode]
     assignPTState (Marker (vars) (oTree)) strings = getTreeState((popTree (sanitiseOpTree(oTree)) (strings) 0))
-    assignPTState (MarkerNested (vars) (eTree)) strings = getETreeState(populateExisTree (sanitiseExisTree(eTree)) (strings))
+   -- assignPTState (MarkerNested (vars) (eTree)) strings = getETreeState(populateExisTree (sanitiseExisTree(eTree)) (strings)) (EXIS REFORMAT)
 
     executeQuery :: [[String]] -> ParseTree -> [[VarNode]] -- Elliott: Changed data type here
     executeQuery [] _ = []
@@ -354,11 +353,9 @@ module Main where
     evaluateParseTree :: ParseTree -> [String] -> Bool --
     evaluateParseTree (Marker ordVars oTree) rList          = checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) &&  (evaluate (thisTree))
                                                             where thisTree = popTree (sanitiseOpTree(oTree)) (rList) (0)
-    evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList)
+    --evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList) (EXIS REFORMAT)
     
-    evaluateExis :: ExistTree -> [String] -> Bool
-    evaluateExis eTree strL = (areRepeats(getETreeState(thisTree)) 0) && (checkExistential(thisTree))
-                            where thisTree = populateExisTree (sanitiseExisTree(eTree)) (strL)
+
     --Are all nodes in list . NB ************* Not sure of ">", ">=" ie what combination *******************
     areRepeats :: [VarNode] -> Int -> Bool
     areRepeats [] _ = False --Is this ever called?? -> Nope
@@ -430,19 +427,24 @@ module Main where
     
     equateName :: VarNode -> VarNode -> Bool
     equateName (Vari (loc) (dat) (name)) (Vari (locB) (datB) (nameB)) = ( (dat == datB) && (name == nameB) )
-    
+ 
+ 
+    -- TODO *** *** *** EXIS REFORMAT CASE
     evaluate :: OpTree -> Bool --evaluate opTree freeVarList
     evaluate (EquateNode (l) (r))  =  ( checkEquality (EquateNode (l) (r))) 
     evaluate (RelationNode (loc) (varTr))  = checkRelation (RelationNode (loc) (varTr))
     evaluate (ConjunctionNode (l) (r))  = checkConjunction (ConjunctionNode (l) (r))
+    evaluate (ExistVar vTree oTree) = checkExistential (ExistVar vTree oTree) && evaluate (oTree)
     --evaluate (VarTree ) varRow = 
     --evaluate (VarOp tree) freeVars = assignVars ((traverseDFVar (tree)) freeVars)
     evaluate (VarOp v)  = True
     
-    checkExistential :: ExistTree -> Bool
-    checkExistential (ExistVar (vTree) (oTree)) = (doesListExistInOpTree (traverseDFVar(vTree)) (oTree)) 
-    checkExistential (ExistNest (vTree) (eTree) (oTree)) = (doesListExistInOpTree (traverseDFVar(vTree)) (oTree)) && checkExistential (eTree)
-    
+
+    checkExistential :: OpTree -> Bool --does vTree exist in oTree
+    checkExistential (ExistVar vTree oTree) doesListExistInOpTree (traverseDFVar vTree) oTree
+
+
+
     checkConjunction :: OpTree -> Bool
     checkConjunction  (ConjunctionNode (l) (r) ) = (evaluate(l)) && (evaluate(r))
     
@@ -478,11 +480,9 @@ module Main where
     {-==============================================================================-}
     getPTreeState :: ParseTree -> [VarNode]
     getPTreeState (Marker (vars) (oTree)) = getTreeState (oTree)
-    getPTreeState (MarkerNested (vars) (eTree) ) = getETreeState (eTree)
+   -- getPTreeState (MarkerNested (vars) (eTree) ) = getETreeState (eTree) (EXIS REFORMAT)
     
-    getETreeState :: ExistTree -> [VarNode]
-    getETreeState (ExistVar (vars) (oTree)) = getTreeState(oTree)
-    getETreeState (ExistNest (vars) (eTree) (oTree)) = getTreeState(oTree)
+
     
     
     getTreeState :: OpTree -> [VarNode]
@@ -494,11 +494,9 @@ module Main where
     getTreeState (BoolNode (bool)) = []
     getTreeState (VarOp (varTree)) = traverseDFVar(varTree)
     getTreeState (EmptyOT (emptyTree)) = []
+    getTreeState (ExistVar (vTree) (oTree)) = getTreeState(varToOpTree(vTree)) ++ getTreeState (oTree) --Possibly not what we need (EXIS REFORMAT)
     
-    -- getTreeStateEx :: ExistTree -> [VarNode]
-    -- getTreeStateEx ExistVar (VarTree) (OpTree) 
-    -- getTreeStateEx ExistNest (VarTree) (ExistTree)
-    -- getTreeStateEx EmptyET (EmptyTree)
+
     {-
     --Issues: 1 : When VarOp is met, works fine. However with multiple vTrees spread across conjunctionNode etc, it cant remember the "index" value across diff trees
     --Issues:   : Order of execution means getPopTotal is called BEFORE populateTree so will return 0 and hence fuck up the multi tree issue..i think
@@ -523,7 +521,7 @@ module Main where
     popTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (popSubTree (querA) (rList) (ind)) (popTree (querB) (rList) (ind + (countNodes querA)) ) )
     popTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (popSubTree (querX) (rList) (ind)) (popTree(querY) (rList) (ind + (countNodes querX))) )
     popTree (RelationNode (tbl) (vTree)) rList ind         = popSubTree  (RelationNode (tbl) (vTree)) (rList) (ind)
-
+    --popTree (ExistVar (vTree) (oTree)) rList ind           = THINK ABOUT THIS (EXIS REFORMAT)
 
 
 -- wat do in case at RIGHT subtree at end of tree? ie stopping condition
@@ -533,7 +531,7 @@ module Main where
     popSubTree (ConjunctionNode (querA) (querB)) rList ind  = popTree  (ConjunctionNode (querA) (querB)) (rList) (ind)
     popSubTree (VarOp (vTree)) rList ind                    = (VarOp (populateVarTree (vTree) (rList) (ind)))
     popSubTree (RelationNode (tbl) (vTree)) rList ind       = (RelationNode (tbl) (populateVarTree (vTree) (rList) (ind)))
-
+--THINK ABOUT THIS (EXIS REFORMAT SMART POP)
 
 
 
@@ -553,20 +551,16 @@ module Main where
                                                         
     --populateParseTree :: ParseTree -> [String] ->
     
-    populateExisTree :: ExistTree -> [String] ->  ExistTree
-    populateExisTree (ExistVar (vTree) (oTree)) rList = (ExistVar (populateVarTree (vTree) (rList) (0) ) (popTree (oTree) (rList) (0) ))
-    populateExisTree (ExistNest (vTree) (eTree) (oTree)) rList = (ExistNest (populateVarTree (vTree) (rList) (0) ) (populateExisTree (eTree) (rList) ) (popTree (oTree) (rList) (0)))
+   
     
-    sanitiseExisTree :: ExistTree -> ExistTree
-    sanitiseExisTree (ExistVar (vTree) (oTree)) = (ExistVar (sanitiseVarTree(vTree)) (sanitiseOpTree(oTree)))
-    saniitseExisTree (ExistNest (vTree) (eTree) (oTree)) = (ExistNest (sanitiseVarTree(vTree)) (sanitiseExisTree(eTree)) (sanitiseOpTree(oTree)) )
+    
     
     sanitiseOpTree :: OpTree -> OpTree
     sanitiseOpTree (RelationNode (tblName) (vTree)) = (RelationNode (tblName) (sanitiseVarTree(vTree)))
     sanitiseOpTree (VarOp (vT)) = (VarOp (sanitiseVarTree(vT)))
     sanitiseOpTree (ConjunctionNode (querA) (querB)) = (ConjunctionNode (sanitiseOpTree (querA)) (sanitiseOpTree(querB)) )
     sanitiseOpTree (EquateNode (querX) (querY)) = (EquateNode (sanitiseOpTree (querX)) (sanitiseOpTree (querY)) )
-   
+    sanitiseOpTree (ExistVar (vTree) (oTree)) = (ExistVar (sanitiseVarTree (vTree)) (sanitiseOpTree (oTree)))
     
     sanitiseVarTree :: VarTree -> VarTree
     sanitiseVarTree (SingleNode ( Vari (loc) (dat) (name) ) ) = (  SingleNode (  Vari (loc) ("*") (name)  )  )
@@ -673,16 +667,17 @@ module Main where
 
     extractPTableNames :: ParseTree -> [String]
     extractPTableNames (Marker (vars) (oTree)) = extractOTableNames(getOpRelationNodesOut(oTree))
-    extractPTableNames (MarkerNested (vars) (eTree)) = extractETableNames(eTree)
+    --extractPTableNames (MarkerNested (vars) (eTree)) = extractETableNames(eTree) (EXIS REFORMAT)
     
-    extractETableNames :: ExistTree -> [String]
-    extractETableNames (ExistVar (vTree) (oTree)) = extractOTableNames(getOpRelationNodesOut(oTree))
-    extractETableNames (ExistNest (vTree) (eTree) (oTree)) = extractOTableNames(getOpRelationNodesOut(oTree))
+    
     
     extractOTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodesOut, possibly needs to be reverse
     extractOTableNames [] = []
     extractOTableNames ( (RelationNode (tbl) (vTree)) :xs) = (tbl) : extractOTableNames xs
-    
+    extractOTableNames ((ExistVar vTree oTree):xs) = extractOTableNames oTree
+    --Elliott: Pls add cases for all other oTrees, otherwise it wont traverse correctly
+
+
     assignVarTreeLoc :: VarTree -> String -> VarTree
     assignVarTreeLoc (SingleNode (Vari (loc) (dat) (name))) x = (SingleNode (Vari (x) (dat) (name)))
     assignVarTreeLoc (CommaNode (Vari (loc) (dat) (name)) (remTree)) x = (CommaNode (Vari (x) (dat) (name)) (assignVarTreeLoc (remTree) (x)))
@@ -697,15 +692,15 @@ module Main where
     assignRelation (RelationNode (tbl) (vTree)) relName | isTreeAssigned (vTree) == False = RelationNode (tbl) (assignVarTreeLoc (vTree) (tbl))
                                                         | otherwise = (RelationNode (tbl) (vTree)) --check node equality here
     
+
+
+    --(EXIS REFORMAT) REDUNDANT NOW?? 
     liftRelationNodesOut :: ParseTree -> [OpTree] --Creates list of single node OpTree's, 
     liftRelationNodesOut (Marker vList oTree) = getOpRelationNodesOut(oTree)
-    liftRelationNodesOut (MarkerNested vList eTree) = getExisRelationNodesOut(eTree)
+    --liftRelationNodesOut (MarkerNested vList eTree) = getExisRelationNodesOut(eTree)
     --liftRelationNodesOut (MarkerExtended vList eTree oTree) = getExisRelationNodesOut(eTree) ++ getOpRelationNodesOut(oTree)
     
-    getExisRelationNodesOut :: ExistTree -> [OpTree]
-    getExisRelationNodesOut (ExistVar (vTree) (oTree)) = getOpRelationNodesOut(oTree)
-    getExisRelationNodesOut (ExistNest (vTree) (eTree) (oTree)) = getExisRelationNodesOut(eTree) ++ getOpRelationNodesOut(oTree)
-    getExisRelationNodesOut (EmptyET empty) = []
+
     
     getOpRelationNodesOut :: OpTree -> [OpTree] --Relation nodess are never subtrees of "="
     getOpRelationNodesOut (RelationNode (tbl) (vTree)) = [(RelationNode (tbl) (vTree))]
@@ -732,3 +727,57 @@ module Main where
     -- Blindly assumes OpTree contains a VarTree containing only one VarNode.
     convertOpToVarNode :: OpTree -> VarNode
     convertOpToVarNode (VarOp (vTree)) = treeToNode (vTree)
+
+
+
+    {-==============================================================================-}
+    {-=============================== OLD EXIS STUFF ===============================-}
+    {-==============================================================================-}
+{-
+    getExisRelationNodesOut :: ExistTree -> [OpTree]
+    getExisRelationNodesOut (ExistVar (vTree) (oTree)) = getOpRelationNodesOut(oTree)
+    getExisRelationNodesOut (ExistNest (vTree) (eTree) (oTree)) = getExisRelationNodesOut(eTree) ++ getOpRelationNodesOut(oTree)
+    getExisRelationNodesOut (EmptyET empty) = []
+
+    buildExisTree :: Existential -> ExistTree 
+    buildExisTree (ExistentialSingle (vars) (quer)) = (ExistVar (buildVarTree(vars)) (buildOpTree (quer)))
+    buildExisTree (ExistentialNested (vars) (exisNest) (quer)) = (ExistNest (buildVarTree(vars)) (buildExisTree (exisNest)) (buildOpTree(quer)))
+
+    extractETableNames :: ExistTree -> [String]
+    extractETableNames (ExistVar (vTree) (oTree)) = extractOTableNames(getOpRelationNodesOut(oTree))
+    extractETableNames (ExistNest (vTree) (eTree) (oTree)) = extractOTableNames(getOpRelationNodesOut(oTree))
+
+    sanitiseExisTree :: ExistTree -> ExistTree
+    sanitiseExisTree (ExistVar (vTree) (oTree)) = (ExistVar (sanitiseVarTree(vTree)) (sanitiseOpTree(oTree)))
+    saniitseExisTree (ExistNest (vTree) (eTree) (oTree)) = (ExistNest (sanitiseVarTree(vTree)) (sanitiseExisTree(eTree)) (sanitiseOpTree(oTree)) )
+
+    populateExisTree :: ExistTree -> [String] ->  ExistTree
+    populateExisTree (ExistVar (vTree) (oTree)) rList = (ExistVar (populateVarTree (vTree) (rList) (0) ) (popTree (oTree) (rList) (0) ))
+    populateExisTree (ExistNest (vTree) (eTree) (oTree)) rList = (ExistNest (populateVarTree (vTree) (rList) (0) ) (populateExisTree (eTree) (rList) ) (popTree (oTree) (rList) (0)))
+
+        -- getTreeStateEx :: ExistTree -> [VarNode]
+    -- getTreeStateEx ExistVar (VarTree) (OpTree) 
+    -- getTreeStateEx ExistNest (VarTree) (ExistTree)
+    -- getTreeStateEx EmptyET (EmptyTree)
+
+    getETreeState :: ExistTree -> [VarNode]
+    getETreeState (ExistVar (vars) (oTree)) = getTreeState(oTree)
+    getETreeState (ExistNest (vars) (eTree) (oTree)) = getTreeState(oTree)
+
+    checkExistential :: ExistTree -> Bool
+    checkExistential (ExistVar (vTree) (oTree)) = (doesListExistInOpTree (traverseDFVar(vTree)) (oTree)) 
+    checkExistential (ExistNest (vTree) (eTree) (oTree)) = (doesListExistInOpTree (traverseDFVar(vTree)) (oTree)) && checkExistential (eTree)
+
+    evaluateExis :: ExistTree -> [String] -> Bool
+    evaluateExis eTree strL = (areRepeats(getETreeState(thisTree)) 0) && (checkExistential(thisTree))
+                            where thisTree = populateExisTree (sanitiseExisTree(eTree)) (strL)
+
+                           
+    -- Seperate exisitential operator.
+    -- EXISITENTIAL TREE ***TODO** add case for nested eTree
+    data ExistTree = ExistVar (VarTree) (OpTree) 
+        | ExistNest (VarTree) (ExistTree) (OpTree)
+        | EmptyET (EmptyTree)
+        deriving Show
+    -- ***TODO*** ADD NESTED EXISTENTIAL
+-}

@@ -23,15 +23,12 @@ import HERBTokens
     ","      { TokenComma _ }
                
 
-%left "|-" "E." "," "^" "<C" ">C" 
+%left "|-" "E." "," "^" 
 %right "="
 %% 
 
 Exp : Variables "|-" Query                              { Evaluate $1 $3 }
-	| Variables "|-" Existential                        { Eval $1 $3}
-    | Variables "|-" Existential Query                  { EvalExisExt $1 $3 $4}
-Existential :  "(" Variables ")" "E." "(" Query ")"     { ExistentialSingle $2 $6 }
-    | "(" Variables ")" "E." "(" Existential  ")"  "(" Query ")"  { ExistentialNested $2 $6 $9 }
+
 
 Variables : var "," Variables                     { Comma $1 $3 }
     | var                                               { VarSingle $1}
@@ -41,18 +38,18 @@ Variables : var "," Variables                     { Comma $1 $3 }
 Query : Query "^" Query                                 { Conjunction $1 $3}
     | rel Variables "}"                                 { Relation $1 $2 }
 	| Query "=" Query                                   { Equality $1 $3 }
-	| Query "<C" Query                                  { LSub $1 $3 }
-	| Query ">C" Query                                  { RSub $1 $3 }
 	| True                                              { Bool True }
 	| False                                             { Bool False }
+    | "(" Variables ")" "E." "(" Query ")"     { ExistentialSingle $2 $6 }
+
+
+
      
 { 
 parseError :: [Token] -> a
 parseError token = error "Parse error"
 
 data Exp = Evaluate Variables Query
-    | Eval Variables Existential
-    | EvalExisExt Variables Existential Query
     deriving Show
 
 data Variables = Comma String Variables
@@ -66,9 +63,8 @@ data Query = Conjunction Query Query
     | RSub Query Query
     | Bool Bool
     | V Variables
+    | ExistentialSingle Variables Query
     deriving Show
 
-data Existential = ExistentialSingle Variables Query
-    | ExistentialNested Variables Existential Query
-    deriving Show		  
+	  
 } 

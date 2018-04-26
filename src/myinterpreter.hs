@@ -23,12 +23,20 @@ module Main where
 
 
     {-==============================================================================-}
-    {-================================== DEBUGGING =================================-}
+    {-==================================== TODO ====================================-}
     {-==============================================================================-}
 
-
     
-    
+    --Begin testing existential cases
+    --Make assignTree functions smarter: Differentiate when varName & tableN are different, eg in cases of R(...) ^ R (...), or cases like A(...) ^ B (...) ^ A(...)
+    --3 page user manual
+    --Informative error messages/type system
+    --Rework Exis to allow (x1,x2,x3)E.(Query)
+    --PR6: Account for empty input files
+    --PR10: Potential issue: Scope of var assignments when checking pairs (checkRepeats/groupRepeats)
+    --Add functionality to define empty input file and cause function to add this null value to the xProd table for evaluation
+   
+   
     {-==============================================================================-}
     {-=============================== DATA STRUCTURES ==============================-}
     {-==============================================================================-}

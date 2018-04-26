@@ -332,15 +332,16 @@ module Main where
     assignPTState (Marker (vars) (oTree)) strings = getTreeState((popTree (sanitiseOpTree(oTree)) (strings) 0))
    -- assignPTState (MarkerNested (vars) (eTree)) strings = getETreeState(populateExisTree (sanitiseExisTree(eTree)) (strings)) (EXIS REFORMAT)
 
-    executeQuery :: [[String]] -> ParseTree -> [[VarNode]] -- Elliott: Changed data type here
-    executeQuery [] _ = []
-    executeQuery (row:remainingRows) (pTree)    | (evaluateParseTree (pTree) (row)) == True   = [output] ++ executeQuery (remainingRows) (pTree)
-                                                | (evaluateParseTree (pTree) (row)) == False  = executeQuery (remainingRows) (pTree)
-                                                where   output = assignPTState pTree row -- : executeQuery (remainingRows) (pTree)
-                                                       
 
+-- NEW ExQuer: (EXIS REFORMAT)
+   executeQuery :: [[VarNode]] -> ParseTree -> [[VarNode]]
+   executeQuery [] _ = []
+   executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (assignedTree) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (pTree)
+                                                                | (evaluateParseTree (assignedTree) ) == False  = executeQuery (remainingRows) (pTree)
+                                                                where   assignedRow = assignPTState pTree row -- : executeQuery (remainingRows) (pTree)
+                                                                        assignedTree = popTree (sanitiseOpTree(oTree)) (row) (0)
 
-
+ 
     --Whats this saying elliott idk wat it does. Needed?
     executeQuery''''' :: [[String]] -> ParseTree -> [[String]] -- Elliott: Changed data type here
     executeQuery''''' [] _ = []
@@ -349,12 +350,19 @@ module Main where
                                     -- where nodeFromX = 
 
     -- getNodeFromRow :: 
-    
+
+    --New ePT: (EXIS REFORMAT)
+    evaluateParseTree :: ParseTree -> Bool --
+    evaluateParseTree thisTree rList = checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) && (evaluate (thisTree))
+                                                            
+
+
+    {- OLD VERSION (EXIS REFORMAT)
     evaluateParseTree :: ParseTree -> [String] -> Bool --
     evaluateParseTree (Marker ordVars oTree) rList          = checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) &&  (evaluate (thisTree))
                                                             where thisTree = popTree (sanitiseOpTree(oTree)) (rList) (0)
     --evaluateParseTree (MarkerNested ordVars eTree ) rList   = evaluateExis (eTree) (rList) (EXIS REFORMAT)
-    
+    -}
 
     --Are all nodes in list . NB ************* Not sure of ">", ">=" ie what combination *******************
     areRepeats :: [VarNode] -> Int -> Bool
@@ -515,8 +523,9 @@ module Main where
 
     -- ::::::::::::::::::::::::::::::::::::::::::::::populateTree attempt 2:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-
-    popTree :: OpTree -> [String] -> Int -> OpTree
+--EXIS REFORMAT TODO: In case of R(...) ^ A(...) ^ R(...), R must assign same vals twice /// ALSO: redo entire thing lol (impl filterNBT)
+-- Changed row input from [String] to [VarNode]
+    popTree :: OpTree -> [Varnode] -> Int -> OpTree
     popTree (VarOp (vTree)) rList ind                      = popSubTree  (VarOp (vTree)) (rList) (ind)
     popTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (popSubTree (querA) (rList) (ind)) (popTree (querB) (rList) (ind + (countNodes querA)) ) )
     popTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (popSubTree (querX) (rList) (ind)) (popTree(querY) (rList) (ind + (countNodes querX))) )
@@ -526,14 +535,47 @@ module Main where
 
 -- wat do in case at RIGHT subtree at end of tree? ie stopping condition
 -- wat do when multiple conjunctions etc?? come back here -- think this will be ok
-    popSubTree :: OpTree -> [String] -> Int -> OpTree
+    popSubTree :: OpTree -> [VarNode] -> Int -> OpTree
     popSubTree (EquateNode (querX) (querY)) rList ind       = popTree  (EquateNode (querX) (querY)) (rList) (ind)
     popSubTree (ConjunctionNode (querA) (querB)) rList ind  = popTree  (ConjunctionNode (querA) (querB)) (rList) (ind)
     popSubTree (VarOp (vTree)) rList ind                    = (VarOp (populateVarTree (vTree) (rList) (ind)))
     popSubTree (RelationNode (tbl) (vTree)) rList ind       = (RelationNode (tbl) (populateVarTree (vTree) (rList) (ind)))
+
+
+-- ::::::::::::::::::::::::::::::::::::::::::::::populateTree attempt 4:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    popTree :: OpTree -> [VarNode] -> OpTree
+    popTree (VarOp (vTree)) rList   | existsTreeInRelation vTree == True =
+                                    | existsTreeInRelation vTree == False = 
+    popTree (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTree querA rList) (popTree querB rList)) 
+    popTree (EquateNode (querX) (querY)) rList = (EquateNode (popTree querA rList) (popTree querY rList))
+    popTree (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (popTree (vTree) (rList)))
+    popTree (ExistVar (vTree) (oTree)) rList =
+
+
 --THINK ABOUT THIS (EXIS REFORMAT SMART POP)
+    --REVOLUTIONARY NEW FUNCTION : (EXIS REFORMAT)
+    filterNodesByTable :: [VarNode] -> String -> [VarNode]
+    filterNodesByTable [] _ []
+    filterNodesByTable ((Vari loc dat name):xs) tblName     | loc == tblName = [(Vari loc dat name)] ++ filterNodesByTable xs tblName
+                                                            | loc /= tblName = filterNodesByTable xs
 
+    getNodeAtNameAndLoc :: [VarNode] -> String -> String -> Maybe VarNode
+    getNodeAtNameAndLoc [] _ _ = Main.Nothing
+    getNodeAtNameAndLoc ((Vari loc dat name):xs) thisLoc thisName   | loc == thisLoc && name == thisName = (Vari loc dat name)
+                                                                    | otherwise = getNodeAtNameAndLoc xs
 
+    getNodeAtName :: [VarNode] -> String -> Maybe VarNode
+    getNodeAtName [] _ _ = Main.Nothing
+    getNodeAtName ((Vari loc dat name):xs) thisName | name == thisName = Just (Vari loc dat name)
+                                                    | name =/ thisName = getNodeAtName xs
+
+    existsTreeInRelation :: VarTree -> Bool
+    existsTreeInRelation (SingleNode (Vari loc dat name))  = existsInRelation (Vari loc dat name)    
+    existsTreeInRelation (CommaNode (Vari loc dat name) (rTree) ) existsInRelation (Vari loc dat name) && existsTreeInRelation rTree                                
+
+    existsInRelation :: VarNode -> Bool
+    existsInRelation (Vari loc dat name) = loc /= "*"
 
     countNodes :: OpTree -> Int
     countNodes (ConjunctionNode (querA) (querB)) = countNodes (querA) + countNodes (querB)
@@ -780,4 +822,32 @@ module Main where
         | EmptyET (EmptyTree)
         deriving Show
     -- ***TODO*** ADD NESTED EXISTENTIAL
+
+    popTree :: OpTree -> [String] -> Int -> OpTree
+    popTree (VarOp (vTree)) rList ind                      = popSubTree  (VarOp (vTree)) (rList) (ind)
+    popTree (ConjunctionNode (querA) (querB)) rList ind    = (ConjunctionNode (popSubTree (querA) (rList) (ind)) (popTree (querB) (rList) (ind + (countNodes querA)) ) )
+    popTree (EquateNode (querX) (querY)) rList ind         = (EquateNode (popSubTree (querX) (rList) (ind)) (popTree(querY) (rList) (ind + (countNodes querX))) )
+    popTree (RelationNode (tbl) (vTree)) rList ind         = popSubTree  (RelationNode (tbl) (vTree)) (rList) (ind)
+
+
+        popSubTree :: OpTree -> [String] -> Int -> OpTree
+    popSubTree (EquateNode (querX) (querY)) rList ind       = popTree  (EquateNode (querX) (querY)) (rList) (ind)
+    popSubTree (ConjunctionNode (querA) (querB)) rList ind  = popTree  (ConjunctionNode (querA) (querB)) (rList) (ind)
+    popSubTree (VarOp (vTree)) rList ind                    = (VarOp (populateVarTree (vTree) (rList) (ind)))
+    popSubTree (RelationNode (tbl) (vTree)) rList ind       = (RelationNode (tbl) (populateVarTree (vTree) (rList) (ind)))
+
+
+
+
+      {- OLD VERSION (EXIS REFORMAT)
+    executeQuery :: [[String]] -> ParseTree -> [[VarNode]] -- Elliott: Changed data type here
+    executeQuery [] _ = []
+    executeQuery (row:remainingRows) (pTree)    | (evaluateParseTree (pTree) (row)) == True   = [output] ++ executeQuery (remainingRows) (pTree)
+                                                | (evaluateParseTree (pTree) (row)) == False  = executeQuery (remainingRows) (pTree)
+                                                where   output = assignPTState pTree row -- : executeQuery (remainingRows) (pTree)
+                                                       
+
+
+-}
+
 -}

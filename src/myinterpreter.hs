@@ -196,6 +196,65 @@ module Main where
     --INPUT ROWS
     getNRowFromCrossProd :: [[String]] -> Int -> [String]
     getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
+
+
+
+
+
+
+
+    {-==============================================================================-}
+    {-====================== EXIS REFORMAT NEW TABLE OPERATIONS ====================-}
+    {-==============================================================================-}
+
+
+
+
+
+
+
+    crossNew :: [[[String]]] -> [String] -> [[VarNode]]
+    crossNew [] [] = []
+    crossNew [tableA] (x:xs) = assignTblNm tableA x
+    crossNew [tableA, tableB] (x:y:xs) = assignTblNm tableA x : assignTblNm tableB y
+    crossNew (tableA:tableB:ts) (x:y:xs) = crossNew(firstTwoTables : ts)
+        where firstTwoTables = crossTwo (assignTblNm tableA x) (assignTblNm tableB y)
+
+    assignTblNm :: [[String]] -> String -> [[VarNode]]
+    assignTblNm [] _ = []
+    assignTblNm (row:rs) name = assignDataAndName row name : assignTblName rs name
+
+    assignDataAndName :: [String] -> String -> [VarNode]
+    assignDataAndName [] _ = []
+    assignDataAndName (cell:cs) name = buildVarNode name cell "*" : assignDataAndName cs name
+
+    buildVarNode :: String -> String -> String -> VarNode
+    buildVarNode (tblName) (cell) (varName) = Vari (tblName) (cell) (varName)
+    
+    --Cross two tables.
+    crossTwo :: [[VarNode]] -> [[VarNode]] -> [[VarNode]]
+    crossTwo _ [] = []
+    crossTwo [] _ = []
+    crossTwo (rowA:as) (rowB:bs) = pairRowToTable (rowA) (rowB:bs) ++ crossTwo as (rowB:bs)
+    
+    --Cross a row to an entire table.
+    pairRowToTable :: [VarNode] -> [[VarNode]] -> [[VarNode]]
+    pairRowToTable _ [] = []
+    pairRowToTable rowA (rowB:bs) = [pairRow (rowA) (rowB)] ++ pairRowToTable (rowA) (bs)
+    
+    pairRow :: [VarNode] -> [VarNode] -> [VarNode]
+    pairRow [] _ = []
+    pairRow _ [] = []
+    pairRow rowA rowB = rowA ++ rowB
+
+
+    {-==============================================================================-}
+    {-====================== EXIS REFORMAT old TABLE OPERATIONS ====================-}
+    {-==============================================================================-}
+
+--ELLIOTT PLEASE CONFRIM THESE IDK WHAT ONES ARE STILL APPLICABLE
+
+
     
     --[Table] -> Table
     --[[Row]] -> [Row]
@@ -550,7 +609,13 @@ module Main where
     popTree (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTree querA rList) (popTree querB rList)) 
     popTree (EquateNode (querX) (querY)) rList = (EquateNode (popTree querA rList) (popTree querY rList))
     popTree (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (popTree (vTree) (rList)))
-    popTree (ExistVar (vTree) (oTree)) rList =
+    popTree (ExistVar (vTree) (oTree)) rList =(ExistVar (filterNodesByTable(vTree)))
+
+
+
+
+    --Separate function populating vTree in ExistVar AFTER first round of population, so the relavant table names can be easily extracted:
+    postPopTreePass :: OpTree -> [VarNode] -> OpTree
 
 
 --THINK ABOUT THIS (EXIS REFORMAT SMART POP)

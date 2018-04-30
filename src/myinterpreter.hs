@@ -247,82 +247,31 @@ module Main where
     pairRow _ [] = []
     pairRow rowA rowB = rowA ++ rowB
 
-    --Asked for function here JT: -e
-    getTreeStateList :: OpTree -> [VarNode]
-    getTreeStateList oTree = removeNonExisDups (getTreeState (oTree)) oTree
-    
-    removeNonExisDups :: [VarNode] -> OpTree -> [VarNode]
-    removeNonExisDups [] _ = []
-    removeNonExisDups (v:vs) oTree | containsExisBranch oTree == False = nub (v:vs)
-    removeNonExisDups (v:vs) oTree | containsExisBranch oTree == True = (v:vs) \\ filter (`notElem` (findExisDups (oTree))) -- Only remove dups outside of exis branch
+    -- --Asked for function here JT: -e
+    getUniqueState :: OpTree -> Bool -> [VarNode]
+    getUniqueState (ConjunctionNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
+    getUniqueState (RelationNode (String) (varTree)) False = rmDupVars (varTree) (False)
+    getUniqueState (EquateNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
+    getUniqueState (BoolNode (bool)) False = []
+    getUniqueState (VarOp (varTree)) False = rmDupVars (varTree)
+    getUniqueState (EmptyOT (emptyTree)) False = []
+    getUniqueState (ExistVar (varTree) (oTA)) False = getUniqueState (oTA) (True)
 
-    containsExisBranch :: OpTree -> Bool
-    containsExisBranch (ConjunctionNode (oTA) (oTB)) = containsExisBranch oTA && containsExisBranch oTB
-    containsExisBranch (RelationNode (String) (varTree)) = False
-    containsExisBranch (EquateNode (oTA) (oTB)) =  containsExisBranch oTA && containsExisBranch oTB
-    containsExisBranch (BoolNode (bool)) = False
-    containsExisBranch (VarOp (varTree)) = False
-    containsExisBranch (EmptyOT (emptyTree)) = False
-    containsExisBranch (ExistVar (varTree) (oTA)) = True
+    getUniqueState (ConjunctionNode (oTA) (oTB)) True = getUniqueState oTA (True) ++ getUniqueState oTB (True)
+    getUniqueState (RelationNode (String) (varTree)) True = varTreeToList (varTree)
+    getUniqueState (EquateNode (oTA) (oTB)) True = getUniqueState oTA (True) ++ getUniqueState oTB (True)
+    getUniqueState (BoolNode (bool)) True = []
+    getUniqueState (VarOp (varTree)) True = varTreeToList (varTree)
+    getUniqueState (EmptyOT (emptyTree)) True = []
+    getUniqueState (ExistVar (varTree) (oTA)) True = getUniqueState (oTA) (True)
 
-    findExisDups :: OpTree -> [VarNode]
-    findExisDups (ConjunctionNode (oTA) (oTB)) = findExisDups oTA ++ findExisDups oTB
-    findExisDups (RelationNode (String) (varTree)) = []
-    findExisDups (EquateNode (oTA) (oTB)) = findExisDups oTA ++ findExisDups oTB
-    findExisDups (BoolNode (bool)) = []
-    findExisDups (VarOp (varTree)) = []
-    findExisDups (EmptyOT (emptyTree)) = []
-    findExisDups (ExistVar (varTree) (oTA)) = -- ONLY THING NEEDED TO ADD NOW
-    -- 
+    rmDupVars :: VarTree -> [VarNode]
+    rmDupVars vTree = nub (varTreeToList(vTree))
 
-    -- First attempt was below. Above is much better but left it incase..
-
-    -- removeNonExisDups (v:vs) (ConjunctionNode (oTA) (oTB)) = 
-    -- removeNonExisDups (v:vs) (RelationNode (String) (varTree)) =
-    -- removeNonExisDups (v:vs) (EquateNode (oTA) (oTB)) = 
-    -- removeNonExisDups (v:vs) (BoolNode (bool)) =
-    -- removeNonExisDups (v:vs) (VarOp (varTree)) =
-    -- removeNonExisDups (v:vs) (EmptyOT (emptyTree)) =
-        .
-    -- removeNonExisDups (v:vs) (ExistVar (varTree) (oTA)) = 
-
-    -- getTreeState :: OpTree -> [VarNode]
-    -- getTreeState (ConjunctionNode (opTree) (opTreeX)) = getTreeState(opTree) ++ getTreeState (opTreeX)
-    -- getTreeState (RelationNode (string) (varTree)) = getTreeState(varToOpTree(varTree))
-    -- getTreeState (EquateNode (opTree) (opTreeX)) = getTreeState (opTree) ++ getTreeState (opTreeX)
-    -- getTreeState (LSubNode (opTree) (opTreeX)) = getTreeState (opTree) ++ getTreeState (opTreeX)
-    -- getTreeState (RSubNode (opTree) (opTreeX)) = getTreeState (opTree) ++ getTreeState (opTreeX)
-    -- getTreeState (BoolNode (bool)) = []
-    -- getTreeState (VarOp (varTree)) = traverseDFVar(varTree)
-    -- getTreeState (EmptyOT (emptyTree)) = []
-    -- getTreeState (ExistVar (vTree) (oTree)) = getTreeState(varToOpTree(vTree)) ++ getTreeState (oTree) --Possibly not what we need (EXIS REFORMAT)
-    
-    -- getUnique :: OpTree -> [VarNode]
-    -- getUnique ConjunctionNode (oTA) (oTB) = getUnique oTA : getUnique oTB
-    -- getUnique RelationNode (String) (varTree) = getUnique(varToOpTree(varTree))
-    -- getUnique EquateNode (oTA) (oTB) = getUnique oTA : getUnique oTB
-    -- getUnique BoolNode (bool) = [] 
-    -- getUnique VarOp (VarTree) = returnUnique (varToOpTree(varTree))
-    -- getUnique EmptyOT (EmptyTree) = []
-    -- getUnique ExistVar (VarTree) (OpTree) = --TODO
-
-    -- inExis :: OpTree -> VarNode -> Bool
-    -- inExis (ConjunctionNode (oTA) (oTB)) vN = inExis oTA vN && inExis oTB vN
-    -- inExis (RelationNode (String) (varTree)) vN = False
-    -- inExis (EquateNode (oTA) (otB)) vN = inExis oTA vn && inExis oTB vn
-    -- inExis (BoolNode (bool)) vN = False
-    -- inExis (VarOp (varTree)) vN = False
-    -- inExis (EmptyOT (emptyTree)) vN = False
-    -- inExis (ExistVar (varTree) (oTA)) vN = inVarTree varTree vN && inExis oTA  
-
-    -- inVarTree :: VarTree -> VarNode -> Bool
-    -- inVarTree (CommaNode (varNode) (varTree)) toCheck | varNode == toCheck = True -- potential error with == ??????
-    -- inVarTree (CommaNode (varNode) (varTree)) toCheck | varNode /= toCheck = inVarTree varTree toCheck
-    -- inVarTree (SingleNode (varNode)) toCheck | varNode == toCheck = True
-    -- inVarTree (SingleNode (varNode)) toCheck | varNode == toCheck = False
-    -- inVarTree (EmptyVT (EmtpyTree)) = False
-
-    
+    varTreeToList :: VarTree -> [VarNode]
+    varTreeToList (CommaNode (varNode) (restTree)) = varNode : varTreeToList restTree
+    varTreeToList (SingleNode (varNode)) = [] : varNode
+    varTreeToList (EmptyVT (EmptyTree)) = [] 
 
     {-==============================================================================-}
     {-====================== EXIS REFORMAT old TABLE OPERATIONS ====================-}

@@ -65,7 +65,7 @@ module Main where
     data OpTree = ConjunctionNode (OpTree) (OpTree)
         | RelationNode (String) (VarTree) -- String is Table name.
         | EquateNode (OpTree) (OpTree)
-        | LSubNode (OpTree) (OpTree)
+        | LSubNode (OpTree) (OpTree) -- JT CAN WE REMOVE THESE?
         | RSubNode (OpTree) (OpTree)
         | BoolNode (Bool)
         | VarOp (VarTree)
@@ -247,13 +247,77 @@ module Main where
     pairRow _ [] = []
     pairRow rowA rowB = rowA ++ rowB
 
+    --Asked for function here JT: -e
+    getTreeStateList :: OpTree -> [VarNode]
+    getTreeStateList oTree = removeNonExisDups (getTreeState (oTree)) oTree
+    
+    removeNonExisDups :: [VarNode] -> OpTree -> [VarNode]
+    removeNonExisDups [] _ = []
+    removeNonExisDups (v:vs) oTree | containsExisBranch oTree == False = nub (v:vs)
+    removeNonExisDups (v:vs) oTree | containsExisBranch oTree == True = ??????? -- Only remove dups outside of exis branch
+
+    containsExisBranch :: OpTree -> Bool
+    containsExisBranch (ConjunctionNode (oTA) (oTB)) = containsExisBranch oTA && containsExisBranch oTB
+    containsExisBranch (RelationNode (String) (varTree)) = False
+    containsExisBranch (EquateNode (oTA) (oTB)) =  containsExisBranch oTA && containsExisBranch oTB
+    containsExisBranch (BoolNode (bool)) = False
+    containsExisBranch (VarOp (varTree)) = False
+    containsExisBranch (EmptyOT (emptyTree)) = False
+    containsExisBranch (ExistVar (varTree) (oTA)) = True
+
+
+    -- removeNonExisDups (v:vs) (ConjunctionNode (oTA) (oTB)) = 
+    -- removeNonExisDups (v:vs) (RelationNode (String) (varTree)) =
+    -- removeNonExisDups (v:vs) (EquateNode (oTA) (oTB)) = 
+    -- removeNonExisDups (v:vs) (BoolNode (bool)) =
+    -- removeNonExisDups (v:vs) (VarOp (varTree)) =
+    -- removeNonExisDups (v:vs) (EmptyOT (emptyTree)) =
+    -- removeNonExisDups (v:vs) (ExistVar (varTree) (oTA)) = 
+
+    getTreeState :: OpTree -> [VarNode]
+    getTreeState (ConjunctionNode (opTree) (opTreeX)) = getTreeState(opTree) ++ getTreeState (opTreeX)
+    getTreeState (RelationNode (string) (varTree)) = getTreeState(varToOpTree(varTree))
+    getTreeState (EquateNode (opTree) (opTreeX)) = getTreeState (opTree) ++ getTreeState (opTreeX)
+    getTreeState (LSubNode (opTree) (opTreeX)) = getTreeState (opTree) ++ getTreeState (opTreeX)
+    getTreeState (RSubNode (opTree) (opTreeX)) = getTreeState (opTree) ++ getTreeState (opTreeX)
+    getTreeState (BoolNode (bool)) = []
+    getTreeState (VarOp (varTree)) = traverseDFVar(varTree)
+    getTreeState (EmptyOT (emptyTree)) = []
+    getTreeState (ExistVar (vTree) (oTree)) = getTreeState(varToOpTree(vTree)) ++ getTreeState (oTree) --Possibly not what we need (EXIS REFORMAT)
+    
+    getUnique :: OpTree -> [VarNode]
+    getUnique ConjunctionNode (oTA) (oTB) = getUnique oTA : getUnique oTB
+    getUnique RelationNode (String) (varTree) = getUnique(varToOpTree(varTree))
+    getUnique EquateNode (oTA) (oTB) = getUnique oTA : getUnique oTB
+    getUnique BoolNode (bool) = [] 
+    getUnique VarOp (VarTree) = returnUnique (varToOpTree(varTree))
+    getUnique EmptyOT (EmptyTree) = []
+    getUnique ExistVar (VarTree) (OpTree) = --TODO
+
+    inExis :: OpTree -> VarNode -> Bool
+    inExis (ConjunctionNode (oTA) (oTB)) vN = inExis oTA vN && inExis oTB vN
+    inExis (RelationNode (String) (varTree)) vN = False
+    inExis (EquateNode (oTA) (otB)) vN = inExis oTA vn && inExis oTB vn
+    inExis (BoolNode (bool)) vN = False
+    inExis (VarOp (varTree)) vN = False
+    inExis (EmptyOT (emptyTree)) vN = False
+    inExis (ExistVar (varTree) (oTA)) vN = inVarTree varTree vN && inExis oTA  
+
+    inVarTree :: VarTree -> VarNode -> Bool
+    inVarTree (CommaNode (varNode) (varTree)) toCheck | varNode == toCheck = True -- potential error with == ??????
+    inVarTree (CommaNode (varNode) (varTree)) toCheck | varNode /= toCheck = inVarTree varTree toCheck
+    inVarTree (SingleNode (varNode)) toCheck | varNode == toCheck = True
+    inVarTree (SingleNode (varNode)) toCheck | varNode == toCheck = False
+    inVarTree (EmptyVT (EmtpyTree)) = False
+
+    
 
     {-==============================================================================-}
     {-====================== EXIS REFORMAT old TABLE OPERATIONS ====================-}
     {-==============================================================================-}
 
 --ELLIOTT PLEASE CONFRIM THESE IDK WHAT ONES ARE STILL APPLICABLE
-
+-- Pretty much all these are redudant now. -E
 
     
     --[Table] -> Table

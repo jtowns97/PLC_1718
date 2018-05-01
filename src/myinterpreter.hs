@@ -607,7 +607,7 @@ module Main where
 
 
     -- ::::::::::::::::::::::::::::::::::::::::::::::populateTree attempt 2:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
+{-
 --EXIS REFORMAT TODO: In case of R(...) ^ A(...) ^ R(...), R must assign same vals twice /// ALSO: redo entire thing lol (impl filterNBT)
 -- Changed row input from [String] to [VarNode]
     popTree :: OpTree -> [Varnode] -> Int -> OpTree
@@ -625,7 +625,7 @@ module Main where
     popSubTree (ConjunctionNode (querA) (querB)) rList ind  = popTree  (ConjunctionNode (querA) (querB)) (rList) (ind)
     popSubTree (VarOp (vTree)) rList ind                    = (VarOp (populateVarTree (vTree) (rList) (ind)))
     popSubTree (RelationNode (tbl) (vTree)) rList ind       = (RelationNode (tbl) (populateVarTree (vTree) (rList) (ind)))
- 
+ -}
 
 -- ::::::::::::::::::::::::::::::::::::::::::::::populateTree attempt 4:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 {-
@@ -642,6 +642,13 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 
 -}
 
+
+
+    popTree :: OpTree -> [VarNode] -> OpTree
+    popTree oTree rList = popTreeNextPass postFstTree uniqueState
+                        where   postFstTree = popTreeFirstPass oTree rList
+                                uniqueState = getUniqueState postFstTree
+    
 
     popTreeFirstPass :: OpTree -> [VarNode] -> OpTree
     popTreeFirstPass (VarOp (vTree)) rList   = (VarOp (vTree))-- Case example: x1  =  x2 ^ ... |||| To be left for 2nd pass
@@ -666,7 +673,9 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popBoundVNode (Vari loc dat name) rList | extractExactNode rList loc name == Main.Nothing = (Vari loc dat name)
                                             | otherwise = extractExactNode rList loc name
 
-    assignScope :: OpTree -> OpTree
+    --assignScope :: OpTree -> OpTree
+
+
 
     getNodeLocation :: String -> [VarNode] -> String -- name -> rList -> location
     getNodeLocation _ [] = "*" -- Elliott : you can probably error check when this case occurs cos all varN's should have a location after population (need to implement that tho)

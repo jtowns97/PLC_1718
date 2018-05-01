@@ -66,7 +66,7 @@ module Main where
     data OpTree = ConjunctionNode (OpTree) (OpTree)
         | RelationNode (String) (VarTree) -- String is Table name.
         | EquateNode (OpTree) (OpTree)
-        | LSubNode (OpTree) (OpTree)
+        | LSubNode (OpTree) (OpTree) -- JT CAN WE REMOVE THESE?
         | RSubNode (OpTree) (OpTree)
         | BoolNode (Bool)
         | VarOp (VarTree)
@@ -248,13 +248,38 @@ module Main where
     pairRow _ [] = []
     pairRow rowA rowB = rowA ++ rowB
 
+    -- --Asked for function here JT: -e
+    getUniqueState :: OpTree -> Bool -> [VarNode]
+    getUniqueState (ConjunctionNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
+    getUniqueState (RelationNode (String) (varTree)) False = rmDupVars (varTree) (False)
+    getUniqueState (EquateNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
+    getUniqueState (BoolNode (bool)) False = []
+    getUniqueState (VarOp (varTree)) False = rmDupVars (varTree)
+    getUniqueState (EmptyOT (emptyTree)) False = []
+    getUniqueState (ExistVar (varTree) (oTA)) False = getUniqueState (oTA) (True)
+
+    getUniqueState (ConjunctionNode (oTA) (oTB)) True = getUniqueState oTA (True) ++ getUniqueState oTB (True)
+    getUniqueState (RelationNode (String) (varTree)) True = varTreeToList (varTree)
+    getUniqueState (EquateNode (oTA) (oTB)) True = getUniqueState oTA (True) ++ getUniqueState oTB (True)
+    getUniqueState (BoolNode (bool)) True = []
+    getUniqueState (VarOp (varTree)) True = varTreeToList (varTree)
+    getUniqueState (EmptyOT (emptyTree)) True = []
+    getUniqueState (ExistVar (varTree) (oTA)) True = getUniqueState (oTA) (True)
+
+    rmDupVars :: VarTree -> [VarNode]
+    rmDupVars vTree = nub (varTreeToList(vTree))
+
+    varTreeToList :: VarTree -> [VarNode]
+    varTreeToList (CommaNode (varNode) (restTree)) = varNode : varTreeToList restTree
+    varTreeToList (SingleNode (varNode)) = [] : varNode
+    varTreeToList (EmptyVT (EmptyTree)) = [] 
 
     {-==============================================================================-}
     {-====================== EXIS REFORMAT old TABLE OPERATIONS ====================-}
     {-==============================================================================-}
 
 --ELLIOTT PLEASE CONFRIM THESE IDK WHAT ONES ARE STILL APPLICABLE
-
+-- Pretty much all these are redudant now. -E
 
     
     --[Table] -> Table

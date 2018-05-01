@@ -45,6 +45,7 @@ module Main where
 
     --EXIS REFORMAT LEFT TO DO:
     --executeQuery, populateTree (smart), checkExistetial, evalutateExis
+    --checkBound
    
     {-==============================================================================-}
     {-=============================== DATA STRUCTURES ==============================-}
@@ -599,21 +600,90 @@ module Main where
     popSubTree (ConjunctionNode (querA) (querB)) rList ind  = popTree  (ConjunctionNode (querA) (querB)) (rList) (ind)
     popSubTree (VarOp (vTree)) rList ind                    = (VarOp (populateVarTree (vTree) (rList) (ind)))
     popSubTree (RelationNode (tbl) (vTree)) rList ind       = (RelationNode (tbl) (populateVarTree (vTree) (rList) (ind)))
-
+ 
 
 -- ::::::::::::::::::::::::::::::::::::::::::::::populateTree attempt 4:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-    popTree :: OpTree -> [VarNode] -> OpTree
-    popTree (VarOp (vTree)) rList   | existsTreeInRelation vTree == True =
-                                    | existsTreeInRelation vTree == False = 
-    popTree (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTree querA rList) (popTree querB rList)) 
-    popTree (EquateNode (querX) (querY)) rList = (EquateNode (popTree querA rList) (popTree querY rList))
-    popTree (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (popTree (vTree) (rList)))
-    popTree (ExistVar (vTree) (oTree)) rList =(ExistVar (filterNodesByTable(vTree)))
+{-
+General order of execution:
+pre pass check          : checkBounds rule applied + existential Scope rule potentially??
+                        : assign eqNode vNodes locations with assignEqLocation
+1st pass of population  : populates varnodes encapsulated within a relation eg R(x1,z2)
+2nd pass of population  : populated varnodes outside of relation eg x1 = x2, or (z1,z2)E.(..) data and location
 
 
+--Consider case         : x1,x2 |- (R{x1,x2} ^ x1 = x2)
+                        : 
+--unsolved problem: in case (z1,z2)E.(R{z1,z2} ^ z1 = z2) how do we specify scope of the exis variables -  as a different variable of same name could exist in query
+
+-}
 
 
+    popTreeFirstPass :: OpTree -> [VarNode] -> OpTree
+    popTreeFirstPass (VarOp (vTree)) rList   = (VarOp (vTree))-- Case example: x1  =  x2 ^ ... |||| To be left for 2nd pass
+    popTreeFirstPass (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeFirstPass querA rList) (popTreeFirstPass querB rList)) 
+    popTreeFirstPass (EquateNode (querX) (querY)) rList = (EquateNode (popTreeFirstPass querA rList) (popTreeFirstPass querY rList))
+    popTreeFirstPass (RelationNode (tbl) (vTree)) rList = popRelation (RelationNode (tbl) (vTree)) (rList)
+    popTreeFirstPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeFirstPass oTree rList) )
+
+
+    popTreeNextPass :: OpTree -> [VarNode] -> OpTree
+    popTreeNextPass (VarOp (vTree)) rList   = (VarOp (vTree)) -- Does this case ever occur
+    popTreeNextPass (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeNextPass querA rList) (popTreeNextPass querB rList)) 
+    popTreeNextPass (EquateNode (querX) (querY)) rList = (EquateNode (popTreeNextPass querA rList) (popTreeNextPass querY rList)) --popEquateNode
+    popTreeNextPass (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (vTree)) --Already populated so left alone
+    popTreeNextPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeNextPass oTree rList) )
+
+    popBoundVTree :: OpTree -> [VarNode] -> OpTree
+    popBoundVTree (VarOp(SingleNode (vNode))) rList = VarOp (popBoundVNode (vNode) (rList))
+    popBoundVTree (VarOp(CommaNode (vNode) (remTree))) rList = VarOp ( CommaNode (popBoundVNode (vNode) (rList)) (popBoundVTree (remTree) (rList)) )
+
+    popBoundVNode :: VarNode -> [VarNode] -> VarNode --2nd pass only, MAYBE additional check to ensure all values are populated
+    popBoundVNode (Vari loc dat name) rList | extractExactNode rList loc name == Main.Nothing = (Vari loc dat name)
+                                            | otherwise = extractExactNode rList loc name
+
+    assignScope :: OpTree -> OpTree
+
+    getNodeLocation :: String -> [VarNode] -> String -- name -> rList -> location
+    getNodeLocation _ [] = "*" -- Elliott : you can probably error check when this case occurs cos all varN's should have a location after population (need to implement that tho)
+    getNodeLocation name (x:xs) | equateNodeName x name == True = unwrapNodeLocation x
+                                | equateNodeName x name == False = getNodeLocation name xs
+
+    unwrapNodeLocation :: VarNode -> String
+    unwrapNodeLocation (Vari loc dat name) = loc 
+
+    equateNodeName :: VarNode -> String -> Bool
+    equateNodeName (Vari locA datA nameA) nameB = nameA == nameB 
+
+        
+
+    extractExactNode :: [VarNode] -> String -> String -> Maybe VarNode --rList -> loc -> name -> outputNode
+    extractExactNode [] _  _ = Main.Nothing
+    extractExactNode (x:xs) loc name    | matchLocName x loc name == True = x
+                                        | matchLocName x loc name == False = extractExactNode xs loc name
+
+    matchLocName :: VarNode -> String -> String -> Bool 
+    matchLocName (Vari thisLoc thisDat thisName) loc name = (thisLoc == loc) && (thisName == name)
+
+    
+
+
+
+
+    popVarTree :: VarTree -> [VarNode] -> VarTree
+    popVarTree (SingleNode (vNode)) rList = popVarNode (vNode) (rList)
+    popVarTree (CommaNode (vNode) (vTree)) rList = (CommaNode (popVarNode(vNode) (rList)) (popVarTree vTree rList)
+
+    popVarNode :: VarTree -> [VarNode] -> VarTree -- for use in popRelation
+    popVarNode (SingleNode (Vari loc dat name)) rList   | isNodeAssigned (Vari loc dat name) =   (extractOutput' rList)
+                                                        | !isNodeAssigned (Vari loc dat name) = --unsure rn
+
+    popRelation :: OpTree -> [VarNode] -> OpTree --RelatioNode case only
+    popRelation (RelationNode (tbl) (vTree)) rList = populateVarTree (vTree) (extractOutput'(filterNodesByTable rList tbl)) 0
+
+    
+
+
+    --REMEMBER: NON BOUND VARIABLES, eg (z1,z2 (E. (R(z1,z2)))), CAN BE DUPLICATED ELSEWHERE IN QUERY AND SHOULDNT BE REMOVED FROM THE LIST, AS THEYRE UNIQUE
     --Separate function populating vTree in ExistVar AFTER first round of population, so the relavant table names can be easily extracted:
     postPopTreePass :: OpTree -> [VarNode] -> OpTree
 

@@ -274,7 +274,7 @@ module Main where
     -- --Asked for function here JT: -e
     getUniqueState :: OpTree -> Bool -> [VarNode]
     getUniqueState (ConjunctionNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
-    getUniqueState (RelationNode (String) (varTree)) False = rmDupVars (varTree) (False)
+    getUniqueState (RelationNode (string) (varTree)) False = rmDupVars (varTree) (False)
     getUniqueState (EquateNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
     getUniqueState (BoolNode (bool)) False = []
     getUniqueState (VarOp (varTree)) False = rmDupVars (varTree)
@@ -282,7 +282,7 @@ module Main where
     getUniqueState (ExistVar (varTree) (oTA)) False = getUniqueState (oTA) (True)
 
     getUniqueState (ConjunctionNode (oTA) (oTB)) True = getUniqueState oTA (True) ++ getUniqueState oTB (True)
-    getUniqueState (RelationNode (String) (varTree)) True = varTreeToList (varTree)
+    getUniqueState (RelationNode (string) (varTree)) True = varTreeToList (varTree)
     getUniqueState (EquateNode (oTA) (oTB)) True = getUniqueState oTA (True) ++ getUniqueState oTB (True)
     getUniqueState (BoolNode (bool)) True = []
     getUniqueState (VarOp (varTree)) True = varTreeToList (varTree)
@@ -295,7 +295,7 @@ module Main where
     varTreeToList :: VarTree -> [VarNode]
     varTreeToList (CommaNode (varNode) (restTree)) = varNode : varTreeToList restTree
     varTreeToList (SingleNode (varNode)) = [] : varNode
-    varTreeToList (EmptyVT (EmptyTree)) = [] 
+    varTreeToList (EmptyVT (emptyTree)) = [] 
 
     {-==============================================================================-}
     {-====================== EXIS REFORMAT old TABLE OPERATIONS ====================-}
@@ -547,17 +547,15 @@ module Main where
     evaluate (ExistVar vTree oTree) = checkExistential (ExistVar vTree oTree) && evaluate (oTree)
     --evaluate (VarTree ) varRow = 
     --evaluate (VarOp tree) freeVars = assignVars ((traverseDFVar (tree)) freeVars)
-    evaluate (VarOp v)  = True
-    
-
-    checkExistential :: OpTree -> Bool --does vTree exist in oTree
-    checkExistential (ExistVar vTree oTree) doesListExistInOpTree (traverseDFVar vTree) oTree
-
-
+    evaluate (VarOp v) = True
 
     checkConjunction :: OpTree -> Bool
     checkConjunction  (ConjunctionNode (l) (r) ) = (evaluate(l)) && (evaluate(r))
     
+    checkExistential :: OpTree -> Bool --does vTree exist in oTree
+    checkExistential (ExistVar vTree oTree) = doesListExistInOpTree (traverseDFVar vTree) oTree
+
+
     checkRelation :: OpTree -> Bool
     checkRelation (RelationNode (tbl) (vList)) = isTreePopulated(vList)
     
@@ -740,7 +738,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 --THINK ABOUT THIS (EXIS REFORMAT SMART POP)
     --REVOLUTIONARY NEW FUNCTION : (EXIS REFORMAT)
     filterNodesByTable :: [VarNode] -> String -> [VarNode]
-    filterNodesByTable [] _ []
+    filterNodesByTable [] _ = []
     filterNodesByTable ((Vari loc dat name):xs) tblName     | loc == tblName = [(Vari loc dat name)] ++ filterNodesByTable xs tblName
                                                             | loc /= tblName = filterNodesByTable xs
 

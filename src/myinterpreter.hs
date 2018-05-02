@@ -133,33 +133,7 @@ module Main where
     checkSyntax (Evaluate (VarSingle String) (ExistentialSingle Variables Query)) = True
     -}
 
-    {-==============================================================================-}
-    {-================================= BUILDING ===================================-}
-    {-==============================================================================-}
-    
-
-    buildParseTree :: Exp -> ParseTree
-    buildParseTree (Evaluate (vars) (query)) = Marker (traverseDFVar(buildVarTree(vars)))  (buildOpTree(query))
-    --buildParseTree (Eval vars exis) = MarkerNested (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (EXIS REFORMAT)
-    
-    buildVarTree :: Variables -> VarTree
-    buildVarTree (VarSingle strName) = SingleNode (Vari ("*") ("*") (strName))
-    buildVarTree (Comma (string) remVars) = CommaNode (Vari ("*") ("*") (string)) (buildVarTree remVars)
-
-
-    
-    buildOpTree :: Query -> OpTree 
-    buildOpTree (Conjunction querA querB) = ConjunctionNode (buildOpTree querA) (buildOpTree querB)
-    buildOpTree (Relation tblN varis) = RelationNode (tblN) (assignVarTreeLoc (buildVarTree varis) (tblN) )
-    --Below (TODO) add type checker for querA/B, checking its a VarTree
-    buildOpTree (Equality querA querB) = (EquateNode (varToOpTree(buildVarTree(queryToVariables(querA)))) (varToOpTree(buildVarTree(queryToVariables(querB)))))
-    buildOpTree (V varis) = VarOp (buildVarTree(varis))
-    buildOpTree (ExistentialSingle vTree oTree) = (ExistVar (buildVarTree(vars)) (buildOpTree (quer))) --(EXIS REFORMAT)
-    buildOpTree _ = EmptyOT (Main.Nothing)
-    
-    --buildRelationalTree :: String -> VarTree -> OpTree
-    --buildRelationalTree tblName vTree = (RelationNode (tblName) (assignVarTreeLoc (vTree) (tblName)))
-    
+  
     {-==============================================================================-}
     {-=============================== CSV EXTRACTION ===============================-}
     {-==============================================================================-}
@@ -192,6 +166,37 @@ module Main where
     removeDups' [] = []
     removeDups' (x:xs) =  [head x] ++ removeDups' xs
     
+
+    {-==============================================================================-}
+    {-================================= BUILDING ===================================-}
+    {-==============================================================================-}
+    
+
+    buildParseTree :: Exp -> ParseTree
+    buildParseTree (Evaluate (vars) (query)) = Marker (traverseDFVar(buildVarTree(vars)))  (buildOpTree(query))
+    --buildParseTree (Eval vars exis) = MarkerNested (traverseDFVar(buildVarTree(vars))) (buildExisTree(exis)) (EXIS REFORMAT)
+    
+    buildVarTree :: Variables -> VarTree
+    buildVarTree (VarSingle strName) = SingleNode (Vari ("*") ("*") (strName))
+    buildVarTree (Comma (string) remVars) = CommaNode (Vari ("*") ("*") (string)) (buildVarTree remVars)
+
+
+    
+    buildOpTree :: Query -> OpTree 
+    buildOpTree (Conjunction querA querB) = ConjunctionNode (buildOpTree querA) (buildOpTree querB)
+    buildOpTree (Relation tblN varis) = RelationNode (tblN) (assignVarTreeLoc (buildVarTree varis) (tblN) )
+    --Below (TODO) add type checker for querA/B, checking its a VarTree
+    buildOpTree (Equality querA querB) = (EquateNode (varToOpTree(buildVarTree(queryToVariables(querA)))) (varToOpTree(buildVarTree(queryToVariables(querB)))))
+    buildOpTree (V varis) = VarOp (buildVarTree(varis))
+    buildOpTree (ExistentialSingle vTree oTree) = (ExistVar (buildVarTree(vars)) (buildOpTree (quer))) --(EXIS REFORMAT)
+    buildOpTree _ = EmptyOT (Main.Nothing)
+    
+    --buildRelationalTree :: String -> VarTree -> OpTree
+    --buildRelationalTree tblName vTree = (RelationNode (tblName) (assignVarTreeLoc (vTree) (tblName)))
+    
+
+
+
     {-==============================================================================-}
     {-============================== TABLE OPERATIONS ==============================-}
     {-==============================================================================-}
@@ -438,7 +443,7 @@ module Main where
 
     executeQuery :: [[VarNode]] -> ParseTree -> [[VarNode]]
     executeQuery [] _ = []
-    executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (assignedTree) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (pTree)
+    executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (assignedTree) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (oTree)
                                                                  | (evaluateParseTree (assignedTree) ) == False  = executeQuery (remainingRows) (pTree)
                                                                  where   assignedRow = assignPTState pTree row -- : executeQuery (remainingRows) (pTree)
                                                                          assignedTree = popTree (sanitiseOpTree(oTree)) (row) (0)

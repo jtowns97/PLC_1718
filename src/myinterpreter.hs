@@ -117,6 +117,7 @@ module Main where
 
     --checkBounds
     --checkScope
+    {-
     checkSyntax :: Exp -> Bool
     checkSyntax (Evaluate (Comma String Variables) (Conjunction Query Query)) = True
     checkSyntax (Evaluate (Comma String Variables) (Relation String Variables)) = True
@@ -130,7 +131,7 @@ module Main where
     checkSyntax (Evaluate (VarSingle String) (Bool Bool)) = True
     checkSyntax (Evaluate (VarSingle String) (V Variables)) = True
     checkSyntax (Evaluate (VarSingle String) (ExistentialSingle Variables Query)) = True
-
+    -}
 
     {-==============================================================================-}
     {-================================= BUILDING ===================================-}
@@ -299,7 +300,7 @@ module Main where
     {-==============================================================================-}
     {-====================== EXIS REFORMAT old TABLE OPERATIONS ====================-}
     {-==============================================================================-}
-
+{-
 --ELLIOTT PLEASE CONFRIM THESE IDK WHAT ONES ARE STILL APPLICABLE
 -- Pretty much all these are redudant now. -E
 
@@ -344,7 +345,7 @@ module Main where
     -- foldRows :: [[[String]]] -> [[String]]
     -- foldRows [] = []
     -- foldRows [table] = foldr (++) [] [table]
-    
+    -}
     doesListExistInOpTree :: [VarNode] -> OpTree -> Bool
     doesListExistInOpTree (x:xs) oTree = ( doesExistInOpTree (x) (oTree) ) && ( doesListExistInOpTree (xs) (oTree) )
     doesListExistInOpTree [] oTree = True
@@ -713,16 +714,18 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 
     matchLocName :: VarNode -> String -> String -> Bool 
     matchLocName (Vari thisLoc thisDat thisName) loc name = (thisLoc == loc) && (thisName == name)
-
+{-
     popVarNode :: VarTree -> [VarNode] -> VarTree -- for use in popRelation
-    popVarNode (SingleNode (Vari loc dat name)) rList   | isNodeAssigned (Vari loc dat name) =   (extractOutput' rList)
+    popVarNode (SingleNode (Vari loc dat name)) rList   | isNodeAssigned (Vari loc dat name) = matchLocName (Vari loc dat name)
+          (extractOutput' rList)
     --UNCOMMENT N FINISH
     --                                                    | !isNodeAssigned (Vari loc dat name) = --unsure rn 
 
     popVarTree :: VarTree -> [VarNode] -> VarTree
     popVarTree (SingleNode (vNode)) rList = popVarNode (vNode) (rList)
     popVarTree (CommaNode (vNode) (vTree)) rList = (CommaNode (popVarNode(vNode) (rList)) (popVarTree vTree rList)
-    
+-}
+
     popRelation :: OpTree -> [VarNode] -> OpTree --RelatioNode case only
     popRelation (RelationNode (tbl) (vTree)) rList = populateVarTree (vTree) (extractOutput'(filterNodesByTable rList tbl)) 0
 
@@ -731,7 +734,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 
     --REMEMBER: NON BOUND VARIABLES, eg (z1,z2 (E. (R(z1,z2)))), CAN BE DUPLICATED ELSEWHERE IN QUERY AND SHOULDNT BE REMOVED FROM THE LIST, AS THEYRE UNIQUE
     --Separate function populating vTree in ExistVar AFTER first round of population, so the relavant table names can be easily extracted:
-    postPopTreePass :: OpTree -> [VarNode] -> OpTree
+    --postPopTreePass :: OpTree -> [VarNode] -> OpTree
 
 
 --THINK ABOUT THIS (EXIS REFORMAT SMART POP)

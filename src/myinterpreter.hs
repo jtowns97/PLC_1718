@@ -246,7 +246,7 @@ module Main where
 
     assignTblNm :: [[String]] -> String -> [[VarNode]]
     assignTblNm [] _ = []
-    assignTblNm (row:rs) name = assignDataAndName row name : assignTblName rs name
+    assignTblNm (row:rs) name = assignDataAndName row name : assignTblNm rs name
 
     assignDataAndName :: [String] -> String -> [VarNode]
     assignDataAndName [] _ = []
@@ -577,12 +577,6 @@ module Main where
     equateNodesName (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | nameA == nameB = True
                                                                                 | nameA /= nameB = False
     
-    
-    
-    
-    -- evaluateE :: ExisitTree -> Bool
-    -- evaluateE varTree opTree | (traverseDFVar (varTree)) --TODO
-    
     {-==============================================================================-}
     {-=========================== TREE & NODE OPERATIONS ===========================-}
     {-==============================================================================-}
@@ -668,7 +662,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeFirstPass :: OpTree -> [VarNode] -> OpTree
     popTreeFirstPass (VarOp (vTree)) rList   = (VarOp (vTree))-- Case example: x1  =  x2 ^ ... |||| To be left for 2nd pass
     popTreeFirstPass (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeFirstPass querA rList) (popTreeFirstPass querB rList)) 
-    popTreeFirstPass (EquateNode (querX) (querY)) rList = (EquateNode (popTreeFirstPass querA rList) (popTreeFirstPass querY rList))
+    popTreeFirstPass (EquateNode (querX) (querY)) rList = (EquateNode (popTreeFirstPass querX rList) (popTreeFirstPass querY rList))
     popTreeFirstPass (RelationNode (tbl) (vTree)) rList = popRelation (RelationNode (tbl) (vTree)) (rList)
     popTreeFirstPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeFirstPass oTree rList) )
 
@@ -676,7 +670,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeNextPass :: OpTree -> [VarNode] -> OpTree
     popTreeNextPass (VarOp (vTree)) rList   = (VarOp (vTree)) -- Does this case ever occur
     popTreeNextPass (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeNextPass querA rList) (popTreeNextPass querB rList)) 
-    popTreeNextPass (EquateNode (querX) (querY)) rList = (EquateNode (popTreeNextPass querA rList) (popTreeNextPass querY rList)) --popEquateNode
+    popTreeNextPass (EquateNode (querX) (querY)) rList = (EquateNode (popTreeNextPass querX rList) (popTreeNextPass querY rList)) --popEquateNode
     popTreeNextPass (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (vTree)) --Already populated so left alone
     popTreeNextPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeNextPass oTree rList) )
 
@@ -748,9 +742,9 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
                                                                     | otherwise = getNodeAtNameAndLoc xs
 
     getNodeAtName :: [VarNode] -> String -> Maybe VarNode
-    getNodeAtName [] _ _ = Main.Nothing
+    getNodeAtName [] _ = Main.Nothing
     getNodeAtName ((Vari loc dat name):xs) thisName | name == thisName = Just (Vari loc dat name)
-                                                    | name =/ thisName = getNodeAtName xs
+                                                    | name /= thisName = getNodeAtName xs
 
     existsTreeInRelation :: VarTree -> Bool
     existsTreeInRelation (SingleNode (Vari loc dat name))  = existsInRelation (Vari loc dat name)    
@@ -929,8 +923,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     getOpRelationNodesOut :: OpTree -> [OpTree] --Relation nodess are never subtrees of "="
     getOpRelationNodesOut (RelationNode (tbl) (vTree)) = [(RelationNode (tbl) (vTree))]
     getOpRelationNodesOut (ConjunctionNode (querA) (querB)) = getOpRelationNodesOut(querA) ++ getOpRelationNodesOut(querB)
-    
-                                                
+                      
     {-==============================================================================-}
     {-=============================== TREE TRAVERSAL ===============================-}
     {-==============================================================================-}

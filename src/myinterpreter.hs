@@ -110,6 +110,28 @@ module Main where
         putStr("_____________________")
         mapM_ putStrLn output      
 
+                                         
+    {-==============================================================================-}
+    {-============================== SYNTAX CHECKER ================================-}
+    {-==============================================================================-}
+
+    --checkBounds
+    --checkScope
+    checkSyntax :: Exp -> Bool
+    checkSyntax (Evaluate (Comma String Variables) (Conjunction Query Query)) = True
+    checkSyntax (Evaluate (Comma String Variables) (Relation String Variables)) = True
+    checkSyntax (Evaluate (Comma String Variables) (Equality Query Query)) = True
+    checkSyntax (Evaluate (Comma String Variables) (Bool Bool)) = True
+    checkSyntax (Evaluate (Comma String Variables) (V Variables)) = True
+    checkSyntax (Evaluate (Comma String Variables) (ExistentialSingle Variables Query)) = True
+    checkSyntax (Evaluate (VarSingle String) (Conjunction Query Query)) = True
+    checkSyntax (Evaluate (VarSingle String) (Relation String Variables)) = True
+    checkSyntax (Evaluate (VarSingle String) (Equality Query Query)) = True
+    checkSyntax (Evaluate (VarSingle String) (Bool Bool)) = True
+    checkSyntax (Evaluate (VarSingle String) (V Variables)) = True
+    checkSyntax (Evaluate (VarSingle String) (ExistentialSingle Variables Query)) = True
+
+
     {-==============================================================================-}
     {-================================= BUILDING ===================================-}
     {-==============================================================================-}
@@ -413,26 +435,20 @@ module Main where
     rowToString [a,b] = a ++ "," ++ b
     rowToString (x:xs) = x ++ "," ++ rowToString xs 
 
+    executeQuery :: [[VarNode]] -> ParseTree -> [[VarNode]]
+    executeQuery [] _ = []
+    executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (assignedTree) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (pTree)
+                                                                 | (evaluateParseTree (assignedTree) ) == False  = executeQuery (remainingRows) (pTree)
+                                                                 where   assignedRow = assignPTState pTree row -- : executeQuery (remainingRows) (pTree)
+                                                                         assignedTree = popTree (sanitiseOpTree(oTree)) (row) (0)
+
     assignPTState :: ParseTree -> [String] -> [VarNode]
-    assignPTState (Marker (vars) (oTree)) strings = getTreeState((popTree (sanitiseOpTree(oTree)) (strings) 0))
+    assignPTState (Marker (vars) (oTree)) strings = getTreeState((popTree (sanitiseOpTree(oTree)) (strings) 0)) : []
    -- assignPTState (MarkerNested (vars) (eTree)) strings = getETreeState(populateExisTree (sanitiseExisTree(eTree)) (strings)) (EXIS REFORMAT)
 
 
 -- NEW ExQuer: (EXIS REFORMAT)
-   executeQuery :: [[VarNode]] -> ParseTree -> [[VarNode]]
-   executeQuery [] _ = []
-   executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (assignedTree) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (pTree)
-                                                                | (evaluateParseTree (assignedTree) ) == False  = executeQuery (remainingRows) (pTree)
-                                                                where   assignedRow = assignPTState pTree row -- : executeQuery (remainingRows) (pTree)
-                                                                        assignedTree = popTree (sanitiseOpTree(oTree)) (row) (0)
 
- 
-    --Whats this saying elliott idk wat it does. Needed?
-    executeQuery''''' :: [[String]] -> ParseTree -> [[String]] -- Elliott: Changed data type here
-    executeQuery''''' [] _ = []
-    executeQuery''''' (x:xs) (pTree)     | (evaluateParseTree (pTree) (x)) == True = [x] ++ executeQuery''''' (xs) (pTree)
-                                    | (evaluateParseTree (pTree) (x)) == False = executeQuery''''' (xs) (pTree)
-                                    -- where nodeFromX = 
 
     -- getNodeFromRow :: 
 
@@ -698,19 +714,15 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     matchLocName :: VarNode -> String -> String -> Bool 
     matchLocName (Vari thisLoc thisDat thisName) loc name = (thisLoc == loc) && (thisName == name)
 
-    
-
-
-
+    popVarNode :: VarTree -> [VarNode] -> VarTree -- for use in popRelation
+    popVarNode (SingleNode (Vari loc dat name)) rList   | isNodeAssigned (Vari loc dat name) =   (extractOutput' rList)
+    --UNCOMMENT N FINISH
+    --                                                    | !isNodeAssigned (Vari loc dat name) = --unsure rn 
 
     popVarTree :: VarTree -> [VarNode] -> VarTree
     popVarTree (SingleNode (vNode)) rList = popVarNode (vNode) (rList)
     popVarTree (CommaNode (vNode) (vTree)) rList = (CommaNode (popVarNode(vNode) (rList)) (popVarTree vTree rList)
-
-    popVarNode :: VarTree -> [VarNode] -> VarTree -- for use in popRelation
-    popVarNode (SingleNode (Vari loc dat name)) rList   | isNodeAssigned (Vari loc dat name) =   (extractOutput' rList)
-                                                        | !isNodeAssigned (Vari loc dat name) = --unsure rn
-
+    
     popRelation :: OpTree -> [VarNode] -> OpTree --RelatioNode case only
     popRelation (RelationNode (tbl) (vTree)) rList = populateVarTree (vTree) (extractOutput'(filterNodesByTable rList tbl)) 0
 

@@ -103,15 +103,12 @@ module Main where
         let tableNames = extractTableNames (pTree)
         allContents <- extractContents readContents tableNames
         let allTables = fmap buildTable allContents
-
         -- For future implementation where contentA-N and allTables is built dynamically.
         let bigTable = crossMulti(allTables)
         let answer = executeQuery (bigTable) (pTree)
         let output = readyOutput ( extractOutput (orderTable (lhsVar) (answer)))
         putStr("_____________________")
-        mapM_ putStrLn output      
-
-                                         
+        mapM_ putStrLn output                                    
     {-==============================================================================-}
     {-============================== SYNTAX CHECKER ================================-}
     {-==============================================================================-}
@@ -133,8 +130,6 @@ module Main where
     checkSyntax (Evaluate (VarSingle String) (V Variables)) = True
     checkSyntax (Evaluate (VarSingle String) (ExistentialSingle Variables Query)) = True
     -}
-
-  
     {-==============================================================================-}
     {-=============================== CSV EXTRACTION ===============================-}
     {-==============================================================================-}
@@ -156,8 +151,6 @@ module Main where
         table <- f tableName 
         rest <- extractContents f (xs)
         return $! table : rest
-
-
     
     removeDups :: [[VarNode]] -> [[VarNode]]
     removeDups [] = [[]]
@@ -166,12 +159,10 @@ module Main where
     removeDups' :: [[VarNode]] -> [VarNode]
     removeDups' [] = []
     removeDups' (x:xs) =  [head x] ++ removeDups' xs
-    
 
     {-==============================================================================-}
     {-================================= BUILDING ===================================-}
-    {-==============================================================================-}
-    
+    {-==============================================================================-} 
 
     buildParseTree :: Exp -> ParseTree
     buildParseTree (Evaluate (vars) (query)) = Marker (traverseDFVar(buildVarTree(vars)))  (buildOpTree(query))
@@ -181,8 +172,6 @@ module Main where
     buildVarTree (VarSingle strName) = SingleNode (Vari ("*") ("*") (strName))
     buildVarTree (Comma (string) remVars) = CommaNode (Vari ("*") ("*") (string)) (buildVarTree remVars)
 
-
-    
     buildOpTree :: Query -> OpTree 
     buildOpTree (Conjunction querA querB) = ConjunctionNode (buildOpTree querA) (buildOpTree querB)
     buildOpTree (Relation tblN varis) = RelationNode (tblN) (assignVarTreeLoc (buildVarTree varis) (tblN) )
@@ -190,13 +179,9 @@ module Main where
     buildOpTree (Equality querA querB) = (EquateNode (varToOpTree(buildVarTree(queryToVariables(querA)))) (varToOpTree(buildVarTree(queryToVariables(querB)))))
     buildOpTree (V varis) = VarOp (buildVarTree(varis))
     buildOpTree (ExistentialSingle vTree oTree) = (ExistVar (buildVarTree(vars)) (buildOpTree (quer))) --(EXIS REFORMAT)
-    buildOpTree _ = EmptyOT (Main.Nothing)
-    
+    buildOpTree _ = EmptyOT (Main.Nothing)    
     --buildRelationalTree :: String -> VarTree -> OpTree
     --buildRelationalTree tblName vTree = (RelationNode (tblName) (assignVarTreeLoc (vTree) (tblName)))
-    
-
-
 
     {-==============================================================================-}
     {-============================== TABLE OPERATIONS ==============================-}

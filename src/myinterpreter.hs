@@ -265,7 +265,7 @@ module Main where
     getUniqueState (RelationNode (string) (varTree)) False = rmDupVars (varTree) 
     getUniqueState (EquateNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
     getUniqueState (BoolNode (bool)) False = []
-    getUniqueState (VarOp (varTree)) False = rmDupVars (varTree)
+    getUniqueState (VarOp (varTree)) False = (varTreeToList(varTree)) -- REMOVE DUPLICATES???!!!!???!!!
     getUniqueState (EmptyOT (emptyTree)) False = []
     getUniqueState (ExistVar (varTree) (oTA)) False = getUniqueState (oTA) (True)
 

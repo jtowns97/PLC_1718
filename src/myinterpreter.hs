@@ -104,11 +104,7 @@ module Main where
         allContents <- extractContents readContents tableNames
         let allTables = fmap buildTable allContents
         -- For future implementation where contentA-N and allTables is built dynamically.
-<<<<<<< HEAD
-        let bigTable = crossMulti(allTables) Elliott
-=======
         let bigTable = crossMulti(toVarnodeTables allTables tableNames)
->>>>>>> ecb358a82a1354fdcb9270b393ca05c506094588
         let answer = executeQuery (bigTable) (pTree)
         let output = readyOutput ( extractOutput (orderTable (lhsVar) (answer)))
         putStr("_____________________")
@@ -227,23 +223,9 @@ module Main where
     {-==============================================================================-}
 
 
-<<<<<<< HEAD
-
-
-
-
-
-    crossNew :: [[[String]]] -> [String] -> [[VarNode]]
-    crossNew [] [] = []
-    crossNew [tableA] (x:xs) = assignTblNm tableA x
-    crossNew [tableA, tableB] (x:y:xs) = assignTblNm tableA x ++ assignTblNm tableB y
-    crossNew (tableA:tableB:ts) (x:y:xs) = crossNew(firstTwoTables : ts)
-        where firstTwoTables = crossTwo (assignTblNm tableA x) (assignTblNm tableB y)
-=======
     toVarnodeTables :: [[[String]]] -> [String] -> [[[VarNode]]]
     toVarnodeTables [] [] = []
     toVarnodeTables (tableA:remTables) (x:xs) = assignTblNm tableA x : toVarnodeTables remTables xs
->>>>>>> ecb358a82a1354fdcb9270b393ca05c506094588
 
     assignTblNm :: [[String]] -> String -> [[VarNode]]
     assignTblNm [] _ = []
@@ -443,15 +425,15 @@ module Main where
     rowToString [a,b] = a ++ "," ++ b
     rowToString (x:xs) = x ++ "," ++ rowToString xs 
 
-    executeQuery :: [[VarNode]] -> ParseTree -> [[VarNode]]
+    executeQuery :: [[VarNode]] -> ParseTree -> [[VarNode]] 
     executeQuery [] _ = []
-    executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (assignedTree) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (oTree)
-                                                                 | (evaluateParseTree (assignedTree) ) == False  = executeQuery (remainingRows) (pTree)
-                                                                 where   assignedRow = assignPTState pTree row -- : executeQuery (remainingRows) (pTree)
-                                                                         assignedTree = popTree (sanitiseOpTree(oTree)) (row) (0)
+    executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (Marker ordVars assignedTree) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (Marker ordVars oTree)
+                                                                 | (evaluateParseTree (Marker ordVars assignedTree) ) == False  = executeQuery (remainingRows) (Marker ordVars oTree)
+                                                                 where   assignedRow = assignPTState (Marker ordVars oTree) row -- : executeQuery (remainingRows) (pTree)
+                                                                         assignedTree = popTree (sanitiseOpTree(oTree)) (row)
 
-    assignPTState :: ParseTree -> [String] -> [VarNode]
-    assignPTState (Marker (vars) (oTree)) strings = getTreeState((popTree (sanitiseOpTree(oTree)) (strings) 0)) : []
+    assignPTState :: ParseTree -> [VarNode] -> [VarNode]
+    assignPTState (Marker (vars) (oTree)) rList = getTreeState( popTree (sanitiseOpTree(oTree)) (rList) ) 
    -- assignPTState (MarkerNested (vars) (eTree)) strings = getETreeState(populateExisTree (sanitiseExisTree(eTree)) (strings)) (EXIS REFORMAT)
 
 
@@ -462,7 +444,7 @@ module Main where
 
     --New ePT: (EXIS REFORMAT)
     evaluateParseTree :: ParseTree -> Bool --
-    evaluateParseTree thisTree rList = checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) && (evaluate (thisTree))
+    evaluateParseTree thisTree = checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) && (evaluate (thisTree))
                                                             
 
 

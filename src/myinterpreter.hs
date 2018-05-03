@@ -726,12 +726,12 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 -}
 
     popRelation :: OpTree -> [VarNode] -> OpTree --RelatioNode case only
-    popRelation (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (populateVarTree (vTree) (extractOutput'((filterNodesByTable (rList) (tbl)))) 0 ) )
+    popRelation (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (populateVarTree (vTree) (reverse (extractOutput'((filterNodesByTable (rList) (tbl)))) ) 0 ) )
         --(RelationNode (tbl) (populateVarTree (vTree) (extractOutput'(rList)) 0 ) )
         --(RelationNode (tbl) (popBoundVTree vTree rList) )
 
     
-
+     
 
     --REMEMBER: NON BOUND VARIABLES, eg (z1,z2 (E. (R(z1,z2)))), CAN BE DUPLICATED ELSEWHERE IN QUERY AND SHOULDNT BE REMOVED FROM THE LIST, AS THEYRE UNIQUE
     --Separate function populating vTree in ExistVar AFTER first round of population, so the relavant table names can be easily extracted:
@@ -804,6 +804,9 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     populateRelation :: OpTree -> [String] -> Int -> OpTree
     populateRelation (RelationNode (tblName) (vTree)) rList ind     | isTreePopulated (vTree) == False = (RelationNode (tblName) (populateVarTree (vTree) rList (ind) )) --Somethings gone wrong maybe?
                                                                     | otherwise = (RelationNode (tblName) (vTree))
+
+
+                                                        --ONLY EVER FOR USE IN POPRELATION
     populateVarTree :: VarTree -> [String] -> Int -> VarTree
     populateVarTree (EmptyVT e) _ _ = (EmptyVT e)
     populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) ind | isNodePopulated (Vari (loc) (dat) (name)) == False = (SingleNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name) ))

@@ -80,7 +80,7 @@ populateVarTree (CommaNode (Vari "A" "*" "x1") (CommaNode (Vari "A" "*" "x2") (S
 
 checkAllDataSame ([Vari "A" "James" "x1",Vari "A" "James" "x1"]) ("James")
 
-executeQuery [["James", "Towns"],["Perrine","Lindsay"]] (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))))  )
+executeQuery [[(Vari ("A") ("James") ("") ),(Vari ("B") ("Towns") ("") )],[(Vari ("A") ("Perrine") ("") ),(Vari ("B") ("Lindsay") ("") )]] (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))))  )
 
 executeQuery [["James", "Towns"],["Perrine","Lindsay"]] (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) (EquateNode (SingleNode (Vari ("A") ("*") ("x1")))  (SingleNode (Vari ("B") ("*") ("x2")))) )
 
@@ -101,10 +101,23 @@ populateTree (sanitiseOpTree((ConjunctionNode(RelationNode("A")(SingleNode (Vari
 
 populateTree ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2")))))) ["James","Towns"] (0)
 
+((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))))
+
+
+
 --Works?:
 getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2"))))) )
 
 
+====NEW TESTS======
+
+(CommaNode (SingleNode (Vari "*" "*" "*") ) (SingleNode (Vari "*" "*" "*") ) )
+(CommaNode ( (Vari "*" "*" "x1") ) (SingleNode (Vari "*" "*" "x2") ) )
+
+executeQuery [[(Vari ("A") ("James") ("") ),(Vari ("B") ("Towns") ("") )],[(Vari ("A") ("Perrine") ("") ),(Vari ("B") ("Lindsay") ("") )]] (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(CommaNode ( (Vari "*" "*" "x1") ) (SingleNode (Vari "*" "*" "x2") ) ))(RelationNode ("B") (CommaNode ( (Vari "*" "*" "x3") ) (SingleNode (Vari "*" "*" "x4") ) ))))  )
+
+
+popTree ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2")))))) [(Vari "A" "James" "*"),(Vari "B" "Towns" "*")]
 
 
 

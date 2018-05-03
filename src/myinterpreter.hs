@@ -440,7 +440,7 @@ module Main where
     executeQuery [] _ = []
     executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (Marker ordVars assignedTree) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (Marker ordVars oTree)
                                                                  | (evaluateParseTree (Marker ordVars assignedTree) ) == False  = executeQuery (remainingRows) (Marker ordVars oTree)
-                                                                 where   assignedRow = assignPTState (Marker ordVars oTree) row -- : executeQuery (remainingRows) (pTree)
+                                                                 where   assignedRow = getTreeState(assignedTree) -- : executeQuery (remainingRows) (pTree)
                                                                          assignedTree = popTree (sanitiseOpTree(oTree)) (row)
 
     assignPTState :: ParseTree -> [VarNode] -> [VarNode]
@@ -669,15 +669,21 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 
 
     popTreeNextPass :: OpTree -> [VarNode] -> OpTree
-    popTreeNextPass (VarOp (vTree)) rList   = (VarOp (vTree)) -- Does this case ever occur
+    popTreeNextPass (VarOp (vTree)) rList   = (VarOp (SingleNode (Vari "***LINE672***" "ERROR CASE" "shouldnt be happening"))) -- Does this case ever occur
     popTreeNextPass (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeNextPass querA rList) (popTreeNextPass querB rList)) 
     popTreeNextPass (EquateNode (querX) (querY)) rList = (EquateNode (popTreeNextPass querX rList) (popTreeNextPass querY rList)) --popEquateNode
     popTreeNextPass (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (vTree)) --Already populated so left alone
     popTreeNextPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeNextPass oTree rList) )
 
-    popBoundVTree :: OpTree -> [VarNode] -> OpTree
-    popBoundVTree (VarOp(SingleNode (vNode))) rList = VarOp (SingleNode (popBoundVNode (vNode) (rList)))
-    popBoundVTree (VarOp(CommaNode (vNode) (remTree))) rList = VarOp ( CommaNode (popBoundVNode (vNode) (rList)) (populateVarTree remTree (extractOutput'(rList)) 0))
+    
+    --2nd pass only, for outside of a relation
+    popBoundOTree :: OpTree -> [VarNode] -> OpTree
+    popBoundOTree (VarOp (SingleNode (vNode))) (rList) = (VarOp(popBoundVTree (SingleNode(vNode)) (rList)))
+    popBoundOTree (VarOp (CommaNode (vNode) (remTree))) (rList) = (VarOp(popBoundVTree (CommaNode (vNode) (remTree)) rList))
+
+    popBoundVTree :: VarTree -> [VarNode] -> VarTree
+    popBoundVTree (SingleNode (vNode)) rList = SingleNode (popBoundVNode (vNode) (rList))
+    popBoundVTree (CommaNode (vNode) (remTree)) rList = CommaNode (popBoundVNode (vNode) (rList)) (popBoundVTree remTree rList) 
 
     popBoundVNode :: VarNode -> [VarNode] -> VarNode --2nd pass only, MAYBE additional check to ensure all values are populated
     popBoundVNode (Vari loc dat name) rList | isNothing (extractExactNode (rList) (loc) (name)) == True = (Vari loc dat name)
@@ -709,18 +715,20 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     matchLocName (Vari thisLoc thisDat thisName) loc name = (thisLoc == loc) && (thisName == name)
 {-
     popVarNode :: VarTree -> [VarNode] -> VarTree -- for use in popRelation
-    popVarNode (SingleNode (Vari loc dat name)) rList   | isNodeAssigned (Vari loc dat name) = matchLocName (Vari loc dat name)
-          (extractOutput' rList)
+    popVarNode (SingleNode (Vari loc dat name)) rList   | isNodeAssigned (Vari loc dat name) = matchLocName (Vari loc dat name) 
+          --(extractOutput' rList)
     --UNCOMMENT N FINISH
     --                                                    | !isNodeAssigned (Vari loc dat name) = --unsure rn 
 
     popVarTree :: VarTree -> [VarNode] -> VarTree
     popVarTree (SingleNode (vNode)) rList = popVarNode (vNode) (rList)
-    popVarTree (CommaNode (vNode) (vTree)) rList = (CommaNode (popVarNode(vNode) (rList)) (popVarTree vTree rList)
+    popVarTree (CommaNode (vNode) (vTree)) rList = (CommaNode (popVarNode(vNode) (rList)) (popVarTree vTree rList) )
 -}
 
     popRelation :: OpTree -> [VarNode] -> OpTree --RelatioNode case only
-    popRelation (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (populateVarTree (vTree) (extractOutput'(filterNodesByTable rList tbl)) 0))
+    popRelation (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (populateVarTree (vTree) (extractOutput'((filterNodesByTable (rList) (tbl)))) 0 ) )
+        --(RelationNode (tbl) (populateVarTree (vTree) (extractOutput'(rList)) 0 ) )
+        --(RelationNode (tbl) (popBoundVTree vTree rList) )
 
     
 
@@ -816,9 +824,15 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
                                     | ind >= length(x:xs) = "THIS IS AN ERROR AND SHOULD NOT BE HERE"
     -}
     generateNextVarData :: [String] -> Int -> String
-    generateNextVarData (x:xs) ind  | ind < length(x:xs) = ( getNthElement (ind+1) (x:xs) ) --possibly unsafe, maybe use getNth
-                                    | ind >= length(x:xs) = "THIS IS AN ERROR AND SHOULD NOT BE HERE (genNextVar)"
+    generateNextVarData (x:xs) ind  | ind <= length(x:xs) && isJust(itemOf (ind+1) (x:xs)) = fromJust(itemOf (ind+1) (x:xs))  --( getNthElement (ind+1) (x:xs) ) --possibly unsafe, maybe use getNth
+                                    | ind == length(x:xs) && isJust(itemOf (ind) (x:xs)) = fromJust(itemOf (ind) (x:xs))
+                                    | ind > length(x:xs) = "THIS IS AN ERROR AND SHOULD NOT BE HERE (genNextVar)"
+                                    | otherwise = "THIS REALLY REALLY SHOULDNT BE HERE : Last case scenario (getNextVar)"
+    
 
+    itemOf :: Int -> [a] -> Maybe a; x `itemOf` xs = let xslen = length xs in if ((abs x) > xslen) then Data.Maybe.Nothing else Just (xs !! (x `mod` xslen))
+    
+    
     -- getDataMatchingName :: String -> [VarNode] -> VarNode
     
     -- doesVarNameExist :: [VarNode] -> String -> Bool

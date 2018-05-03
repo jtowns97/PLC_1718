@@ -128,7 +128,14 @@ popTree ((ConjunctionNode(RelationNode("A")(CommaNode ( (Vari "A" "*" "x1") ) (S
 
 
 executeQuery [[(Vari ("A") ("James") ("") ),(Vari ("A") ("Towns") ("") ),(Vari ("B") ("Perrine") ("") ),(Vari ("B") ("Lindsay") ("") )]] (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(CommaNode ( (Vari "A" "*" "x1") ) (SingleNode (Vari "A" "*" "x2") ) ))(RelationNode ("B") (CommaNode ( (Vari "B" "*" "x3") ) (SingleNode (Vari "B" "*" "x4") ) ))))  )--[[Vari "*" "Towns" "x1",Vari "*" "James" "x2",Vari "*" "Lindsay" "x3",Vari "*" "Perrine" "x4"]]
+executeQuery  [[Vari "A" "Sofiane" "*",Vari "A" "Boufal" "*",Vari "B" "Boufal" "*",Vari "B" "Maserati" "*"],[Vari "A" "Sofiane" "*",Vari "A" "Boufal" "*",Vari "B" "Carillo" "*",Vari "B" "Ferrari" "*"],[Vari "A" "Dusan" "*",Vari "A" "Tadic" "*",Vari "B" "Boufal" "*",Vari "B" "Maserati" "*"],[Vari "A" "Dusan" "*",Vari "A" "Tadic" "*",Vari "B" "Carillo" "*",Vari "B" "Ferrari" "*"],[Vari "A" "Guido" "*",Vari "A" "Carillo" "*",Vari "B" "Boufal" "*",Vari "B" "Maserati" "*"],[Vari "A" "Guido" "*",Vari "A" "Carillo" "*",Vari "B" "Carillo" "*",Vari "B" "Ferrari" "*"]]    (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(CommaNode ( (Vari "A" "*" "x1") ) (SingleNode (Vari "A" "*" "x2") ) ))(RelationNode ("B") (CommaNode ( (Vari "B" "*" "x3") ) (SingleNode (Vari "B" "*" "x4") ) ))))  )
+executeQuery  [[Vari "A" "Pawel" "*",Vari "A" "Sobocinski" "*",Vari "B" "Julian" "*",Vari "B" "Rathke" "*"]] (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(CommaNode ( (Vari "A" "*" "x1") ) (SingleNode (Vari "A" "*" "x2") ) ))(RelationNode ("B") (CommaNode ( (Vari "B" "*" "x3") ) (SingleNode (Vari "B" "*" "x4") ) ))))  )--[[Vari "*" "Towns" "x1",Vari "*" "James" "x2",Vari "*" "Lindsay" "x3",Vari "*" "Perrine" "x4"]]
 
+
+--BigTable PR1:
+[[Vari "A" "Pawel" "*",Vari "A" "Sobocinski" "*",Vari "B" "Julian" "*",Vari "B" "Rathke" "*"]]
+--BigTable PR3:
+[[Vari "A" "Sofiane" "*",Vari "A" "Boufal" "*",Vari "B" "Boufal" "*",Vari "B" "Maserati" "*"],[Vari "A" "Sofiane" "*",Vari "A" "Boufal" "*",Vari "B" "Carillo" "*",Vari "B" "Ferrari" "*"],[Vari "A" "Dusan" "*",Vari "A" "Tadic" "*",Vari "B" "Boufal" "*",Vari "B" "Maserati" "*"],[Vari "A" "Dusan" "*",Vari "A" "Tadic" "*",Vari "B" "Carillo" "*",Vari "B" "Ferrari" "*"],[Vari "A" "Guido" "*",Vari "A" "Carillo" "*",Vari "B" "Boufal" "*",Vari "B" "Maserati" "*"],[Vari "A" "Guido" "*",Vari "A" "Carillo" "*",Vari "B" "Carillo" "*",Vari "B" "Ferrari" "*"]]
 
 
 

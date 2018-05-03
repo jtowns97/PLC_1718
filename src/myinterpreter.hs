@@ -122,22 +122,22 @@ module Main where
     {-==============================================================================-}
 
     -- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
-
+{-
     --checkBounds
     --checkScope
     expSyntax :: Exp -> Bool
-    (Conjunction queryA queryB)) = True
-    (Relation string variables)) = True
+    (Conjunction queryA queryB) = True
+    (Relation string variables) = True
     (Equality queryA queryB)) = True
     (Bool bool)) = True
     (V variables)) = True
-    (ExistentialSingle variables query)) = True
-    (Conjunction queryA queryB)) = True
-    (Relation string variables)) = True
-    (Equality queryA queryB)) = True
+    (ExistentialSingle variables query) = True
+    (Conjunction queryA queryB) = True
+    (Relation string variables) = True
+    (Equality queryA queryB) = True
     (Bool bool)) = True
-    (V variables)) = True
-    (ExistentialSingle variables query)) = True
+    (V variables) = True
+    (ExistentialSingle variables query) = True
     expSyntax (Evaluate lefthandside query) = orderSyntax (lefthandSide) && querySyntax (query)
 
     orderSyntax :: Variables -> Bool
@@ -154,6 +154,7 @@ module Main where
 
     equalityChildren :: Query -> Bool
     equalityChildren (Evaluate (VarSingle string) (Var 
+    -}
     {-==============================================================================-}
     {-=============================== CSV EXTRACTION ===============================-}
     {-==============================================================================-}

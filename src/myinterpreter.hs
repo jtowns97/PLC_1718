@@ -591,7 +591,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
                                                     | name /= thisName = getNodeAtName xs thisName
 
     popRelation :: OpTree -> [VarNode] -> OpTree --RelatioNode case only
-    popRelation (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (populateVarTree (vTree) (extractOutput'((filterNodesByTable (rList) (tbl)))) 0 ) )
+    popRelation (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (populateVarTree (vTree) (reverse (extractOutput'((filterNodesByTable (rList) (tbl))))) 0 ) )
         --(RelationNode (tbl) (populateVarTree (vTree) (extractOutput'(rList)) 0 ) )
         --(RelationNode (tbl) (popBoundVTree vTree rList) )
 

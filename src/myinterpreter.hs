@@ -104,7 +104,7 @@ module Main where
         allContents <- extractContents readContents tableNames
         let allTables = fmap buildTable allContents
         -- For future implementation where contentA-N and allTables is built dynamically.
-        let bigTable = crossMulti(allTables)
+        let bigTable = crossMulti(toVarnodeTables allTables tableNames)
         let answer = executeQuery (bigTable) (pTree)
         let output = readyOutput ( extractOutput (orderTable (lhsVar) (answer)))
         putStr("_____________________")
@@ -223,17 +223,9 @@ module Main where
     {-==============================================================================-}
 
 
-
-
-
-
-
-    crossNew :: [[[String]]] -> [String] -> [[VarNode]]
-    crossNew [] [] = []
-    crossNew [tableA] (x:xs) = assignTblNm tableA x
-    crossNew [tableA, tableB] (x:y:xs) = assignTblNm tableA x : assignTblNm tableB y
-    crossNew (tableA:tableB:ts) (x:y:xs) = crossNew(firstTwoTables : ts)
-        where firstTwoTables = crossTwo (assignTblNm tableA x) (assignTblNm tableB y)
+    toVarnodeTables :: [[[String]]] -> [String] -> [[[VarNode]]]
+    toVarnodeTables [] [] = []
+    toVarnodeTables (tableA:remTables) (x:xs) = assignTblNm tableA x : toVarnodeTables remTables xs
 
     assignTblNm :: [[String]] -> String -> [[VarNode]]
     assignTblNm [] _ = []
@@ -246,6 +238,12 @@ module Main where
     buildVarNode :: String -> String -> String -> VarNode
     buildVarNode (tblName) (cell) (varName) = Vari (tblName) (cell) (varName)
     
+    crossMulti :: [[[VarNode]]] -> [[VarNode]]
+    crossMulti [] = []
+    crossMulti [tableA] = tableA
+    crossMulti [tableA, tableB] = crossTwo tableA tableB
+    crossMulti (t0:t1:ts) = crossMulti (crossTwo (t0) (t1) : ts)
+
     --Cross two tables.
     crossTwo :: [[VarNode]] -> [[VarNode]] -> [[VarNode]]
     crossTwo _ [] = []
@@ -725,21 +723,21 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     filterNodesByTable :: [VarNode] -> String -> [VarNode]
     filterNodesByTable [] _ = []
     filterNodesByTable ((Vari loc dat name):xs) tblName     | loc == tblName = [(Vari loc dat name)] ++ filterNodesByTable xs tblName
-                                                            | loc /= tblName = filterNodesByTable xs
+                                                            | loc /= tblName = filterNodesByTable xs tblName
 
     getNodeAtNameAndLoc :: [VarNode] -> String -> String -> Maybe VarNode
-    getNodeAtNameAndLoc [] _ _ = Main.Nothing
-    getNodeAtNameAndLoc ((Vari loc dat name):xs) thisLoc thisName   | loc == thisLoc && name == thisName = (Vari loc dat name)
-                                                                    | otherwise = getNodeAtNameAndLoc xs
+    getNodeAtNameAndLoc [] _ _ = Data.Maybe.Nothing
+    getNodeAtNameAndLoc ((Vari loc dat name):xs) thisLoc thisName   | loc == thisLoc && name == thisName = Just (Vari loc dat name)
+                                                                    | otherwise = getNodeAtNameAndLoc xs thisLoc thisName
 
     getNodeAtName :: [VarNode] -> String -> Maybe VarNode
-    getNodeAtName [] _ = Main.Nothing
+    getNodeAtName [] _ = Data.Maybe.Nothing
     getNodeAtName ((Vari loc dat name):xs) thisName | name == thisName = Just (Vari loc dat name)
-                                                    | name /= thisName = getNodeAtName xs
+                                                    | name /= thisName = getNodeAtName xs thisName
 
     existsTreeInRelation :: VarTree -> Bool
     existsTreeInRelation (SingleNode (Vari loc dat name))  = existsInRelation (Vari loc dat name)    
-    existsTreeInRelation (CommaNode (Vari loc dat name) (rTree) ) existsInRelation (Vari loc dat name) && existsTreeInRelation rTree                                
+    existsTreeInRelation (CommaNode (Vari loc dat name) (rTree) ) = existsInRelation (Vari loc dat name) && existsTreeInRelation rTree                                
 
     existsInRelation :: VarNode -> Bool
     existsInRelation (Vari loc dat name) = loc /= "*"
@@ -883,7 +881,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     extractOTableNames :: [OpTree] -> [String] -- takes output from liftRelationNodesOut, possibly needs to be reverse
     extractOTableNames [] = []
     extractOTableNames ( (RelationNode (tbl) (vTree)) :xs) = (tbl) : extractOTableNames xs
-    extractOTableNames ((ExistVar vTree oTree):xs) = extractOTableNames oTree
+    extractOTableNames ((ExistVar vTree oTree):xs) = extractOTableNames (oTree:xs)
     --Elliott: Pls add cases for all other oTrees, otherwise it wont traverse correctly
 
 

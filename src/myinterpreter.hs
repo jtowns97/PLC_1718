@@ -99,11 +99,23 @@ module Main where
         let pTree = buildParseTree (happy)
         let lhsVar = getOrderOfVars (pTree)
         let tableNames = extractTableNames (pTree)
+        putStr("_________tab names____________")
+        print(tableNames)
+        putStr("_____________________")
         allContents <- extractContents readContents tableNames
         let allTables = fmap buildTable allContents
+        putStr("__________allTables___________")
+        print(allTables)
+        putStr("_____________________")
         -- For future implementation where contentA-N and allTables is built dynamically.
         let bigTable = crossMulti(toVarnodeTables allTables tableNames)
+        putStr("__________BigTables___________")
+        print(bigTable)
+        putStr("_____________________")
         let answer = executeQuery (bigTable) (pTree)
+        putStr("_______ANSWER______________")
+        print(answer)
+        putStr("_____________________")
         let output = readyOutput ( extractOutput (orderTable (lhsVar) (answer)))
         putStr("_____________________")
         mapM_ putStrLn output                                    

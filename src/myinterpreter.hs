@@ -424,15 +424,15 @@ module Main where
     rowToString [a,b] = a ++ "," ++ b
     rowToString (x:xs) = x ++ "," ++ rowToString xs 
 
-    executeQuery :: [[VarNode]] -> ParseTree -> [[VarNode]]
+    executeQuery :: [[VarNode]] -> ParseTree -> [[VarNode]] 
     executeQuery [] _ = []
-    executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (assignedTree) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (oTree)
-                                                                 | (evaluateParseTree (assignedTree) ) == False  = executeQuery (remainingRows) (pTree)
-                                                                 where   assignedRow = assignPTState pTree row -- : executeQuery (remainingRows) (pTree)
-                                                                         assignedTree = popTree (sanitiseOpTree(oTree)) (row) (0)
+    executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (Marker ordVars assignedTree) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (Marker ordVars oTree)
+                                                                 | (evaluateParseTree (Marker ordVars assignedTree) ) == False  = executeQuery (remainingRows) (Marker ordVars oTree)
+                                                                 where   assignedRow = assignPTState (Marker ordVars oTree) row -- : executeQuery (remainingRows) (pTree)
+                                                                         assignedTree = popTree (sanitiseOpTree(oTree)) (row)
 
-    assignPTState :: ParseTree -> [String] -> [VarNode]
-    assignPTState (Marker (vars) (oTree)) strings = getTreeState((popTree (sanitiseOpTree(oTree)) (strings) 0)) : []
+    assignPTState :: ParseTree -> [VarNode] -> [VarNode]
+    assignPTState (Marker (vars) (oTree)) rList = getTreeState( popTree (sanitiseOpTree(oTree)) (rList) ) 
    -- assignPTState (MarkerNested (vars) (eTree)) strings = getETreeState(populateExisTree (sanitiseExisTree(eTree)) (strings)) (EXIS REFORMAT)
 
 
@@ -443,7 +443,13 @@ module Main where
 
     --New ePT: (EXIS REFORMAT)
     evaluateParseTree :: ParseTree -> Bool --
+<<<<<<< HEAD
     evaluateParseTree thisTree rList = checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) && (evaluate (thisTree))
+=======
+    evaluateParseTree thisTree = checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) && (evaluate (thisTree))
+                                                            
+
+>>>>>>> 5deedd04a2d901763ff1619cff8db6c48b00bc20
 
     {- OLD VERSION (EXIS REFORMAT)
     evaluateParseTree :: ParseTree -> [String] -> Bool --

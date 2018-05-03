@@ -114,7 +114,7 @@ getTreeState ( (ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") (
 (CommaNode (SingleNode (Vari "*" "*" "*") ) (SingleNode (Vari "*" "*" "*") ) )
 (CommaNode ( (Vari "*" "*" "x1") ) (SingleNode (Vari "*" "*" "x2") ) )
 
-executeQuery [[(Vari ("A") ("James") ("") ),(Vari ("B") ("Towns") ("") ),[(Vari ("A") ("Perrine") ("") ),(Vari ("B") ("Lindsay") ("") )]] (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(CommaNode ( (Vari "*" "*" "x1") ) (SingleNode (Vari "*" "*" "x2") ) ))(RelationNode ("B") (CommaNode ( (Vari "*" "*" "x3") ) (SingleNode (Vari "*" "*" "x4") ) ))))  )
+executeQuery [[(Vari ("A") ("James") ("") ),(Vari ("B") ("Towns") ("") ),(Vari ("A") ("Perrine") ("") ),(Vari ("B") ("Lindsay") ("") )]] (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(CommaNode ( (Vari "*" "*" "x1") ) (SingleNode (Vari "*" "*" "x2") ) ))(RelationNode ("B") (CommaNode ( (Vari "*" "*" "x3") ) (SingleNode (Vari "*" "*" "x4") ) ))))  )
 
 
 popTree ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2")))))) [(Vari "A" "James" "*"),(Vari "B" "Towns" "*")]
@@ -122,7 +122,8 @@ popTree ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))
 popTree ((ConjunctionNode(RelationNode("A")(CommaNode ( (Vari "*" "*" "x1") ) (SingleNode (Vari "*" "*" "x2") ) ))(RelationNode ("B") (CommaNode ( (Vari "*" "*" "x3") ) (SingleNode (Vari "*" "*" "x4") ) ))))
 
 
-
+executeQuery [[(Vari ("A") ("James") ("") ),(Vari ("A") ("Towns") ("") ),(Vari ("B") ("Perrine") ("") ),(Vari ("B") ("Lindsay") ("") )]] (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(CommaNode ( (Vari "*" "*" "x1") ) (SingleNode (Vari "*" "*" "x2") ) ))(RelationNode ("B") (CommaNode ( (Vari "*" "*" "x3") ) (SingleNode (Vari "*" "*" "x4") ) ))))  )
+--[[Vari "*" "Towns" "x1",Vari "*" "James" "x2",Vari "*" "Lindsay" "x3",Vari "*" "Perrine" "x4"]]
 
 
 

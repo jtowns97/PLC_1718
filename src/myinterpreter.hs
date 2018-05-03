@@ -262,7 +262,7 @@ module Main where
 
     getUniqueState :: OpTree -> Bool -> [VarNode]
     getUniqueState (ConjunctionNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
-    getUniqueState (RelationNode (string) (varTree)) False = rmDupVars (varTree) 
+    getUniqueState (RelationNode (string) (varTree)) False = varTreeToList(varTree)--rmDupVars (varTree) 
     getUniqueState (EquateNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
     getUniqueState (BoolNode (bool)) False = []
     getUniqueState (VarOp (varTree)) False = (varTreeToList(varTree)) -- REMOVE DUPLICATES???!!!!???!!!
@@ -276,10 +276,10 @@ module Main where
     getUniqueState (VarOp (varTree)) True = varTreeToList (varTree)
     getUniqueState (EmptyOT (emptyTree)) True = []
     getUniqueState (ExistVar (varTree) (oTA)) True = getUniqueState (oTA) (True)
-
+{-
     rmDupVars :: VarTree -> [VarNode]
     rmDupVars vTree = nub (varTreeToList(vTree))
-
+-}
     varTreeToList :: VarTree -> [VarNode]
     varTreeToList (CommaNode (varNode) (restTree)) = [varNode] ++ varTreeToList restTree
     varTreeToList (SingleNode (varNode)) = [varNode]
@@ -785,11 +785,12 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     populateRelation (RelationNode (tblName) (vTree)) rList ind     | isTreePopulated (vTree) == False = (RelationNode (tblName) (populateVarTree (vTree) rList (ind) )) --Somethings gone wrong maybe?
                                                                     | otherwise = (RelationNode (tblName) (vTree))
     populateVarTree :: VarTree -> [String] -> Int -> VarTree
+    populateVarTree (EmptyVT e) _ _ = (EmptyVT e)
     populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) ind | isNodePopulated (Vari (loc) (dat) (name)) == False = (SingleNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name) ))
     populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) ind | isNodePopulated (Vari (loc) (dat) (name)) == True = (SingleNode (Vari (loc) (dat) (name)))
     populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind  | isNodePopulated (Vari (loc) (dat) (name)) == False = ( CommaNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name)) ( populateVarTree (remTree) (x:xs) (ind+1) ) )
     populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind  | isNodePopulated (Vari (loc) (dat) (name)) == True = (CommaNode (Vari (loc) (dat) (name)) (remTree)) --add recursive call here
-    
+    populateVarTree e _ _ = e
     -- doesNameExistInVList :: String -> [VarNode] -> Bool
     -- doesNameExistInVList _  (x:xs) [] = False
     -- doesNameExistInVList targStr (x:xs) ((Vari (loc) (dat) (name)):ys)  | targStr == name = True

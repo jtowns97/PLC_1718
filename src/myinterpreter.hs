@@ -67,8 +67,6 @@ module Main where
     data OpTree = ConjunctionNode (OpTree) (OpTree)
         | RelationNode (String) (VarTree) -- String is Table name.
         | EquateNode (OpTree) (OpTree)
-        | LSubNode (OpTree) (OpTree) -- JT CAN WE REMOVE THESE?
-        | RSubNode (OpTree) (OpTree)
         | BoolNode (Bool)
         | VarOp (VarTree)
         | EmptyOT (EmptyTree)
@@ -127,21 +125,35 @@ module Main where
 
     --checkBounds
     --checkScope
-    {-
-    checkSyntax :: Exp -> Bool
-    checkSyntax (Evaluate (Comma String Variables) (Conjunction Query Query)) = True
-    checkSyntax (Evaluate (Comma String Variables) (Relation String Variables)) = True
-    checkSyntax (Evaluate (Comma String Variables) (Equality Query Query)) = True
-    checkSyntax (Evaluate (Comma String Variables) (Bool Bool)) = True
-    checkSyntax (Evaluate (Comma String Variables) (V Variables)) = True
-    checkSyntax (Evaluate (Comma String Variables) (ExistentialSingle Variables Query)) = True
-    checkSyntax (Evaluate (VarSingle String) (Conjunction Query Query)) = True
-    checkSyntax (Evaluate (VarSingle String) (Relation String Variables)) = True
-    checkSyntax (Evaluate (VarSingle String) (Equality Query Query)) = True
-    checkSyntax (Evaluate (VarSingle String) (Bool Bool)) = True
-    checkSyntax (Evaluate (VarSingle String) (V Variables)) = True
-    checkSyntax (Evaluate (VarSingle String) (ExistentialSingle Variables Query)) = True
-    -}
+    expSyntax :: Exp -> Bool
+    (Conjunction queryA queryB)) = True
+    (Relation string variables)) = True
+    (Equality queryA queryB)) = True
+    (Bool bool)) = True
+    (V variables)) = True
+    (ExistentialSingle variables query)) = True
+    (Conjunction queryA queryB)) = True
+    (Relation string variables)) = True
+    (Equality queryA queryB)) = True
+    (Bool bool)) = True
+    (V variables)) = True
+    (ExistentialSingle variables query)) = True
+    expSyntax (Evaluate lefthandside query) = orderSyntax (lefthandSide) && querySyntax (query)
+
+    orderSyntax :: Variables -> Bool
+    orderSyntax (Comma string variables) = --?????
+    orderSyntax (VarSingle string) = --?????
+
+    querySyntax :: Query -> Bool
+    querySyntax (Conjunction queryA queryB)) = True
+    querySyntax (Relation string variables)) = True
+    querySyntax (Equality queryA queryB)) = True
+    querySyntax (Bool bool)) = True
+    querySyntax (V variables)) = True
+    querySyntax (ExistentialSingle variables query)) = True
+
+    equalityChildren :: Query -> Bool
+    equalityChildren (Evaluate (VarSingle string) (Var 
     {-==============================================================================-}
     {-=============================== CSV EXTRACTION ===============================-}
     {-==============================================================================-}
@@ -475,8 +487,6 @@ module Main where
     getTreeState (ConjunctionNode (opTree) (opTreeX)) = getTreeState(opTree) ++ getTreeState (opTreeX)
     getTreeState (RelationNode (string) (varTree)) = getTreeState(varToOpTree(varTree))
     getTreeState (EquateNode (opTree) (opTreeX)) = getTreeState (opTree) ++ getTreeState (opTreeX)
-    getTreeState (LSubNode (opTree) (opTreeX)) = getTreeState (opTree) ++ getTreeState (opTreeX)
-    getTreeState (RSubNode (opTree) (opTreeX)) = getTreeState (opTree) ++ getTreeState (opTreeX)
     getTreeState (BoolNode (bool)) = []
     getTreeState (VarOp (varTree)) = traverseDFVar(varTree)
     getTreeState (EmptyOT (emptyTree)) = []

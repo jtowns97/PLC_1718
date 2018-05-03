@@ -889,7 +889,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     charToString = (:[])
 
     extractTableNames :: ParseTree -> [String]
-    extractTableNames pTree = extractDups(map (++ ".csv") (map charToString (map head (extractPTableNames pTree))))
+    extractTableNames pTree = extractDups(map charToString (map head (extractPTableNames pTree))))
     
     -- Removes multiple instances of table names. Only need to read the file once. [Removed : Eq String => on type sig]
     extractDups :: [String] -> [String]

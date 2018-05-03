@@ -91,7 +91,7 @@ module Main where
     {-==============================================================================-}
     {-===================================== MAIN ===================================-}
     {-==============================================================================-}
-   -- main :: IO()
+    main :: IO()
     main = do 
         a <- getArgs
         b <- readFile (head a)
@@ -104,7 +104,7 @@ module Main where
         allContents <- extractContents readContents tableNames
         let allTables = fmap buildTable allContents
         -- For future implementation where contentA-N and allTables is built dynamically.
-        let bigTable = crossMulti(allTables)
+        let bigTable = crossMulti(allTables) Elliott
         let answer = executeQuery (bigTable) (pTree)
         let output = readyOutput ( extractOutput (orderTable (lhsVar) (answer)))
         putStr("_____________________")
@@ -178,7 +178,7 @@ module Main where
     --Below (TODO) add type checker for querA/B, checking its a VarTree
     buildOpTree (Equality querA querB) = (EquateNode (varToOpTree(buildVarTree(queryToVariables(querA)))) (varToOpTree(buildVarTree(queryToVariables(querB)))))
     buildOpTree (V varis) = VarOp (buildVarTree(varis))
-    buildOpTree (ExistentialSingle vTree oTree) = (ExistVar (buildVarTree(vars)) (buildOpTree (quer))) --(EXIS REFORMAT)
+    buildOpTree (ExistentialSingle vTree oTree) = (ExistVar (buildVarTree(vTree)) (buildOpTree (oTree))) --(EXIS REFORMAT)
     buildOpTree _ = EmptyOT (Main.Nothing)    
     --buildRelationalTree :: String -> VarTree -> OpTree
     --buildRelationalTree tblName vTree = (RelationNode (tblName) (assignVarTreeLoc (vTree) (tblName)))
@@ -231,7 +231,7 @@ module Main where
     crossNew :: [[[String]]] -> [String] -> [[VarNode]]
     crossNew [] [] = []
     crossNew [tableA] (x:xs) = assignTblNm tableA x
-    crossNew [tableA, tableB] (x:y:xs) = assignTblNm tableA x : assignTblNm tableB y
+    crossNew [tableA, tableB] (x:y:xs) = assignTblNm tableA x ++ assignTblNm tableB y
     crossNew (tableA:tableB:ts) (x:y:xs) = crossNew(firstTwoTables : ts)
         where firstTwoTables = crossTwo (assignTblNm tableA x) (assignTblNm tableB y)
 
@@ -265,7 +265,7 @@ module Main where
     -- --Asked for function here JT: -e
     getUniqueState :: OpTree -> Bool -> [VarNode]
     getUniqueState (ConjunctionNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
-    getUniqueState (RelationNode (string) (varTree)) False = rmDupVars (varTree) (False)
+    getUniqueState (RelationNode (string) (varTree)) False = rmDupVars (varTree) 
     getUniqueState (EquateNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
     getUniqueState (BoolNode (bool)) False = []
     getUniqueState (VarOp (varTree)) False = rmDupVars (varTree)
@@ -284,8 +284,8 @@ module Main where
     rmDupVars vTree = nub (varTreeToList(vTree))
 
     varTreeToList :: VarTree -> [VarNode]
-    varTreeToList (CommaNode (varNode) (restTree)) = varNode : varTreeToList restTree
-    varTreeToList (SingleNode (varNode)) = [] : varNode
+    varTreeToList (CommaNode (varNode) (restTree)) = [varNode] ++ varTreeToList restTree
+    varTreeToList (SingleNode (varNode)) = [varNode]
     varTreeToList (EmptyVT (emptyTree)) = [] 
 
     {-==============================================================================-}
@@ -601,9 +601,10 @@ module Main where
                                                      --   where   popsX = countPopNodes (querX) + countPopNodes (querY)
     populateTree (RelationNode (tbl) (vTree)) rList ind         = populateRelation (RelationNode (tbl) (vTree)) rList ind
     -}
+    {-
     getPopTotal :: OpTree -> OpTree -> Int
     getPopTotal querP querQ = countPopNodes (querP) + countPopNodes (querQ)
-
+    -}
 
 
     -- ::::::::::::::::::::::::::::::::::::::::::::::populateTree attempt 2:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -739,7 +740,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 
     existsTreeInRelation :: VarTree -> Bool
     existsTreeInRelation (SingleNode (Vari loc dat name))  = existsInRelation (Vari loc dat name)    
-    existsTreeInRelation (CommaNode (Vari loc dat name) (rTree) ) existsInRelation (Vari loc dat name) && existsTreeInRelation rTree                                
+    existsTreeInRelation (CommaNode (Vari loc dat name) (rTree) ) = existsInRelation (Vari loc dat name) && existsTreeInRelation rTree                                
 
     existsInRelation :: VarNode -> Bool
     existsInRelation (Vari loc dat name) = loc /= "*"
@@ -835,7 +836,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     varToOpTree (CommaNode varN varT) = (VarOp (CommaNode varN varT))
     varToOpTree (SingleNode varN) = (VarOp (SingleNode varN))
     varToOpTree (EmptyVT emptyT) = (VarOp (EmptyVT emptyT))
-    
+    {-
     countPopNodes :: OpTree -> Int
     countPopNodes (ConjunctionNode (opTree) (opTreeX)) = countPopNodes opTree + countPopNodes opTreeX
     countPopNodes (RelationNode (string) (varTree)) = countPopNodesInVT varTree
@@ -850,7 +851,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     countPopNodesInVT (CommaNode varN varTree) = (if(checkNodePop varN) then 1 else 0) + countPopNodesInVT varTree
     countPopNodesInVT (SingleNode varN) = (if(checkNodePop varN) then 1 else 0)
     countPopNodesInVT (EmptyVT empty) = 0
-    
+    -}
     checkNodePop :: VarNode -> Bool
     checkNodePop (Vari loc dat name) | dat /= "*" = True
     checkNodePop (Vari loc dat name) | dat == "*" = False

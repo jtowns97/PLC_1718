@@ -79,8 +79,6 @@ module Main where
     -- All expressions available within language.
     -- PARSE TREE
     data ParseTree = Marker ([VarNode]) (OpTree)
-        -- | MarkerNested ([VarNode]) (ExistTree)
-      --  | MarkerExisExtended ([VarNode]) (ExistTree) (OpTree) --Added to account for PR6 issues UPDT: probs wont work
         | EmptyPT (EmptyTree)
         deriving Show
       --  (1,10,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
@@ -104,11 +102,7 @@ module Main where
         allContents <- extractContents readContents tableNames
         let allTables = fmap buildTable allContents
         -- For future implementation where contentA-N and allTables is built dynamically.
-<<<<<<< HEAD
-        let bigTable = crossMulti(allTables) Elliott
-=======
         let bigTable = crossMulti(toVarnodeTables allTables tableNames)
->>>>>>> ecb358a82a1354fdcb9270b393ca05c506094588
         let answer = executeQuery (bigTable) (pTree)
         let output = readyOutput ( extractOutput (orderTable (lhsVar) (answer)))
         putStr("_____________________")
@@ -140,7 +134,7 @@ module Main where
 
     readContents :: String -> IO [[String]]
     readContents filepath = do
-        contents <- readFile (filepath ++ ".csv")
+        contents <- readFile (filepath)
         let lines = chunksOf 1 (splitOn "\n" contents)
         return lines
 
@@ -227,23 +221,9 @@ module Main where
     {-==============================================================================-}
 
 
-<<<<<<< HEAD
-
-
-
-
-
-    crossNew :: [[[String]]] -> [String] -> [[VarNode]]
-    crossNew [] [] = []
-    crossNew [tableA] (x:xs) = assignTblNm tableA x
-    crossNew [tableA, tableB] (x:y:xs) = assignTblNm tableA x ++ assignTblNm tableB y
-    crossNew (tableA:tableB:ts) (x:y:xs) = crossNew(firstTwoTables : ts)
-        where firstTwoTables = crossTwo (assignTblNm tableA x) (assignTblNm tableB y)
-=======
     toVarnodeTables :: [[[String]]] -> [String] -> [[[VarNode]]]
     toVarnodeTables [] [] = []
     toVarnodeTables (tableA:remTables) (x:xs) = assignTblNm tableA x : toVarnodeTables remTables xs
->>>>>>> ecb358a82a1354fdcb9270b393ca05c506094588
 
     assignTblNm :: [[String]] -> String -> [[VarNode]]
     assignTblNm [] _ = []
@@ -279,6 +259,7 @@ module Main where
     pairRow rowA rowB = rowA ++ rowB
 
     -- --Asked for function here JT: -e
+
     getUniqueState :: OpTree -> Bool -> [VarNode]
     getUniqueState (ConjunctionNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
     getUniqueState (RelationNode (string) (varTree)) False = rmDupVars (varTree) 
@@ -463,8 +444,6 @@ module Main where
     --New ePT: (EXIS REFORMAT)
     evaluateParseTree :: ParseTree -> Bool --
     evaluateParseTree thisTree rList = checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) && (evaluate (thisTree))
-                                                            
-
 
     {- OLD VERSION (EXIS REFORMAT)
     evaluateParseTree :: ParseTree -> [String] -> Bool --
@@ -664,7 +643,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTree :: OpTree -> [VarNode] -> OpTree
     popTree oTree rList = popTreeNextPass postFstTree uniqueState
                         where   postFstTree = popTreeFirstPass oTree rList
-                                uniqueState = getUniqueState postFstTree
+                                uniqueState = getUniqueState postFstTree False
     
 
     popTreeFirstPass :: OpTree -> [VarNode] -> OpTree
@@ -683,12 +662,12 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeNextPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeNextPass oTree rList) )
 
     popBoundVTree :: OpTree -> [VarNode] -> OpTree
-    popBoundVTree (VarOp(SingleNode (vNode))) rList = VarOp (popBoundVNode (vNode) (rList))
-    popBoundVTree (VarOp(CommaNode (vNode) (remTree))) rList = VarOp ( CommaNode (popBoundVNode (vNode) (rList)) (popBoundVTree (remTree) (rList)) )
+    popBoundVTree (VarOp(SingleNode (vNode))) rList = VarOp (SingleNode (popBoundVNode (vNode) (rList)))
+    popBoundVTree (VarOp(CommaNode (vNode) (remTree))) rList = VarOp ( CommaNode (popBoundVNode (vNode) (rList)) (populateVarTree remTree (extractOutput'(rList)) 0))
 
     popBoundVNode :: VarNode -> [VarNode] -> VarNode --2nd pass only, MAYBE additional check to ensure all values are populated
-    popBoundVNode (Vari loc dat name) rList | extractExactNode rList loc name == Main.Nothing = (Vari loc dat name)
-                                            | otherwise = extractExactNode rList loc name
+    popBoundVNode (Vari loc dat name) rList | extractExactNode rList loc name == Data.Maybe.Nothing = (Vari loc dat name)
+                                            | extractExactNode rList loc name /= Data.Maybe.Nothing = fromJust(extractExactNode rList loc name)
 
     --assignScope :: OpTree -> OpTree
 
@@ -708,8 +687,8 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
         
 
     extractExactNode :: [VarNode] -> String -> String -> Maybe VarNode --rList -> loc -> name -> outputNode
-    extractExactNode [] _  _ = Main.Nothing
-    extractExactNode (x:xs) loc name    | matchLocName x loc name == True = x
+    extractExactNode [] _  _ = Data.Maybe.Nothing
+    extractExactNode (x:xs) loc name    | matchLocName x loc name == True = Just x
                                         | matchLocName x loc name == False = extractExactNode xs loc name
 
     matchLocName :: VarNode -> String -> String -> Bool 
@@ -727,7 +706,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 -}
 
     popRelation :: OpTree -> [VarNode] -> OpTree --RelatioNode case only
-    popRelation (RelationNode (tbl) (vTree)) rList = populateVarTree (vTree) (extractOutput'(filterNodesByTable rList tbl)) 0
+    popRelation (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (populateVarTree (vTree) (extractOutput'(filterNodesByTable rList tbl)) 0))
 
     
 

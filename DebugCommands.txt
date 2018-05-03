@@ -122,6 +122,12 @@ executeQuery [[(Vari ("A") ("James") ("") ),(Vari ("B") ("Towns") ("") ),(Vari (
 popTree ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2")))))) [(Vari "A" "James" "*"),(Vari "B" "Towns" "*")]
 
 popTree ((ConjunctionNode(RelationNode("A")(CommaNode ( (Vari "A" "*" "x1") ) (SingleNode (Vari "A" "*" "x2") ) ))(RelationNode ("B") (CommaNode ( (Vari "B" "*" "x3") ) (SingleNode (Vari "B" "*" "x4") ) )))) [(Vari ("A") ("James") ("") ),(Vari ("A") ("Towns") ("") )]
+--PR3: 
+--PR3 tree
+(Marker [Vari "*" "*" "x1",Vari "*" "*" "x2"] (ConjunctionNode (ConjunctionNode (RelationNode "P" (SingleNode (Vari "P" "James" "x1"))) (RelationNode "Q" (SingleNode (Vari "Q" "James" "x2")))) (EquateNode (VarOp (SingleNode (Vari "P" "James" "x1"))) (VarOp (SingleNode (Vari "Q" "James" "x2"))))))
+
+
+executeQuery [[Vari "P" "1" "*",Vari "Q" "1" "*"],[Vari "P" "1" "*",Vari "Q" "2" "*"],[Vari "P" "1" "*",Vari "Q" "2" "*"],[Vari "P" "1" "*",Vari "Q" "Sofa" "*"],[Vari "P" "2" "*",Vari "Q" "1" "*"],[Vari "P" "2" "*",Vari "Q" "2" "*"],[Vari "P" "2" "*",Vari "Q" "2" "*"],[Vari "P" "2" "*",Vari "Q" "Sofa" "*"],[Vari "P" "3" "*",Vari "Q" "1" "*"],[Vari "P" "3" "*",Vari "Q" "2" "*"],[Vari "P" "3" "*",Vari "Q" "2" "*"],[Vari "P" "3" "*",Vari "Q" "Sofa" "*"],[Vari "P" "4" "*",Vari "Q" "1" "*"],[Vari "P" "4" "*",Vari "Q" "2" "*"],[Vari "P" "4" "*",Vari "Q" "2" "*"],[Vari "P" "4" "*",Vari "Q" "Sofa" "*"]] (Marker [Vari "*" "*" "x1",Vari "*" "*" "x2"] (ConjunctionNode (ConjunctionNode (RelationNode "P" (SingleNode (Vari "P" "*" "x1"))) (RelationNode "Q" (SingleNode (Vari "Q" "*" "x2")))) (EquateNode (VarOp (SingleNode (Vari "*" "*" "x1"))) (VarOp (SingleNode (Vari "*" "*" "x2"))))))
 
 
 [(Vari ("A") ("James") ("") ),(Vari ("A") ("Towns") ("") ),(Vari ("B") ("Perrine") ("") ),(Vari ("B") ("Lindsay") ("") )]

@@ -94,11 +94,17 @@ module Main where
         let herbLang = head (splitOn "\n" b)
         let alex = alexScanTokens (herbLang)
         let happy = parseCalc (alex)
+        putStr("_________alex____________")
+        print(alex)
+        putStr("_____________________")
         let pTree = buildParseTree (happy)
         let lhsVar = getOrderOfVars (pTree)
         let tableNames = extractTableNames (pTree)
         putStr("_________tab names____________")
         print(tableNames)
+        putStr("_____________________")
+        putStr("________pTree____________")
+        print(pTree)
         putStr("_____________________")
         allContents <- extractContents readContents tableNames
         let allTables = fmap buildTable allContents
@@ -114,7 +120,7 @@ module Main where
         putStr("_______ANSWER______________")
         print(answer)
         putStr("_____________________")
-        let output = readyOutput ( extractOutput (orderTable (lhsVar) (answer)))
+        let output = readyOutput ( extractOutput (removeDups((orderTable (lhsVar) (answer))) ))
         putStr("_____________________")
         mapM_ putStrLn output                                    
     {-==============================================================================-}
@@ -199,9 +205,10 @@ module Main where
 
     buildOpTree :: Query -> OpTree 
     buildOpTree (Conjunction querA querB) = ConjunctionNode (buildOpTree querA) (buildOpTree querB)
-    buildOpTree (Relation tblN varis) = RelationNode (tblN) (assignVarTreeLoc (buildVarTree varis) (tblN) )
+    buildOpTree (ConjunctionTriple querX querY querZ) = (ConjunctionNode (buildOpTree querX) (ConjunctionNode (buildOpTree querY) (buildOpTree querZ)))
+    buildOpTree (Relation tblN varis) = RelationNode [tblN!!0] (assignVarTreeLoc (buildVarTree varis) [tblN!!0] )
     --Below (TODO) add type checker for querA/B, checking its a VarTree
-    buildOpTree (Equality querA querB) = (EquateNode (varToOpTree(buildVarTree(queryToVariables(querA)))) (varToOpTree(buildVarTree(queryToVariables(querB)))))
+    buildOpTree (Equality querA querB) = (EquateNode (varToOpTree(buildVarTree(querA))) (varToOpTree(buildVarTree(querB))))
     buildOpTree (V varis) = VarOp (buildVarTree(varis))
     buildOpTree (ExistentialSingle vTree oTree) = (ExistVar (buildVarTree(vTree)) (buildOpTree (oTree))) --(EXIS REFORMAT)
     buildOpTree _ = EmptyOT (Main.Nothing)
@@ -509,8 +516,8 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 -}
     popTree :: OpTree -> [VarNode] -> OpTree
     popTree oTree rList = popTreeNextPass postFstTree uniqueState
-                        where   postFstTree = popTreeFirstPass oTree rList
-                                uniqueState = getUniqueState postFstTree False
+                        where   postFstTree = (popTreeFirstPass (oTree) (rList))
+                                uniqueState = (extractAssignedNodes(getUniqueState (postFstTree) (False)))
     
     popTreeFirstPass :: OpTree -> [VarNode] -> OpTree
     popTreeFirstPass (VarOp (vTree)) rList   = (VarOp (vTree))-- Case example: x1  =  x2 ^ ... |||| To be left for 2nd pass
@@ -522,10 +529,15 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeNextPass :: OpTree -> [VarNode] -> OpTree
     popTreeNextPass (VarOp (vTree)) rList   = (VarOp (SingleNode (Vari "***LINE672***" "ERROR CASE" "shouldnt be happening"))) -- Does this case ever occur
     popTreeNextPass (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeNextPass querA rList) (popTreeNextPass querB rList)) 
-    popTreeNextPass (EquateNode (querX) (querY)) rList = (EquateNode (popTreeNextPass querX rList) (popTreeNextPass querY rList)) --popEquateNode
+    popTreeNextPass (EquateNode (querX) (querY)) rList = popEquateNode (EquateNode (querX) (querY)) rList--popEquateNode
     popTreeNextPass (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (vTree)) --Already populated so left alone
     popTreeNextPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeNextPass oTree rList) )
     
+    popEquateNode :: OpTree -> [VarNode] -> OpTree
+    popEquateNode (EquateNode (VarOp (SingleNode(Vari (lloc) (ldat) (lname)))) (VarOp(SingleNode(Vari (rloc) (rdat) (rname))))) rList = (EquateNode (VarOp(SingleNode(lPopped))) (VarOp(SingleNode(rPopped))))
+                                                                                                            where   lPopped = fromJust (extractExactNode rList (getNodeLocation lname rList) lname)
+                                                                                                                    rPopped = fromJust (extractExactNode rList (getNodeLocation rname rList) rname)
+
     --2nd pass only, for outside of a relation
     popBoundOTree :: OpTree -> [VarNode] -> OpTree
     popBoundOTree (VarOp (SingleNode (vNode))) (rList) = (VarOp(popBoundVTree (SingleNode(vNode)) (rList)))
@@ -540,6 +552,12 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
                                             | otherwise = fromJust(extractExactNode rList loc name)
 
     --assignScope :: OpTree -> OpTree
+
+    extractAssignedNodes :: [VarNode] -> [VarNode]
+    extractAssignedNodes [] = []
+    extractAssignedNodes (x:xs) | isNodeAssigned x == True = [x] ++ extractAssignedNodes xs
+                                | isNodeAssigned x == False = extractAssignedNodes xs
+
 
     getNodeLocation :: String -> [VarNode] -> String -- name -> rList -> location
     getNodeLocation _ [] = "*" -- Elliott : you can probably error check when this case occurs cos all varN's should have a location after population (need to implement that tho)
@@ -556,6 +574,8 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     extractExactNode [] _  _ = Data.Maybe.Nothing
     extractExactNode (x:xs) loc name    | matchLocName x loc name == True = Just x
                                         | matchLocName x loc name == False = extractExactNode xs loc name
+
+   
 
     matchLocName :: VarNode -> String -> String -> Bool 
     matchLocName (Vari thisLoc thisDat thisName) loc name = (thisLoc == loc) && (thisName == name)
@@ -714,7 +734,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     getOpRelationNodesOut :: OpTree -> [OpTree] --Relation nodess are never subtrees of "="
     getOpRelationNodesOut (RelationNode (tbl) (vTree)) = [(RelationNode (tbl) (vTree))]
     getOpRelationNodesOut (ConjunctionNode (querA) (querB)) = getOpRelationNodesOut(querA) ++ getOpRelationNodesOut(querB)
-                      
+    getOpRelationNodesOut _ = []                  
     {-==============================================================================-}
     {-=============================== TREE TRAVERSAL ===============================-}
     {-==============================================================================-}

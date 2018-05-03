@@ -148,7 +148,7 @@ module Main where
 
     readContents :: String -> IO [[String]]
     readContents filepath = do
-        contents <- readFile (filepath)
+        contents <- readFile (filepath ++ ".csv")
         let lines = chunksOf 1 (splitOn "\n" contents)
         return lines
 

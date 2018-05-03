@@ -443,13 +443,9 @@ module Main where
 
     --New ePT: (EXIS REFORMAT)
     evaluateParseTree :: ParseTree -> Bool --
-<<<<<<< HEAD
-    evaluateParseTree thisTree rList = checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) && (evaluate (thisTree))
-=======
-    evaluateParseTree thisTree = checkRepeats(filterRepeats(groupRepeats(getTreeState(thisTree)))) && (evaluate (thisTree))
+    evaluateParseTree (Marker ordVars assignedTree) = checkRepeats(filterRepeats(groupRepeats(getTreeState(assignedTree)))) && (evaluate (assignedTree))
                                                             
 
->>>>>>> 5deedd04a2d901763ff1619cff8db6c48b00bc20
 
     {- OLD VERSION (EXIS REFORMAT)
     evaluateParseTree :: ParseTree -> [String] -> Bool --
@@ -672,8 +668,8 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popBoundVTree (VarOp(CommaNode (vNode) (remTree))) rList = VarOp ( CommaNode (popBoundVNode (vNode) (rList)) (populateVarTree remTree (extractOutput'(rList)) 0))
 
     popBoundVNode :: VarNode -> [VarNode] -> VarNode --2nd pass only, MAYBE additional check to ensure all values are populated
-    popBoundVNode (Vari loc dat name) rList | extractExactNode rList loc name == Data.Maybe.Nothing = (Vari loc dat name)
-                                            | extractExactNode rList loc name /= Data.Maybe.Nothing = fromJust(extractExactNode rList loc name)
+    popBoundVNode (Vari loc dat name) rList | isNothing (extractExactNode (rList) (loc) (name)) == True = (Vari loc dat name)
+                                            | otherwise = fromJust(extractExactNode rList loc name)
 
     --assignScope :: OpTree -> OpTree
 

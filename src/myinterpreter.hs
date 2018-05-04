@@ -28,32 +28,25 @@ module Main where
     {-==============================================================================-}
 
 
-    {-
-    Hello. 
-    
-    I took the liberty of making automarker tables for pr6-10, look in the automarker foler.
-    
-
-    New tasks here:
-        -- Double check my tests for each problem
-        --Test EMPTY CASES as shown in spec pr1 through to pr10, copy over table contents etc
-        --WORKING PROGRAMS: Pr1, Pr2, Pr3, Pr4, Pr5, Pr6, Pr9
-        --BROKEN PROGRAMS: Pr7, Pr8, Pr10
-        -- ^^ Basically any program that self references multiple times. This causes your BigTable to not reflect every assignment, bcos its the NUMBERR OF RELATIONS IN THE QUERY..
-        --      ... THAT DECIDES THE BigTable, as far as I understand it. Not really sure tho, COULD BE as easy as cross producting itself as many times (see Pr7) as needed and checking all those rows?
-        --Once thats fixed should all fall into place
-        --My understanding: 
-        --Pr10: actual .cql file parse error somewhere cba to fix it atm
-        --2-3page manual
-        -}
-
-
-    -- Also still to look at:
-
+    --Begin testing existential cases
+    --Make assignTree functions smarter: Differentiate when varName & tableN are different, eg in cases of R(...) ^ R (...), or cases like A(...) ^ B (...) ^ A(...)
+    --3 page user manual
+    --Informative error messages/type system
+    --Rework Exis to allow (x1,x2,x3)E.(Query) - ALREADY DONE
     --PR6: Account for empty input files
+    --PR10: Potential issue: Scope of var assignments when checking pairs (checkRepeats/groupRepeats)
     --Add functionality to define empty input file and cause function to add this null value to the xProd table for evaluation
     -- Deal with empty tree cases for pTrees and oTrees
-    
+    --possible getRelationData function? Would return all current assignments from a given table as a row
+    --Remove ambiguity with exis cases (as in pr6) so we get the correct semantics and convert to a form our interpreter can read (exis on left)
+    -- WE MIGHT NEED TO MOVE EXIS BACK INTO QUERY :( :( :( ...
+    -- ... SEE PR6: Our interpreter pTree structure must account for an exis being anywhere in a query, but we could convert all to left maybe?
+    -- Evaluate exis
+    --getRelationState :: 
+
+    --EXIS REFORMAT LEFT TO DO:
+    --executeQuery, populateTree (smart), checkExistetial, evalutateExis
+    --checkBound
    
     {-==============================================================================-}
     {-=============================== DATA STRUCTURES ==============================-}

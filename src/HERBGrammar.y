@@ -62,12 +62,8 @@ data Query = Conjunction Query Query
     | ConjunctionTriple Query Query Query
     | Relation String Variables
     | Equality Variables Variables
-    | LSub Query Query
-    | RSub Query Query
     | Bool Bool
     | V Variables
     | ExistentialSingle Variables Query
     deriving Show
-
-	  
 } 

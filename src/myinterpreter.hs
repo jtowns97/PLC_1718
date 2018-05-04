@@ -127,8 +127,10 @@ module Main where
         putStr("_______ANSWER______________")
         print(answer)
         putStr("_____________________")
-        let output = readyOutput ( extractOutput (removeDups((orderTable (lhsVar) (answer))) ))
+        let printable = readyOutput ( extractOutput (removeDups((orderTable (lhsVar) (answer))) ))
         putStr("_____________________")
+        let output = ""
+        if anyEmptyFile (tableNames) then output = "" else output = printable
         mapM_ putStrLn output                                    
     {-==============================================================================-}
     {-============================== SYNTAX CHECKER ================================-}
@@ -181,6 +183,28 @@ module Main where
     buildTable :: [[String]] -> [[String]]
     buildTable [] = []
     buildTable ((x:xs):xss) = (splitOn "," x) : buildTable xss 
+
+    anyEmptyFile :: [String] -> IO Bool
+    anyEmptyFile [] = do
+        let flag = False
+        return flag
+    anyEmptyFile [oneEl] = do
+        bool <- emptyFile oneEl
+        return bool
+    anyEmptyFile (file:fs) = do
+        let listempty = length (file:fs) == 0
+        bool <- emptyFile file
+        if bool then return bool else anyEmptyFile fs
+        
+    emptyFile :: String -> IO Bool
+    emptyFile filepath = do
+        contents <- readFile (filepath ++ ".csv")
+        let flag = isFileEmpty contents
+        return flag
+
+    isFileEmpty :: String -> Bool
+    isFileEmpty string  | length string /= 0 = False
+                        | otherwise = True
 
     extractContents :: (String -> IO [[String]]) -> [String] -> IO [[[String]]]
     extractContents f [] = return []

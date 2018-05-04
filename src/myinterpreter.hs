@@ -471,9 +471,7 @@ module Main where
     checkConjunction :: OpTree -> Bool
     checkConjunction  (ConjunctionNode (l) (r) ) = (evaluate(l)) && (evaluate(r))
     
-    -- needs checking
-    checkExistential :: OpTree -> Bool --does vTree exist in oTree
-    checkExistential (ExistVar vTree oTree) = doesListExistInOpTree (traverseDFVar vTree) oTree
+
 
     checkRelation :: OpTree -> Bool
     checkRelation (RelationNode (tbl) (vList)) = isTreePopulated(vList)
@@ -499,6 +497,21 @@ module Main where
     getTreeState (VarOp (varTree)) = traverseDFVar(varTree)
     getTreeState (EmptyOT (emptyTree)) = []
     getTreeState (ExistVar (vTree) (oTree)) = getTreeState(varToOpTree(vTree)) ++ getTreeState (oTree) --Possibly not what we need (EXIS REFORMAT)
+
+    -- New checkExis below along with needed aux functions
+    checkExistential :: OpTree -> Bool --TODO: test failiure case cos probs wont show
+    checkExistential (ExistVar vTree oTree) = checkExisTInOpT (vTree) (oTree) 
+
+    checkExisTInOpT :: VarTree -> OpTree -> Bool
+    checkExisTInOpT (SingleNode (vNode)) oTree = checkExisInOpTree vNode oTree
+    checkExisTInOpT (CommaNode (vNode) (remTree)) oTree = (checkExisInOpTree (vNode) (oTree)) && (checkExisTInOpT (remTree) (oTree))
+    
+    
+    checkExisInOpTree :: VarNode -> OpTree -> Bool
+    checkExisInOpTree vNode oTree = checkExisInOpTreeList (vNode) (extractAssignedNodes(getUniqueState (oTree) (False)))
+
+    checkExisInOpTreeList :: VarNode -> [VarNode] -> Bool
+    checkExisInOpTreeList (Vari loc dat name) rList = existsExactNode (rList) (loc) (name)
 
 -- ::::::::::::::::::::::::::::::::::::::::::::::populateTree attempt 4:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 {-
@@ -531,7 +544,16 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeNextPass (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeNextPass querA rList) (popTreeNextPass querB rList)) 
     popTreeNextPass (EquateNode (querX) (querY)) rList = popEquateNode (EquateNode (querX) (querY)) rList--popEquateNode
     popTreeNextPass (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (vTree)) --Already populated so left alone
-    popTreeNextPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeNextPass oTree rList) )
+    popTreeNextPass (ExistVar (vTree) (oTree)) rList = popExistNode (ExistVar (vTree) (oTree)) rList
+
+    popExistNode :: OpTree -> [VarNode] -> OpTree
+    popExistNode (ExistVar (vTree) (oTree)) rList = (ExistVar (popBoundVTree (scopeVTree) (rList)) (popTreeNextPass (oTree) (rList)))
+                                                    where   scopeList = extractAssignedNodes(getUniqueState (oTree) (False))
+                                                            scopeVTree = assignLocationInTree (vTree) (scopeList)
+
+    assignLocationInTree :: VarTree -> [VarNode] -> VarTree
+    assignLocationInTree (SingleNode (Vari loc dat name)) rList = (SingleNode (Vari (getNodeLocation (name) (rList)) dat name))
+    assignLocationInTree (CommaNode (Vari loc dat name) (remTree)) rList = (CommaNode (Vari (getNodeLocation (name) (rList)) dat name) (assignLocationInTree (remTree) (rList)))
     
     popEquateNode :: OpTree -> [VarNode] -> OpTree
     popEquateNode (EquateNode (VarOp (SingleNode(Vari (lloc) (ldat) (lname)))) (VarOp(SingleNode(Vari (rloc) (rdat) (rname))))) rList = (EquateNode (VarOp(SingleNode(lPopped))) (VarOp(SingleNode(rPopped))))
@@ -575,7 +597,9 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     extractExactNode (x:xs) loc name    | matchLocName x loc name == True = Just x
                                         | matchLocName x loc name == False = extractExactNode xs loc name
 
-   
+    existsExactNode :: [VarNode] -> String -> String -> Bool
+    existsExactNode [] _ _ = False
+    existsExactNode (x:xs) loc name = matchLocName x loc name || existsExactNode xs loc name
 
     matchLocName :: VarNode -> String -> String -> Bool 
     matchLocName (Vari thisLoc thisDat thisName) loc name = (thisLoc == loc) && (thisName == name)
@@ -734,6 +758,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     getOpRelationNodesOut :: OpTree -> [OpTree] --Relation nodess are never subtrees of "="
     getOpRelationNodesOut (RelationNode (tbl) (vTree)) = [(RelationNode (tbl) (vTree))]
     getOpRelationNodesOut (ConjunctionNode (querA) (querB)) = getOpRelationNodesOut(querA) ++ getOpRelationNodesOut(querB)
+    getOpRelationNodesOut (ExistVar (vTree) (oTree)) = getOpRelationNodesOut(oTree)
     getOpRelationNodesOut _ = []                  
     {-==============================================================================-}
     {-=============================== TREE TRAVERSAL ===============================-}

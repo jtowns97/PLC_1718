@@ -12,23 +12,23 @@ $alphaCap = [A-Z]
 
 
 tokens :-
-    $white+                             ; 
-    "--".*                              ; 
-    \|\-                               { \p s -> TokenEntailment p s} 
-    \^                                { \p s -> TokenConjunction p s}
-    \<C                               { \p s -> TokenLSubset p s}
-    \>C                               { \p s -> TokenRSubset p s}
-    E.                               { \p s -> TokenExistential p s} -- 2 variables needed here? ie. THERE EXISTS (x) WHERE (x + y = 1) etc
-    \=                                { \p s -> TokenEquality p s}
-    \(                                { \p s -> TokenLParen p}
-    \{                                { \p s -> TokenLCurly p}
-    \)                                { \p s -> TokenRParen p}
-    \}                                { \p s -> TokenRCurly p}
-    \,                                { \p s -> TokenComma p}
-    True                                { \p s -> TokenBool p}
-    False                               { \p s -> TokenBool p}
-    $alphaCap \{        { \p s -> TokenRelation p s} -- Relation defined as any capital letter followed by an open bracket
-    $alpha $digit [$digit]*       { \p s -> TokenVar p s }  -- Char then Number, ie Valid = [x1,y22,b33]- Invalid = [1z,2]
+    $white+                         ; 
+    "--".*                          ; 
+    \|\-                            { \p s -> TokenEntailment p s} 
+    \^                              { \p s -> TokenConjunction p s}
+    \<C                             { \p s -> TokenLSubset p s}
+    \>C                             { \p s -> TokenRSubset p s}
+    E.                              { \p s -> TokenExistential p s} -- 2 variables needed here? ie. THERE EXISTS (x) WHERE (x + y = 1) etc
+    \=                              { \p s -> TokenEquality p s}
+    \(                              { \p s -> TokenLParen p}
+    \{                              { \p s -> TokenLCurly p}
+    \)                              { \p s -> TokenRParen p}
+    \}                              { \p s -> TokenRCurly p}
+    \,                              { \p s -> TokenComma p}
+    True                            { \p s -> TokenBool p}
+    False                           { \p s -> TokenBool p}
+    $alphaCap \{                    { \p s -> TokenRelation p s} -- Relation defined as any capital letter followed by an open bracket
+    $alpha $digit [$digit]*         { \p s -> TokenVar p s }  -- Char then Number, ie Valid = [x1,y22,b33]- Invalid = [1z,2]
 { 
 
 

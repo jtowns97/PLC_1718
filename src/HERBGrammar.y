@@ -40,7 +40,7 @@ Query : Query "^" Query                                 { Conjunction $1 $3}
 	| Query "=" Query                                   { Equality $1 $3 }
 	| True                                              { Bool True }
 	| False                                             { Bool False }
-    | "(" Variables ")" "E." "(" Query ")"     { ExistentialSingle $2 $6 }
+    | "(" Variables ")" "E." "(" Query ")"                  { ExistentialSingle $2 $6 }
 
 
 
@@ -59,12 +59,8 @@ data Variables = Comma String Variables
 data Query = Conjunction Query Query
     | Relation String Variables
     | Equality Query Query
-    | LSub Query Query
-    | RSub Query Query
     | Bool Bool
     | V Variables
     | ExistentialSingle Variables Query
     deriving Show
-
-	  
 } 

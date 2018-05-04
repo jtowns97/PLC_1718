@@ -114,7 +114,7 @@ module Main where
         putStr("_______ANSWER______________")
         print(answer)
         putStr("_____________________")
-        let output = readyOutput ( extractOutput (orderTable (lhsVar) (answer)))
+        let output = readyOutput ( extractOutput (removeDups(orderTable (lhsVar) (answer))))
         putStr("_____________________")
         mapM_ putStrLn output                                    
     {-==============================================================================-}
@@ -122,39 +122,50 @@ module Main where
     {-==============================================================================-}
 
     -- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
-{-
+
     --checkBounds
     --checkScope
     expSyntax :: Exp -> Bool
-    (Conjunction queryA queryB) = True
-    (Relation string variables) = True
-    (Equality queryA queryB)) = True
-    (Bool bool)) = True
-    (V variables)) = True
-    (ExistentialSingle variables query) = True
-    (Conjunction queryA queryB) = True
-    (Relation string variables) = True
-    (Equality queryA queryB) = True
-    (Bool bool)) = True
-    (V variables) = True
-    (ExistentialSingle variables query) = True
-    expSyntax (Evaluate lefthandside query) = orderSyntax (lefthandSide) && querySyntax (query)
+    -- (Conjunction queryA queryB) = True
+    -- (Relation string variables) = True
+    -- (Equality queryA queryB)) = True
+    -- (Bool bool)) = True
+    -- (V variables)) = True
+    -- (ExistentialSingle variables query) = True
+    -- (Conjunction queryA queryB) = True
+    -- (Relation string variables) = True
+    -- (Equality queryA queryB) = True
+    -- (Bool bool)) = True
+    -- (V variables) = True
+    -- (ExistentialSingle variables query) = True
+    expSyntax (Evaluate lefthandside query) =  querySyntax (query) -- && orderSyntax (lefthandSide)
 
-    orderSyntax :: Variables -> Bool
-    orderSyntax (Comma string variables) = --?????
-    orderSyntax (VarSingle string) = --?????
+    -- orderSyntax :: Variables -> Bool
+    -- orderSyntax (Comma string variables) = --?????
+    -- orderSyntax (VarSingle string) = --?????
 
-    querySyntax :: Query -> Bool
-    querySyntax (Conjunction queryA queryB)) = True
+    --CHECK TUPLE LENGTH - CHECK EACH RELATION HAS SAME NO OF COLUMNS
+
+    querySyntax :: Query -> String
+    querySyntax (Conjunction queryA queryB)) | conjunctionChildren queryA queryB == False = "Compilation Error: Arguments to conjunction \"^\" must not be of type: Variable"
     querySyntax (Relation string variables)) = True
-    querySyntax (Equality queryA queryB)) = True
+    querySyntax (Equality queryA queryB)) | equalityChildren queryA queryB == False = "Compilation Error: Arguments to equality \"=\" must be Variables."
     querySyntax (Bool bool)) = True
     querySyntax (V variables)) = True
     querySyntax (ExistentialSingle variables query)) = True
 
-    equalityChildren :: Query -> Bool
-    equalityChildren (Evaluate (VarSingle string) (Var 
-    -}
+    equalityChildren :: Query -> Query -> Bool
+    equalityChildren (V variables) (V variables) = True
+    equalityChildren _ _ = False
+
+    conjunctionChildren :: Query -> Query -> Bool
+    conjunctionChildren (V variables) (V variables) = False
+    conjunctionChildren _ _ = True
+
+    relationLength :: Query -> Bool
+    relationLength (Relation string variables)) | length string == length variables = True
+                                                | otherwise = False
+    checkScope :: Query -> Bool
     {-==============================================================================-}
     {-=============================== CSV EXTRACTION ===============================-}
     {-==============================================================================-}

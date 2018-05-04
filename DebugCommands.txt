@@ -122,6 +122,13 @@ executeQuery [[(Vari ("A") ("James") ("") ),(Vari ("B") ("Towns") ("") ),(Vari (
 popTree ((ConjunctionNode(RelationNode("A")(SingleNode (Vari ("A") ("*") ("x1"))))(RelationNode ("B") (SingleNode (Vari ("B") ("*") ("x2")))))) [(Vari "A" "James" "*"),(Vari "B" "Towns" "*")]
 
 popTree ((ConjunctionNode(RelationNode("A")(CommaNode ( (Vari "A" "*" "x1") ) (SingleNode (Vari "A" "*" "x2") ) ))(RelationNode ("B") (CommaNode ( (Vari "B" "*" "x3") ) (SingleNode (Vari "B" "*" "x4") ) )))) [(Vari ("A") ("James") ("") ),(Vari ("A") ("Towns") ("") )]
+--PR3: 
+--PR3 tree raw out
+Marker [Vari "*" "*" "x1",Vari "*" "*" "x2"] (ConjunctionNode (ConjunctionNode (RelationNode "P" (SingleNode (Vari "P" "*" "x1"))) (RelationNode "Q" (SingleNode (Vari "Q" "*" "x2")))) (EquateNode (VarOp (SingleNode (Vari "*" "*" "x1"))) (VarOp (SingleNode (Vari "*" "*" "x2")))))
+(Marker [Vari "*" "*" "x1",Vari "*" "*" "x2"] (ConjunctionNode (ConjunctionNode (RelationNode "P" (SingleNode (Vari "P" "James" "x1"))) (RelationNode "Q" (SingleNode (Vari "Q" "James" "x2")))) (EquateNode (VarOp (SingleNode (Vari "P" "James" "x1"))) (VarOp (SingleNode (Vari "Q" "James" "x2"))))))
+
+
+executeQuery [[Vari "P" "1" "*",Vari "Q" "1" "*"],[Vari "P" "1" "*",Vari "Q" "2" "*"],[Vari "P" "1" "*",Vari "Q" "2" "*"],[Vari "P" "1" "*",Vari "Q" "Sofa" "*"],[Vari "P" "2" "*",Vari "Q" "1" "*"],[Vari "P" "2" "*",Vari "Q" "2" "*"],[Vari "P" "2" "*",Vari "Q" "2" "*"],[Vari "P" "2" "*",Vari "Q" "Sofa" "*"],[Vari "P" "3" "*",Vari "Q" "1" "*"],[Vari "P" "3" "*",Vari "Q" "2" "*"],[Vari "P" "3" "*",Vari "Q" "2" "*"],[Vari "P" "3" "*",Vari "Q" "Sofa" "*"],[Vari "P" "4" "*",Vari "Q" "1" "*"],[Vari "P" "4" "*",Vari "Q" "2" "*"],[Vari "P" "4" "*",Vari "Q" "2" "*"],[Vari "P" "4" "*",Vari "Q" "Sofa" "*"]] (Marker [Vari "*" "*" "x1",Vari "*" "*" "x2"] (ConjunctionNode (ConjunctionNode (RelationNode "P" (SingleNode (Vari "P" "*" "x1"))) (RelationNode "Q" (SingleNode (Vari "Q" "*" "x2")))) (EquateNode (VarOp (SingleNode (Vari "*" "*" "x1"))) (VarOp (SingleNode (Vari "*" "*" "x2"))))))
 
 
 [(Vari ("A") ("James") ("") ),(Vari ("A") ("Towns") ("") ),(Vari ("B") ("Perrine") ("") ),(Vari ("B") ("Lindsay") ("") )]
@@ -131,12 +138,24 @@ executeQuery [[(Vari ("A") ("James") ("") ),(Vari ("A") ("Towns") ("") ),(Vari (
 executeQuery  [[Vari "A" "Sofiane" "*",Vari "A" "Boufal" "*",Vari "B" "Boufal" "*",Vari "B" "Maserati" "*"],[Vari "A" "Sofiane" "*",Vari "A" "Boufal" "*",Vari "B" "Carillo" "*",Vari "B" "Ferrari" "*"],[Vari "A" "Dusan" "*",Vari "A" "Tadic" "*",Vari "B" "Boufal" "*",Vari "B" "Maserati" "*"],[Vari "A" "Dusan" "*",Vari "A" "Tadic" "*",Vari "B" "Carillo" "*",Vari "B" "Ferrari" "*"],[Vari "A" "Guido" "*",Vari "A" "Carillo" "*",Vari "B" "Boufal" "*",Vari "B" "Maserati" "*"],[Vari "A" "Guido" "*",Vari "A" "Carillo" "*",Vari "B" "Carillo" "*",Vari "B" "Ferrari" "*"]]    (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(CommaNode ( (Vari "A" "*" "x1") ) (SingleNode (Vari "A" "*" "x2") ) ))(RelationNode ("B") (CommaNode ( (Vari "B" "*" "x3") ) (SingleNode (Vari "B" "*" "x4") ) ))))  )
 executeQuery  [[Vari "A" "Pawel" "*",Vari "A" "Sobocinski" "*",Vari "B" "Julian" "*",Vari "B" "Rathke" "*"]] (Marker ([(Vari ("*") ("*") ("x1") ),(Vari ("*") ("*") ("x2") )]) ((ConjunctionNode(RelationNode("A")(CommaNode ( (Vari "A" "*" "x1") ) (SingleNode (Vari "A" "*" "x2") ) ))(RelationNode ("B") (CommaNode ( (Vari "B" "*" "x3") ) (SingleNode (Vari "B" "*" "x4") ) ))))  )--[[Vari "*" "Towns" "x1",Vari "*" "James" "x2",Vari "*" "Lindsay" "x3",Vari "*" "Perrine" "x4"]]
 
-
+--===============================================PR3=================================
 --BigTable PR1:
 [[Vari "A" "Pawel" "*",Vari "A" "Sobocinski" "*",Vari "B" "Julian" "*",Vari "B" "Rathke" "*"]]
 --BigTable PR3:
 [[Vari "A" "Sofiane" "*",Vari "A" "Boufal" "*",Vari "B" "Boufal" "*",Vari "B" "Maserati" "*"],[Vari "A" "Sofiane" "*",Vari "A" "Boufal" "*",Vari "B" "Carillo" "*",Vari "B" "Ferrari" "*"],[Vari "A" "Dusan" "*",Vari "A" "Tadic" "*",Vari "B" "Boufal" "*",Vari "B" "Maserati" "*"],[Vari "A" "Dusan" "*",Vari "A" "Tadic" "*",Vari "B" "Carillo" "*",Vari "B" "Ferrari" "*"],[Vari "A" "Guido" "*",Vari "A" "Carillo" "*",Vari "B" "Boufal" "*",Vari "B" "Maserati" "*"],[Vari "A" "Guido" "*",Vari "A" "Carillo" "*",Vari "B" "Carillo" "*",Vari "B" "Ferrari" "*"]]
 
+
+
+
+
+ConjunctionNode (ConjunctionNode (RelationNode "P" (SingleNode (Vari "P" "HI" "x1"))) (RelationNode "Q" (SingleNode (Vari "Q" "HI" "x2")))) (EquateNode (VarOp (SingleNode (Vari "*" "*" "x1"))) (VarOp (SingleNode (Vari "*" "*" "x2"))))
+
+*Main> getUniqueState (ConjunctionNode (ConjunctionNode (RelationNode "P" (SingleNode (Vari "P" "HI" "x1"))) (RelationNode "Q" (SingleNode (Vari "Q" "HI" "x2")))) (EquateNode (VarOp (SingleNode (Vari "*" "*" "x1"))) (VarOp (SingleNode (Vari "*" "*" "x2")))) )  False
+[Vari "P" "HI" "x1",Vari "Q" "HI" "x2",Vari "*" "*" "x1",Vari "*" "*" "x2"]
+
+--===============================================PR4============================================================
+
+(Marker [Vari "*" "*" "x1",Vari "*" "*" "x2"] (ExistVar (SingleNode (Vari "*" "*" "z1")) (RelationNode "R" (CommaNode (Vari "R" "*" "x1") (SingleNode (Vari "R" "*" "z1"))))))
 
 
 

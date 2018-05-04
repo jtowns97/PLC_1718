@@ -23,8 +23,8 @@ import HERBTokens
     ","      { TokenComma _ }
                
 
-%left "|-" "E." "," "^" 
-%right "="
+%left "|-" "E." "^" 
+%right "=" "," 
 %% 
 
 Exp : Variables "|-" Query                              { Evaluate $1 $3 }
@@ -36,18 +36,24 @@ Variables : var "," Variables                     { Comma $1 $3 }
 
 
 Query : Query "^" Query                                 { Conjunction $1 $3}
+    | Query "^" Query "^" Query                         { ConjunctionTriple $1 $3 $5}
     | rel Variables "}"                                 { Relation $1 $2 }
-	| Query "=" Query                                   { Equality $1 $3 }
+	| "(" Variables "=" Variables ")"                   { Equality $2 $4 }
 	| True                                              { Bool True }
 	| False                                             { Bool False }
+<<<<<<< HEAD
     | "(" Variables ")" "E." "(" Query ")"                  { ExistentialSingle $2 $6 }
+=======
+    | Variables                                               { V $1 } 
+    | "(" Variables ")" "E." "(" Query ")"     { ExistentialSingle $2 $6 }
+>>>>>>> 255f713ca0dd81ed71e965bb6c54d5906f57cf67
 
 
 
      
 { 
 parseError :: [Token] -> a
-parseError token = error "Parse error"
+parseError token = error "Parse error : on token : " token
 
 data Exp = Evaluate Variables Query
     deriving Show
@@ -57,8 +63,15 @@ data Variables = Comma String Variables
     deriving Show
 
 data Query = Conjunction Query Query
+    | ConjunctionTriple Query Query Query
     | Relation String Variables
+<<<<<<< HEAD
     | Equality Query Query
+=======
+    | Equality Variables Variables
+    | LSub Query Query
+    | RSub Query Query
+>>>>>>> 255f713ca0dd81ed71e965bb6c54d5906f57cf67
     | Bool Bool
     | V Variables
     | ExistentialSingle Variables Query

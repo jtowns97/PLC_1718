@@ -129,9 +129,9 @@ module Main where
         putStr("_____________________")
         let printable = readyOutput ( extractOutput (removeDups((orderTable (lhsVar) (answer))) ))
         putStr("_____________________")
-        let output = ""
-        if anyEmptyFile (tableNames) then output = "" else output = printable
-        mapM_ putStrLn output                                    
+        --let output = ""
+        --if anyEmptyFile (tableNames) then output = "" else output = printable
+        mapM_ putStrLn printable                                    
     {-==============================================================================-}
     {-============================== SYNTAX CHECKER ================================-}
     {-==============================================================================-}
@@ -749,7 +749,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 
     -- ::::::::::::EXTRACTION OF TABLE NAMES:::::::::
     extractTableNames :: ParseTree -> [String]
-    extractTableNames pTree = extractDups(map charToString (map head (extractPTableNames pTree)))
+    extractTableNames pTree = map charToString (map head (extractPTableNames pTree))
     
     -- Removes multiple instances of table names. Only need to read the file once. [Removed : Eq String => on type sig]
     extractDups :: [String] -> [String]

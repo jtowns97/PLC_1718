@@ -130,6 +130,7 @@ module Main where
         prettyPrintTable (exisTable)
         putStr("_____________________")
         let noDoubles = beGoneDbls exisTable noOfCols
+        -- Not working for columns of 3??? check pr10
         putStr("__________No Doubles___________")
         putStrLn("")
         prettyPrintTable (noDoubles)
@@ -184,11 +185,6 @@ module Main where
     equalityChildren :: Query -> Bool
     equalityChildren (Evaluate (VarSingle string) (Var 
     -}
-
-
-
-
-
 
     prettyPrintTable :: Show a => [[a]] -> IO[()]
     prettyPrintTable (x:xs) = mapM (prettyPrintLine) (x:xs)

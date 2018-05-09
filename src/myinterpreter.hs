@@ -134,7 +134,7 @@ module Main where
         putStrLn("")
         prettyPrintTable (noDoubles)
         putStr("_____________________")
-        let answer = executeQuery (exisTable) (pTree)
+        let answer = executeQuery (noDoubles) (exisTable) (pTree) 
         putStr("_______ANSWER______________")
         putStrLn("")
         prettyPrintTable(answer)

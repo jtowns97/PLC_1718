@@ -129,16 +129,12 @@ module Main where
         putStrLn("")
         prettyPrintTable (exisTable)
         putStr("_____________________")
-<<<<<<< HEAD
-        let answer = executeQuery (bigTable) (pTree) 
-=======
         let noDoubles = beGoneDbls exisTable noOfCols
         putStr("__________No Doubles___________")
         putStrLn("")
         prettyPrintTable (noDoubles)
         putStr("_____________________")
         let answer = executeQuery (exisTable) (pTree)
->>>>>>> 90577226ace435351ea6355d0096aa98ca3beeca
         putStr("_______ANSWER______________")
         putStrLn("")
         prettyPrintTable(answer)

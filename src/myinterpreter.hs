@@ -273,6 +273,7 @@ module Main where
     getNRowFromCrossProd :: [[String]] -> Int -> [String]
     getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
 
+
     {-==============================================================================-}
     {-====================== EXIS REFORMAT NEW TABLE OPERATIONS ====================-}
     {-==============================================================================-}
@@ -411,7 +412,7 @@ module Main where
 
     readyOutput :: [[String]] -> [String]
     readyOutput [] = []
-    readyOutput (row:rs) = rowToString row : readyOutput rs
+    readyOutput (row:rs) = sort(rowToString row : readyOutput rs)
 
     extractOutput :: [[VarNode]] -> [[String]]
     extractOutput [] = []

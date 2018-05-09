@@ -118,17 +118,27 @@ module Main where
         putStr("_____________________")
         allContents <- extractContents readContents tableNames
         let allTables = fmap buildTable allContents
+        let noOfCols = getColumn (allTables)
         putStr("__________allTables___________")
         putStrLn("")
         prettyPrintTable(allTables)
         putStr("_____________________")
         -- For future implementation where contentA-N and allTables is built dynamically.
-        let bigTable = crossMulti(toVarnodeTables allTables tableNames)
-        putStr("__________BigTables___________")
+        let exisTable = crossMulti(toVarnodeTables allTables tableNames)
+        putStr("__________ExisTables___________")
         putStrLn("")
-        prettyPrintTable (bigTable)
+        prettyPrintTable (exisTable)
         putStr("_____________________")
+<<<<<<< HEAD
         let answer = executeQuery (bigTable) (pTree) 
+=======
+        let noDoubles = beGoneDbls exisTable noOfCols
+        putStr("__________No Doubles___________")
+        putStrLn("")
+        prettyPrintTable (noDoubles)
+        putStr("_____________________")
+        let answer = executeQuery (exisTable) (pTree)
+>>>>>>> 90577226ace435351ea6355d0096aa98ca3beeca
         putStr("_______ANSWER______________")
         putStrLn("")
         prettyPrintTable(answer)
@@ -267,6 +277,40 @@ module Main where
     {-==============================================================================-}
     {-============================== TABLE OPERATIONS ==============================-}
     {-==============================================================================-}
+
+    getColumn :: [[[String]]] -> Int
+    getColumn [] = 0
+    getColumn (table:ts) = getColumn' table
+    
+    getColumn' :: [[String]] -> Int
+    getColumn' [] = 0
+    getColumn' (row:rs) = length row
+
+    beGoneDbls :: [[VarNode]] -> Int -> [[VarNode]]
+    beGoneDbls [] _ = []
+    beGoneDbls (row:rs) noOfCols | dblRow row noOfCols == False = row : beGoneDbls rs noOfCols
+    beGoneDbls (row:rs) noOfCols | dblRow row noOfCols == True = beGoneDbls rs noOfCols
+
+    dblRow :: [VarNode] -> Int -> Bool
+    dblRow [] _ = False
+    dblRow list noOfCols = repeatedPhrase (unwrap list) noOfCols
+
+    unwrap :: [VarNode] -> [String]
+    unwrap [] = []
+    unwrap ((Vari loc dat name):otherCells) = dat : unwrap otherCells
+
+    repeatedPhrase :: [String] -> Int -> Bool
+    repeatedPhrase [] _ = False
+    repeatedPhrase (string:ss) noOfCols = anyListEqual(chunksOf noOfCols (string:ss))
+
+    anyListEqual :: [[String]] -> Bool
+    anyListEqual [] = False
+    anyListEqual (list:ls) = checkList list ls || anyListEqual ls
+
+    checkList :: [String] -> [[String]] -> Bool
+    checkList _ [] = False
+    checkList list (otherLists:ls) | list == otherLists = True
+    checkList list (otherLists:ls) | list /= otherLists = False || checkList list ls
 
     getNthElement :: Int -> [String] -> String
     getNthElement _ [] = "THIS IS AN ERROR IN getNthElement" --remove this

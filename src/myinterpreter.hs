@@ -102,33 +102,41 @@ module Main where
         let alex = alexScanTokens (herbLang)
         let happy = parseCalc (alex)
         putStr("_________alex____________")
+        putStrLn("")
         print(alex)
         putStr("_____________________")
         let pTree = buildParseTree (happy)
         let lhsVar = getOrderOfVars (pTree)
         let tableNames = extractTableNames (pTree)
         putStr("_________tab names____________")
+        putStrLn("")
         print(tableNames)
         putStr("_____________________")
         putStr("________pTree____________")
+        putStrLn("")
         print(pTree)
         putStr("_____________________")
         allContents <- extractContents readContents tableNames
         let allTables = fmap buildTable allContents
         putStr("__________allTables___________")
-        print(allTables)
+        putStrLn("")
+        prettyPrintTable(allTables)
         putStr("_____________________")
         -- For future implementation where contentA-N and allTables is built dynamically.
         let bigTable = crossMulti(toVarnodeTables allTables tableNames)
         putStr("__________BigTables___________")
-        print(bigTable)
+        putStrLn("")
+        prettyPrintTable (bigTable)
         putStr("_____________________")
         let answer = executeQuery (bigTable) (pTree)
         putStr("_______ANSWER______________")
-        print(answer)
+        putStrLn("")
+        prettyPrintTable(answer)
         putStr("_____________________")
+        putStrLn("")
         let printable = readyOutput ( extractOutput (removeDups((orderTable (lhsVar) (answer))) ))
         putStr("_____________________")
+        putStrLn("")
         --let output = ""
         --if anyEmptyFile (tableNames) then output = "" else output = printable
         mapM_ putStrLn printable                                    
@@ -170,6 +178,18 @@ module Main where
     equalityChildren :: Query -> Bool
     equalityChildren (Evaluate (VarSingle string) (Var 
     -}
+
+
+
+
+
+
+    prettyPrintTable :: Show a => [[a]] -> IO[()]
+    prettyPrintTable (x:xs) = mapM (prettyPrintLine) (x:xs)
+
+    prettyPrintLine :: Show a => [a] -> IO()
+    prettyPrintLine [] = putStrLn("=======================================================================================")
+    prettyPrintLine x = print(x)
     {-==============================================================================-}
     {-=============================== CSV EXTRACTION ===============================-}
     {-==============================================================================-}

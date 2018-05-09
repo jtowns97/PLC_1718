@@ -293,17 +293,17 @@ module Main where
     buildVarNode :: String -> String -> String -> VarNode
     buildVarNode (tblName) (cell) (varName) = Vari (tblName) (cell) (varName)
     
-    selfRef :: [[VarNode]] -> [[VarNode]]
-    selfRef [] = []
-    selfRef (row:rs) = refRow row ++ selfRef rs
+    -- selfRef :: [[VarNode]] -> [[VarNode]]
+    -- selfRef [] = []
+    -- selfRef (row:rs) = refRow row ++ selfRef rs
 
-    refRow :: [VarNode] -> [VarNode]
-    refRow [] = []
-    refRow (cell:cs) = refCell cell cs 
+    -- refRow :: [VarNode] -> [VarNode]
+    -- refRow [] = []
+    -- refRow (cell:cs) = refCell cell cs 
     
-    refCell :: VarNode -> [VarNode] -> VarNode
-    refCell _ [] = []
-    refCell (Vari loc dat name) (cell:cs) | dat = --MORE THAN ONE OTHER CELLS DAT????
+    -- refCell :: VarNode -> [VarNode] -> VarNode
+    -- refCell _ [] = []
+    -- refCell (Vari loc dat name) (cell:cs) | dat = --MORE THAN ONE OTHER CELLS DAT????
 
 
     crossMulti :: [[[VarNode]]] -> [[VarNode]]

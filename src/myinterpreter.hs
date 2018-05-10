@@ -360,9 +360,15 @@ module Main where
 
     countRExisNames :: OpTree -> Int
     countRExisNames oTree = length (extractRExisNames oTree)
-    
-    
+    --Split popTree location assignment so it happens before population
 
+    
+    renameRelLocation :: OpTree -> String -> OpTree
+    renameRelLocation (RelationNode (tbl) (vTree)) (newTbl) = (RelationNode (newTbl) (renameTreeLocation (vTree) (newTbl)))
+
+    renameTreeLocation :: VarTree -> String -> VarTree 
+    renameTreeLocation (SingleNode (Vari loc dat name)) newLoc = (SingleNode (Vari newLoc dat name))
+    renameTreeLocation (CommaNode (Vari loc dat name) (remTree)) newLoc = (CommaNode (Vari newLoc dat name) (renameTreeLocation (remTree) (newLoc)) )
 
 
     toVarnodeTables :: [[[String]]] -> [String] -> [[[VarNode]]]

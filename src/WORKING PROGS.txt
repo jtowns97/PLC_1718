@@ -1,10 +1,10 @@
 1 YES
 2 YES 
-3 YES
-4 NO [] exis
-5 NO [] exis
+3 NO
+4 YES [] exis
+5 YES [] exis
 6 YES
 7 NO ______________________ ____________________
 8 YES
-9 NO
+9 YES
 10 NO

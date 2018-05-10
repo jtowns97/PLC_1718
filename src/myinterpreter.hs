@@ -142,21 +142,28 @@ module Main where
         --prettyPrintTable (noDoubles)
         print(noDoubles)
         putStr("_____________________")
-        let answer = executeQuery (noDoubles) (exisTable) (pTreeLoc) 
+        let answer = executeQuery (noDoubles) (pTreeLoc) 
         putStr("_______ANSWER______________")
         putStrLn("")
         prettyPrintTable(answer)
         putStr("_____________________")
         putStrLn("")
-        let printable = readyOutput ( extractOutput (removeDups((orderTable (lhsVar) (answer))) ))
+        let output = readyOutput ( extractOutput (removeDups((orderTable (lhsVar) (answer))) ))
         putStr("_____________________")
         putStrLn("")
+        emptyFlag <- anyEmptyFile tableNames
+        let printable = burnOutput output emptyFlag
         --let output = ""
         --if anyEmptyFile (tableNames) then output = "" else output = printable
-        mapM_ putStrLn printable                                    
+        mapM_ putStrLn printable                                
     {-==============================================================================-}
     {-============================== SYNTAX CHECKER ================================-}
     {-==============================================================================-}
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 98b89182780ff1af1212a7a8a44bf695bd4973cd
     -- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
 {-
     --checkBounds
@@ -207,6 +214,10 @@ module Main where
     {-=============================== CSV EXTRACTION ===============================-}
     {-==============================================================================-}
 
+    burnOutput :: [String] -> Bool -> [String]
+    burnOutput output flag   | flag == True = ["EMPTY"]
+                             | flag == False = output
+
     readContents :: String -> IO [[String]]
     readContents filepath = do
         contents <- readFile (fix filepath)
@@ -225,11 +236,11 @@ module Main where
         let flag = False
         return flag
     anyEmptyFile [oneEl] = do
-        bool <- emptyFile oneEl
+        bool <- emptyFile (charToString (head oneEl))
         return bool
     anyEmptyFile (file:fs) = do
         let listempty = length (file:fs) == 0
-        bool <- emptyFile file
+        bool <- emptyFile (charToString (head file))
         if bool then return bool else anyEmptyFile fs
         
     emptyFile :: String -> IO Bool
@@ -550,22 +561,18 @@ module Main where
     rowToString [a] = a
     rowToString [a,b] = a ++ "," ++ b
     rowToString (x:xs) = x ++ "," ++ rowToString xs 
-{- Pre- checkExis update
+
     executeQuery :: [[VarNode]] -> ParseTree -> [[VarNode]] 
     executeQuery [] _ = []
-    executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (Marker ordVars assignedTree) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (Marker ordVars oTree)
+    executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (Marker ordVars assignedTree) ) && repeatCheckV assignedRow == True   = [assignedRow] ++ executeQuery (remainingRows) (Marker ordVars oTree)
                                                                  | (evaluateParseTree (Marker ordVars assignedTree) ) == False  = executeQuery (remainingRows) (Marker ordVars oTree)
                                                                  where   assignedRow = getTreeState(assignedTree) -- : executeQuery (remainingRows) (pTree)
                                                                          assignedTree = popTree (sanitiseOpTree(oTree)) (row)
--}
 
-    executeQuery :: [[VarNode]] -> [[VarNode]] -> ParseTree -> [[VarNode]] -- PopTable -> ExisTable -> pTree -> OutputRows
-    executeQuery [] _ _ = []
-    executeQuery (row:remainingRows) (exisTable) (Marker ordVars oTree)         | (evaluateParseTree (Marker ordVars assignedTree) (exisTable) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (exisTable) (Marker ordVars oTree)
-                                                                                | (evaluateParseTree (Marker ordVars assignedTree) (exisTable) ) == False  = executeQuery (remainingRows) (exisTable) (Marker ordVars oTree)
-                                                                                where   assignedRow = getTreeState(assignedTree) -- : executeQuery (remainingRows) (pTree)
-                                                                                        assignedTree = popTree (sanitiseOpTree(oTree)) (row)
+    assignPTState :: ParseTree -> [VarNode] -> [VarNode]
+    assignPTState (Marker (vars) (oTree)) rList = getTreeState( popTree (sanitiseOpTree(oTree)) (rList) ) 
 
+<<<<<<< HEAD
     --New ePT: (EXIS REFORMAT) SEE HERE **** DEADLINE DAY *** : bottom comment shows checkrepeats syntax checker
     evaluateParseTree :: ParseTree -> [[VarNode]] -> Bool -- pTree -> ExisTable -> Boolean output
     evaluateParseTree (Marker ordVars assignedTree) (exisTable) = checkRepeats(filterRepeats(groupRepeats(extractAssignedNodes(getTreeState(assignedTree))))) && (evaluate (assignedTree) (exisTable))
@@ -574,6 +581,11 @@ module Main where
     evaluateTree :: OpTree -> [[VarNode]] -> Bool -- oTree -> ExisTable -> Boolean output
     evaluateTree (assignedTree) (exisTable) = checkRepeats(filterRepeats(groupRepeats(extractAssignedNodes(getTreeState(assignedTree))))) && (evaluate (assignedTree) (exisTable))
 
+=======
+    --New ePT: (EXIS REFORMAT)
+    evaluateParseTree :: ParseTree -> Bool --
+    evaluateParseTree (Marker ordVars assignedTree) = repeatCheck assignedTree && (evaluate (assignedTree))
+>>>>>>> 98b89182780ff1af1212a7a8a44bf695bd4973cd
 
     --Are all nodes in list . NB ************* Not sure of ">", ">=" ie what combination *******************
     areRepeats :: [VarNode] -> Int -> Bool
@@ -625,15 +637,16 @@ module Main where
     equateName :: VarNode -> VarNode -> Bool
     equateName (Vari (loc) (dat) (name)) (Vari (locB) (datB) (nameB)) = ( (dat == datB) && (name == nameB) )
  
-    evaluate :: OpTree -> [[VarNode]] -> Bool --evaluate opTree exisTable output
-    evaluate (EquateNode (l) (r)) (exTable)   =  ( checkEquality (EquateNode (l) (r))) 
-    evaluate (RelationNode (loc) (varTr)) (exTable)  = checkRelation (RelationNode (loc) (varTr))
-    evaluate (ConjunctionNode (l) (r)) (exTable)  = checkConjunction (ConjunctionNode (l) (r)) (exTable)
-    evaluate (ExistVar vTree oTree) (exTable) = checkExistential (ExistVar vTree oTree) (exTable)
-    evaluate (VarOp v) (exTable) = True
+    --checkExis rewritten, popTree, all of propoganoate of big table removed trees through executeQuery to popNodes, 
+    evaluate :: OpTree -> Bool --evaluate opTree freeVarList
+    evaluate (EquateNode (l) (r))  =  ( checkEquality (EquateNode (l) (r))) 
+    evaluate (RelationNode (loc) (varTr))  = checkRelation (RelationNode (loc) (varTr))
+    evaluate (ConjunctionNode (l) (r))  = checkConjunction (ConjunctionNode (l) (r))
+    evaluate (ExistVar vTree oTree) = checkExistential (ExistVar vTree oTree) && evaluate (oTree)
+    evaluate (VarOp v) = True
 
-    checkConjunction :: OpTree -> [[VarNode]] -> Bool
-    checkConjunction  (ConjunctionNode (l) (r) ) (exTable)  = (evaluate (l) (exTable)) && (evaluate (r) (exTable))
+    checkConjunction :: OpTree -> Bool
+    checkConjunction  (ConjunctionNode (l) (r) ) = (evaluate(l)) && (evaluate(r))
     
 
 
@@ -696,18 +709,33 @@ module Main where
     getTreeStateNoEx (ExistVar (vTree) (oTree)) = [] --Possibly not what we need (EXIS REFORMAT)
 
     -- New checkExis below along with needed aux functions
-    checkExistential :: OpTree -> [[VarNode]] -> Bool --oTree -> ExisTable 
-    checkExistential _ [] = False
-    checkExistential (ExistVar vTree oTree) (ex:exs) = evaluateAssignTree (oTree) (ex) (ex:exs) || checkExistential (ExistVar vTree oTree) (exs)  
+    -- checkExistential :: OpTree -> Bool --TODO: test failiure case cos probs wont show
+    -- checkExistential (ExistVar vTree oTree) = checkExisTInOpT (vTree) (oTree) 
 
-    evaluateAssignTree :: OpTree -> [VarNode] -> [[VarNode]] -> Bool
-    evaluateAssignTree oTree rList exTable = evaluateTree (popTree (sanitiseOpTree(oTree)) (rList)) (exTable)
+    checkExistential :: OpTree -> Bool
+    checkExistential (ExistVar vTree oTree) = isVListPop (getTreeState(oTree)) 
+    checkExistential x = False
 
+
+
+    isVListPop :: [VarNode] -> Bool
+    isVListPop (node:ns) = isNodePopulated node && isVListPop ns
+
+    repeatCheckV :: [VarNode] -> Bool
+    repeatCheckV assignedRow = True --checkRepeats(filterRepeats(groupRepeats(assignedRow)))
+
+    repeatCheck :: OpTree -> Bool
+    repeatCheck assignedTree = checkRepeats(filterRepeats(groupRepeats(getTreeState(assignedTree))))
     -- checkExisTInOpT :: VarTree -> OpTree -> Bool
     -- checkExisTInOpT (SingleNode (vNode)) oTree = checkExisInOpTree vNode oTree
     -- checkExisTInOpT (CommaNode (vNode) (rem Tree)) oTree = (checkExisInOpTree (vNode) (oTree)) && (checkExisTInOpT (remTree) (oTree))
     
-    
+    -- checkExistential :: OpTree -> [[VarNode]] -> Bool --oTree -> ExisTable 
+    -- checkExistential _ [] = False
+    -- checkExistential (ExistVar vTree oTree) (ex:exs) = evaluateAssignTree (oTree) (ex) (ex:exs) || checkExistential (ExistVar vTree oTree) (exs)  
+
+    -- evaluateAssignTree :: OpTree -> [VarNode] -> [[VarNode]] -> Bool
+    -- evaluateAssignTree oTree rList exTable = evaluateTree (popTree (sanitiseOpTree(oTree)) (rList)) (exTable)
     -- checkExisInOpTree :: VarNode -> OpTree -> Bool
     -- checkExisInOpTree vNode oTree = checkExisInOpTreeList (vNode) (extractAssignedNodes(getUniqueState (oTree) (False)))
 
@@ -850,8 +878,8 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 
     filterNodesByTable :: [VarNode] -> String -> [VarNode]
     filterNodesByTable [] _ = []
-    filterNodesByTable ((Vari loc dat name):xs) tblName     | (head loc) == (head tblName) = [(Vari loc dat name)] ++ filterNodesByTable xs tblName
-                                                            | (head loc) /= (head tblName) = filterNodesByTable xs tblName
+    filterNodesByTable ((Vari loc dat name):xs) tblName     | (loc) == (tblName) = [(Vari loc dat name)] ++ filterNodesByTable xs tblName
+                                                            | (loc) /= (tblName) = filterNodesByTable xs tblName
 
     getNodeAtNameAndLoc :: [VarNode] -> String -> String -> Maybe VarNode
     getNodeAtNameAndLoc [] _ _ = Data.Maybe.Nothing

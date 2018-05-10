@@ -874,7 +874,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
                                                     | name /= thisName = getNodeAtName xs thisName
 
     popRelation :: OpTree -> [VarNode] -> OpTree --RelatioNode case only
-    popRelation (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (populateVarTree (vTree) (reverse (extractOutput'((filterNodesByTable (rList) (tbl))))) 0 ) )
+    popRelation (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (popVarTree (vTree) ( (extractOutput'((filterNodesByTable (rList) (tbl))))) ) )
         --(RelationNode (tbl) (populateVarTree (vTree) (extractOutput'(rList)) 0 ) )
         --(RelationNode (tbl) (popBoundVTree vTree rList) )
 
@@ -885,6 +885,14 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind = ( CommaNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name)) ( populateVarTree (remTree) (x:xs) (ind+1) ) )
     --populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind  | isNodePopulated (Vari (loc) (dat) (name)) == True = (CommaNode (Vari (loc) (dat) (name)) (remTree)) --add recursive call here
     populateVarTree e _ _ = e
+
+
+    popVarTree :: VarTree -> [String] -> VarTree
+    popVarTree x [] = x
+    popVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs)            = (SingleNode (Vari (loc) (x) (name)))
+    popVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) = ( CommaNode (Vari (loc) (x) (name)) (popVarTree (remTree) (xs)) ) 
+
+
 
     --REMEMBER: NON BOUND VARIABLES, eg (z1,z2 (E. (R(z1,z2)))), CAN BE DUPLICATED ELSEWHERE IN QUERY AND SHOULDNT BE REMOVED FROM THE LIST, AS THEYRE UNIQUE
     --Separate function populating vTree in ExistVar AFTER first round of population, so the relavant table names can be easily extracted:

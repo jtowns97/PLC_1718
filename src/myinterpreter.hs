@@ -764,6 +764,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     locTree (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (locTree (querA) rList) (locTree (querB) rList))
     locTree (EquateNode (querX) (querY)) rList = (EquateNode (assignLocationInOTree querX rList) (assignLocationInOTree querY rList))
     locTree (ExistVar (vTree) (oTree)) rList = locExistNode (ExistVar (vTree) (oTree)) rList
+    locTree x rList = x
 
     locExistNode :: OpTree -> [VarNode] -> OpTree
     locExistNode (ExistVar (vTree) (oTree)) rList =  (ExistVar (assignLocationInTree (vTree) (getUniqueState(oTree) (False)) ) (locTree oTree rList)) 

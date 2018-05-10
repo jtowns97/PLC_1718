@@ -177,15 +177,19 @@ Marker [Vari "*" "*" "x1"] (ExistVar (SingleNode (Vari "*" "*" "z1")) (RelationN
 
 
 
+--PR5:
+
+[[Vari "B0" "Boufal" "*",Vari "B0" "Maserati" "*",Vari "A0" "Sofiane" "*",Vari "A0" "Boufal" "*"],[Vari "B0" "Boufal" "*",Vari "B0" "Maserati" "*",Vari "A0" "Dusan" "*",Vari "A0" "Tadic" "*"],[Vari "B0" "Boufal" "*",Vari "B0" "Maserati" "*",Vari "A0" "Guido" "*",Vari "A0" "Carillo" "*"],[Vari "B0" "Carillo" "*",Vari "B0" "Ferrari" "*",Vari "A0" "Sofiane" "*",Vari "A0" "Boufal" "*"],[Vari "B0" "Carillo" "*",Vari "B0" "Ferrari" "*",Vari "A0" "Dusan" "*",Vari "A0" "Tadic" "*"],[Vari "B0" "Carillo" "*",Vari "B0" "Ferrari" "*",Vari "A0" "Guido" "*",Vari "A0" "Carillo" "*"]]
+
+Marker [Vari "*" "*" "x1",Vari "*" "*" "x2"] (ExistVar (SingleNode (Vari "A0" "*" "z1")) (ConjunctionNode (RelationNode "A0" (CommaNode (Vari "A0" "*" "x1") (SingleNode (Vari "A0" "*" "z1")))) (RelationNode "B0" (CommaNode (Vari "B0" "*" "z1") (SingleNode (Vari "B0" "*" "x2"))))))
+
+(ExistVar (SingleNode (Vari "A0" "*" "z1")) (ConjunctionNode (RelationNode "A0" (CommaNode (Vari "A0" "*" "x1") (SingleNode (Vari "A0" "*" "z1")))) (RelationNode "B0" (CommaNode (Vari "B0" "*" "z1") (SingleNode (Vari "B0" "*" "x2"))))))
+
+evaluate (ExistVar (SingleNode (Vari "A0" "*" "z1")) (ConjunctionNode (RelationNode "A0" (CommaNode (Vari "A0" "*" "x1") (SingleNode (Vari "A0" "*" "z1")))) (RelationNode "B0" (CommaNode (Vari "B0" "*" "z1") (SingleNode (Vari "B0" "*" "x2")))))) ([[Vari "A0" "Sofiane" "*",Vari "A0" "Boufal" "*",Vari "B0" "Boufal" "*",Vari "B0" "Maserati" "*"],[Vari "A0" "Sofiane" "*",Vari "A0" "Boufal" "*",Vari "B0" "Carillo" "*",Vari "B0" "Ferrari" "*"],[Vari "A0" "Dusan" "*",Vari "A0" "Tadic" "*",Vari "B0" "Boufal" "*",Vari "B0" "Maserati" "*"],[Vari "A0" "Dusan" "*",Vari "A0" "Tadic" "*",Vari "B0" "Carillo" "*",Vari "B0" "Ferrari" "*"],[Vari "A0" "Guido" "*",Vari "A0" "Carillo" "*",Vari "B0" "Boufal" "*",Vari "B0" "Maserati" "*"],[Vari "A0" "Guido" "*",Vari "A0" "Carillo" "*",Vari "B0" "Carillo" "*",Vari "B0" "Ferrari" "*"]])
 
 
 
-
-
-
-
-
-
+ExistVar (SingleNode (Vari "A0" "*" "z1")) (ConjunctionNode (RelationNode "A0" (CommaNode (Vari "A0" "Sofiane" "x1") (SingleNode (Vari "A0" "Boufal" "z1")))) (RelationNode "B0" (CommaNode (Vari "B0" "Boufal" "z1") (SingleNode (Vari "B0" "Maserati" "x2")))))
 
 
 --PR10 PTree:
@@ -203,6 +207,9 @@ executeQuery ([[Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "A" 
 
 
 Marker [Vari "*" "*" "x1",Vari "*" "*" "x2",Vari "*" "*" "x3"] (ConjunctionNode (RelationNode "S" (CommaNode (Vari "S" "*" "x1") (CommaNode (Vari "S" "*" "x2") (SingleNode (Vari "S" "*" "x3"))))) (ExistVar (CommaNode (Vari "*" "*" "z1") (SingleNode (Vari "*" "*" "z2"))) (RelationNode "S" (CommaNode (Vari "S" "*" "z1") (CommaNode (Vari "S" "*" "z1") (SingleNode (Vari "S" "*" "z2")))))))
+
+*Main> evaluate (ExistVar (SingleNode (Vari "A0" "*" "z1")) (ConjunctionNode (RelationNode "A0" (CommaNode (Vari "A0" "Sofiane" "x1") (SingleNode (Vari "A0" "Boufal" "z1")))) (RelationNode "B0" (CommaNode (Vari "B0" "Boufal" "z1") (SingleNode (Vari "B0" "Maserati" "x2"))))))
+True
 
 
 

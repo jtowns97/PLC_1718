@@ -563,6 +563,7 @@ module Main where
     executeQuery [] _ = []
     executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (Marker ordVars assignedTree) ) && repeatCheckV assignedRow == True   = [assignedRow] ++ executeQuery (remainingRows) (Marker ordVars oTree)
                                                                  | (evaluateParseTree (Marker ordVars assignedTree) ) == False  = executeQuery (remainingRows) (Marker ordVars oTree)
+                                                                 | otherwise = executeQuery (remainingRows) (Marker ordVars oTree)
                                                                  where   assignedRow = getTreeState(assignedTree) -- : executeQuery (remainingRows) (pTree)
                                                                          assignedTree = popTree (sanitiseOpTree(oTree)) (row)
 
@@ -571,7 +572,7 @@ module Main where
 
     --New ePT: (EXIS REFORMAT)
     evaluateParseTree :: ParseTree -> Bool --
-    evaluateParseTree (Marker ordVars assignedTree) = repeatCheck assignedTree && (evaluate (assignedTree))
+    evaluateParseTree (Marker ordVars assignedTree) =  (evaluate (assignedTree))
 
     --Are all nodes in list . NB ************* Not sure of ">", ">=" ie what combination *******************
     areRepeats :: [VarNode] -> Int -> Bool
@@ -683,7 +684,7 @@ module Main where
     getTreeState (BoolNode (bool)) = []
     getTreeState (VarOp (varTree)) = traverseDFVar(varTree)
     getTreeState (EmptyOT (emptyTree)) = []
-    getTreeState (ExistVar (vTree) (oTree)) = getTreeState(varToOpTree(vTree)) ++ getTreeState (oTree) --Possibly not what we need (EXIS REFORMAT)
+    getTreeState (ExistVar (vTree) (oTree)) =  getTreeState (oTree) --Possibly not what we need (EXIS REFORMAT)
 
     getTreeStateNoEx :: OpTree -> [VarNode]
     getTreeStateNoEx (ConjunctionNode (opTree) (opTreeX)) = getTreeStateNoEx(opTree) ++ getTreeStateNoEx (opTreeX)
@@ -705,10 +706,11 @@ module Main where
 
 
     isVListPop :: [VarNode] -> Bool
+    isVListPop [] = True
     isVListPop (node:ns) = isNodePopulated node && isVListPop ns
 
     repeatCheckV :: [VarNode] -> Bool
-    repeatCheckV assignedRow = True --checkRepeats(filterRepeats(groupRepeats(assignedRow)))
+    repeatCheckV assignedRow = checkRepeats(filterRepeats(groupRepeats(assignedRow)))
 
     repeatCheck :: OpTree -> Bool
     repeatCheck assignedTree = checkRepeats(filterRepeats(groupRepeats(getTreeState(assignedTree))))

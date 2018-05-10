@@ -1,8 +1,8 @@
 1 YES
 2 YES 
-3 NO
-4 YES [] exis
-5 YES [] exis
+3 YES
+4 YES
+5 YES
 6 YES
 7 NO ______________________ ____________________
 8 YES

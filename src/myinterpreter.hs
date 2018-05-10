@@ -116,7 +116,7 @@ module Main where
         putStrLn("")
         print(pTree)
         putStr("_____________________")
-        let pTreeLoc = locTree (pTree) (getUniqueState (pTree))
+        let pTreeLoc = locPTree (pTree) (getUniqueState (pTree) (False))
         putStr("________pTree___loc assigned_________")
         putStrLn("")
         print(pTreeLoc)
@@ -753,6 +753,9 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeEX (RelationNode (tbl) (vTree)) rList = popRelation (RelationNode (tbl) (vTree)) (rList)
     popTreeEX (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeFirstPass oTree rList) )
 
+
+    locPTree :: ParseTree -> [VarNode] -> ParseTree
+    locPTree (Marker (ordVars) (oTree)) rList = locTree (oTree) (rList)
 
     locTree :: OpTree -> [VarNode] -> OpTree
     locTree (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (locTree (querA) rList) (locTree (querB) rList))

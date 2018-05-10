@@ -148,15 +148,18 @@ module Main where
         prettyPrintTable(answer)
         putStr("_____________________")
         putStrLn("")
-        let printable = readyOutput ( extractOutput (removeDups((orderTable (lhsVar) (answer))) ))
+        let output = readyOutput ( extractOutput (removeDups((orderTable (lhsVar) (answer))) ))
         putStr("_____________________")
         putStrLn("")
+        emptyFlag <- anyEmptyFile tableNames
+        let printable = burnOutput output emptyFlag
         --let output = ""
         --if anyEmptyFile (tableNames) then output = "" else output = printable
-        mapM_ putStrLn printable                                    
+        mapM_ putStrLn printable                                
     {-==============================================================================-}
     {-============================== SYNTAX CHECKER ================================-}
     {-==============================================================================-}
+
 
     -- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
 {-
@@ -208,6 +211,10 @@ module Main where
     {-=============================== CSV EXTRACTION ===============================-}
     {-==============================================================================-}
 
+    burnOutput :: [String] -> Bool -> [String]
+    burnOutput output flag   | flag == True = ["EMPTY"]
+                             | flag == False = output
+
     readContents :: String -> IO [[String]]
     readContents filepath = do
         contents <- readFile (fix filepath)
@@ -226,11 +233,11 @@ module Main where
         let flag = False
         return flag
     anyEmptyFile [oneEl] = do
-        bool <- emptyFile oneEl
+        bool <- emptyFile (charToString (head oneEl))
         return bool
     anyEmptyFile (file:fs) = do
         let listempty = length (file:fs) == 0
-        bool <- emptyFile file
+        bool <- emptyFile (charToString (head file))
         if bool then return bool else anyEmptyFile fs
         
     emptyFile :: String -> IO Bool

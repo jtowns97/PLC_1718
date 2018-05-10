@@ -210,9 +210,12 @@ module Main where
 
     readContents :: String -> IO [[String]]
     readContents filepath = do
-        contents <- readFile (filepath ++ ".csv")
+        contents <- readFile (fix filepath)
         let lines = chunksOf 1 (splitOn "\n" contents)
         return lines
+
+    fix :: String -> String
+    fix string = charToString(head string) ++ ".csv"
 
     buildTable :: [[String]] -> [[String]]
     buildTable [] = []
@@ -271,13 +274,18 @@ module Main where
     buildOpTree :: Query -> OpTree 
     buildOpTree (Conjunction querA querB) = ConjunctionNode (buildOpTree querA) (buildOpTree querB)
     buildOpTree (ConjunctionTriple querX querY querZ) = (ConjunctionNode (buildOpTree querX) (ConjunctionNode (buildOpTree querY) (buildOpTree querZ)))
-    buildOpTree (Relation tblN varis) = RelationNode [tblN!!0] (assignVarTreeLoc (buildVarTree varis) [tblN!!0] )
+    buildOpTree (Relation tblN varis) = RelationNode (removeBracket tblN) (assignVarTreeLoc (buildVarTree varis) (removeBracket tblN))
     --Below (TODO) add type checker for querA/B, checking its a VarTree
     buildOpTree (Equality querA querB) = (EquateNode (varToOpTree(buildVarTree(querA))) (varToOpTree(buildVarTree(querB))))
     buildOpTree (V varis) = VarOp (buildVarTree(varis))
     buildOpTree (ExistentialSingle vTree oTree) = (ExistVar (buildVarTree(vTree)) (buildOpTree (oTree))) --(EXIS REFORMAT)
     buildOpTree _ = EmptyOT (Main.Nothing)
 
+    removeBracket :: String -> String
+    removeBracket string | length string == 1 = "Grammar Error in buildOpTree: Table Name Length one."
+    removeBracket string | length string == 2 = string
+    removeBracket string | length string == 3 = init string
+    removeBracket string = string
     {-==============================================================================-}
     {-============================== TABLE OPERATIONS ==============================-}
     {-==============================================================================-}
@@ -346,6 +354,9 @@ module Main where
     {-====================== EXIS REFORMAT NEW TABLE OPERATIONS ====================-}
     {-==============================================================================-}
 
+    extractTableNames :: ParseTree -> [String]
+    extractTableNames (Marker ord oTree) = extractRNames oTree ++ extractRExisNames oTree
+
     extractRNames :: OpTree -> [String] 
     extractRNames (ConjunctionNode (oTA) (oTB)) = extractRNames (oTA) ++ extractRNames(oTB)
     extractRNames (RelationNode (tbl) (varTree)) = [tbl]
@@ -374,6 +385,8 @@ module Main where
     renameTreeLocation :: VarTree -> String -> VarTree 
     renameTreeLocation (SingleNode (Vari loc dat name)) newLoc = (SingleNode (Vari newLoc dat name))
     renameTreeLocation (CommaNode (Vari loc dat name) (remTree)) newLoc = (CommaNode (Vari newLoc dat name) (renameTreeLocation (remTree) (newLoc)) )
+    
+
 
 
     toVarnodeTables :: [[[String]]] -> [String] -> [[[VarNode]]]
@@ -638,6 +651,27 @@ module Main where
     {-==============================================================================-}
     {-=========================== TREE & NODE OPERATIONS ===========================-}
     {-==============================================================================-}
+
+    -- highestOrder :: ParseTree -> ParseTree
+    -- highestOrder (Marker (vars) (oTree)) = secondOrder oTree (Marker (vars) (oTree)) 
+
+    -- secondOrder :: OpTree -> ParseTree -> OpTree
+    -- secondOrder opTree pTree =   renameTree opTree renamedTblNms
+    --                         where   renamedTblNms = renameTblName tblNms
+    --                                 tblNms = extractTableNames pTree
+    -- -- extract table names
+    -- gather dup table names
+    -- create new table names (depending on exis or nonexis maybe?)
+    -- parse list of table names with int flag and go through all OpTree first S leave it the same, second S when int flag is f
+    -- renameTree :: OpTree -> [String] -> OpTree
+    -- renameTree  (ConjunctionNode (opTree) (opTreeX)) = 
+    -- renameTree  (RelationNode (string) (varTree)) =
+    -- renameTree  (EquateNode (opTree) (opTreeX)) = 
+    -- renameTree  (BoolNode (bool)) = (BoolNode bool)
+    -- renameTree  (VarOp (varTree)) = 
+    -- renameTree  (EmptyOT (emptyTree)) = (EmptyOT emptyTree)
+    -- renameTree  (ExistVar (vTree) (oTree)) = 
+
     getPTreeState :: ParseTree -> [VarNode]
     getPTreeState (Marker (vars) (oTree)) = getTreeState (oTree)
     
@@ -904,10 +938,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     charToString :: Char -> String
     charToString = (:[])
 
-    -- ::::::::::::EXTRACTION OF TABLE NAMES:::::::::
-    extractTableNames :: ParseTree -> [String]
-    extractTableNames pTree = map charToString (map head (extractPTableNames pTree))
-    
+
     -- Removes multiple instances of table names. Only need to read the file once. [Removed : Eq String => on type sig]
     extractDups :: [String] -> [String]
     extractDups = rdHelper []

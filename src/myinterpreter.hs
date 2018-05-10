@@ -20,41 +20,7 @@ module Main where
     import Debug.Trace
     import qualified Data.ByteString.Char8 as C
     import GHC.Exts
-   
 
-
-    {-==============================================================================-}
-    {-==================================== TODO ====================================-}
-    {-==============================================================================-}
-
-
-    {-
-    Hello. 
-    
-    I took the liberty of making automarker tables for pr6-10, look in the automarker foler.
-    
-
-    New tasks here:
-        -- Double check my tests for each problem
-        --Test EMPTY CASES as shown in spec pr1 through to pr10, copy over table contents etc
-        --WORKING PROGRAMS: Pr1, Pr2, Pr3, Pr4, Pr5, Pr6, Pr9
-        --BROKEN PROGRAMS: Pr7, Pr8, Pr10
-        -- ^^ Basically any program that self references multiple times. This causes your BigTable to not reflect every assignment, bcos its the NUMBERR OF RELATIONS IN THE QUERY..
-        --      ... THAT DECIDES THE BigTable, as far as I understand it. Not really sure tho, COULD BE as easy as cross producting itself as many times (see Pr7) as needed and checking all those rows?
-        --Once thats fixed should all fall into place
-        --My understanding: 
-        --Pr10: actual .cql file parse error somewhere cba to fix it atm
-        --2-3page manual
-        -}
-
-
-    -- Also still to look at:
-
-    --PR6: Account for empty input files
-    --Add functionality to define empty input file and cause function to add this null value to the xProd table for evaluation
-    -- Deal with empty tree cases for pTrees and oTrees
-    
-   
     {-==============================================================================-}
     {-=============================== DATA STRUCTURES ==============================-}
     {-==============================================================================-}
@@ -63,7 +29,6 @@ module Main where
     -- VARIABLES TREE
     data VarTree = CommaNode (VarNode) (VarTree) --Added to force tree structure to right recurse
         | SingleNode (VarNode)  -- VarNode location actualData
-        | EmptyVT (EmptyTree)
         deriving Show
         
     data VarNode = Vari (String) (String) (String) -- loc dat name
@@ -76,77 +41,39 @@ module Main where
         | EquateNode (OpTree) (OpTree)
         | BoolNode (Bool)
         | VarOp (VarTree)
-        | EmptyOT (EmptyTree)
         | ExistVar (VarTree) (OpTree)
         deriving Show
 
-    -- (EXIS REFORMAT) : Is EmptyPT ever actually needed?
-    -- All expressions available within language.
     -- PARSE TREE
     data ParseTree = Marker ([VarNode]) (OpTree)
-        | EmptyPT (EmptyTree)
         deriving Show
       --  (1,10,3)E.( ( (1,2)E.Q(x1,x2) ^ (x1 = x2) ) ^ (x3=foo) )
-    
-    data EmptyTree = Nothing
-        deriving Show
     
     {-==============================================================================-}
     {-===================================== MAIN ===================================-}
     {-==============================================================================-}
     main :: IO()
     main = do 
+        -- Take inputs
         a <- getArgs
         b <- readFile (head a)
         let herbLang = head (splitOn "\n" b)
         let alex = alexScanTokens (herbLang)
         let happy = parseCalc (alex)
-        putStr("_________alex____________")
-        putStrLn("")
-        print(alex)
-        putStr("_____________________")
+        -- Passed grammar and tokenising
         let pTree = buildParseTree (happy)
         let pTreeLoc = locPTree (pTree) (getUniqueState (getOTree(pTree)) (False))
         let lhsVar = getOrderOfVars (pTree)
-        print lhsVar
+        -- Got all tableNames from parseTree
         let tableNames = extractTableNames (pTree)
-        putStr("_________tab names____________")
-        putStrLn("")
-        print(tableNames)
-        putStr("_____________________")
-        putStr("________pTree____________")
-        putStrLn("")
-        print(pTree)
-        putStr("_____________________")
-        putStr("________pTree___loc assigned_________")
-        putStrLn("")
-        print(pTreeLoc)
-        putStr("_____________________")
+        -- Read IO contents
         allContents <- extractContents readContents tableNames
-        let allTables = fmap buildTable allContents
+        let allTables = fmap buildTable allContents -- list of tables
         let noOfCols = getColumn (allTables)
-        putStr("__________allTables___________")
-        putStrLn("")
-        --prettyPrintTable(allTables)
-        print(allTables)
-        putStr("_____________________")
-        -- For future implementation where contentA-N and allTables is built dynamically.
-        let exisTable = crossMulti(toVarnodeTables allTables tableNames)
-        putStr("__________ExisTables___________")
-        putStrLn("")
-        prettyPrintTable (exisTable)
-        --print(noDoubles)
-        putStr("_____________________")
-        let answer = executeQuery (exisTable) (pTreeLoc) 
-        putStr("_______ANSWER______________")
-        putStrLn("")
-        print(answer)
-        putStr("_____________________")
-        putStrLn("")
-        let output = readyOutput ( extractOutput (orderTable (lhsVar) (removeDups(answer))) )
-        putStr("_____________________")
-        putStrLn("")
-        emptyFlag <- anyEmptyFile tableNames
+        let crossTable = crossMulti(toVarnodeTables allTables tableNames) -- Table with all variations with other tables
+        let answer = executeQuery (crossTable) (pTreeLoc) -- Execute query for each of these rows 
+        let output = readyOutput ( extractOutput (orderTable (lhsVar) (removeDups(answer))) ) -- Orders the answer lexicographically and in order of lhs
+        emptyFlag <- anyEmptyFile tableNames -- Checks for empty files
         let printable = burnOutput output emptyFlag
         mapM_ putStrLn printable                                
     {-==============================================================================-}
@@ -190,16 +117,6 @@ module Main where
     -}
 
 
-
-
-
-
-    prettyPrintTable :: Show a => [[a]] -> IO[()]
-    prettyPrintTable (x:xs) = mapM (prettyPrintLine) (x:xs)
-
-    prettyPrintLine :: Show a => [a] -> IO()
-    prettyPrintLine [] = putStrLn("=======================================================================================")
-    prettyPrintLine x = print(x)
     {-==============================================================================-}
     {-=============================== CSV EXTRACTION ===============================-}
     {-==============================================================================-}
@@ -259,6 +176,13 @@ module Main where
     removeDups' [] = []
     removeDups' (x:xs) =  [head x] ++ removeDups' xs
 
+    prettyPrintTable :: Show a => [[a]] -> IO[()]
+    prettyPrintTable (x:xs) = mapM (prettyPrintLine) (x:xs)
+
+    prettyPrintLine :: Show a => [a] -> IO()
+    prettyPrintLine [] = putStrLn("=======================================================================================")
+    prettyPrintLine x = print(x)
+
     {-==============================================================================-}
     {-================================= BUILDING ===================================-}
     {-==============================================================================-} 
@@ -271,6 +195,9 @@ module Main where
     buildVarTree (VarSingle strName) = SingleNode (Vari ("*") ("*") (strName))
     buildVarTree (Comma (string) remVars) = CommaNode (Vari ("*") ("*") (string)) (buildVarTree remVars)
 
+    buildVarNode :: String -> String -> String -> VarNode
+    buildVarNode (tblName) (cell) (varName) = Vari (tblName) (cell) (varName)
+
     buildOpTree :: Query -> OpTree 
     buildOpTree (Conjunction querA querB) = ConjunctionNode (buildOpTree querA) (buildOpTree querB)
     buildOpTree (ConjunctionTriple querX querY querZ) = (ConjunctionNode (buildOpTree querX) (ConjunctionNode (buildOpTree querY) (buildOpTree querZ)))
@@ -279,7 +206,6 @@ module Main where
     buildOpTree (Equality querA querB) = (EquateNode (varToOpTree(buildVarTree(querA))) (varToOpTree(buildVarTree(querB))))
     buildOpTree (V varis) = VarOp (buildVarTree(varis))
     buildOpTree (ExistentialSingle vTree oTree) = (ExistVar (buildVarTree(vTree)) (buildOpTree (oTree))) --(EXIS REFORMAT)
-    buildOpTree _ = EmptyOT (Main.Nothing)
 
     removeBracket :: String -> String
     removeBracket string | length string == 1 = "Grammar Error in buildOpTree: Table Name Length one."
@@ -349,11 +275,6 @@ module Main where
     getNRowFromCrossProd :: [[String]] -> Int -> [String]
     getNRowFromCrossProd table goalRow = getNthRow table  goalRow 0
 
-
-    {-==============================================================================-}
-    {-====================== EXIS REFORMAT NEW TABLE OPERATIONS ====================-}
-    {-==============================================================================-}
-
     extractTableNames :: ParseTree -> [String]
     extractTableNames (Marker ord oTree) = extractRNames oTree ++ extractRExisNames oTree
 
@@ -386,9 +307,6 @@ module Main where
     renameTreeLocation (SingleNode (Vari loc dat name)) newLoc = (SingleNode (Vari newLoc dat name))
     renameTreeLocation (CommaNode (Vari loc dat name) (remTree)) newLoc = (CommaNode (Vari newLoc dat name) (renameTreeLocation (remTree) (newLoc)) )
     
-
-
-
     toVarnodeTables :: [[[String]]] -> [String] -> [[[VarNode]]]
     toVarnodeTables [] [] = []
     toVarnodeTables (tableA:remTables) (x:xs) = assignTblNm tableA x : toVarnodeTables remTables xs
@@ -400,22 +318,6 @@ module Main where
     assignDataAndName :: [String] -> String -> [VarNode]
     assignDataAndName [] _ = []
     assignDataAndName (cell:cs) name = buildVarNode name cell "*" : assignDataAndName cs name
-
-    buildVarNode :: String -> String -> String -> VarNode
-    buildVarNode (tblName) (cell) (varName) = Vari (tblName) (cell) (varName)
-    
-    -- selfRef :: [[VarNode]] -> [[VarNode]]
-    -- selfRef [] = []
-    -- selfRef (row:rs) = refRow row ++ selfRef rs
-
-    -- refRow :: [VarNode] -> [VarNode]
-    -- refRow [] = []
-    -- refRow (cell:cs) = refCell cell cs 
-    
-    -- refCell :: VarNode -> [VarNode] -> VarNode
-    -- refCell _ [] = []
-    -- refCell (Vari loc dat name) (cell:cs) | dat = --MORE THAN ONE OTHER CELLS DAT????
-
 
     crossMulti :: [[[VarNode]]] -> [[VarNode]]
     crossMulti [] = []
@@ -439,15 +341,12 @@ module Main where
     pairRow _ [] = []
     pairRow rowA rowB = rowA ++ rowB
 
-    -- --Asked for function here JT: -e
-
     getUniqueState :: OpTree -> Bool -> [VarNode]
     getUniqueState (ConjunctionNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
     getUniqueState (RelationNode (string) (varTree)) False = varTreeToList(varTree)--rmDupVars (varTree) 
     getUniqueState (EquateNode (oTA) (oTB)) False = getUniqueState oTA (False) ++ getUniqueState oTB (False)
     getUniqueState (BoolNode (bool)) False = []
     getUniqueState (VarOp (varTree)) False = (varTreeToList(varTree)) -- REMOVE DUPLICATES???!!!!???!!!
-    getUniqueState (EmptyOT (emptyTree)) False = []
     getUniqueState (ExistVar (varTree) (oTA)) False = getUniqueState (oTA) (True)
 
     getUniqueState (ConjunctionNode (oTA) (oTB)) True = getUniqueState oTA (True) ++ getUniqueState oTB (True)
@@ -455,16 +354,11 @@ module Main where
     getUniqueState (EquateNode (oTA) (oTB)) True = getUniqueState oTA (True) ++ getUniqueState oTB (True)
     getUniqueState (BoolNode (bool)) True = []
     getUniqueState (VarOp (varTree)) True = varTreeToList (varTree)
-    getUniqueState (EmptyOT (emptyTree)) True = []
     getUniqueState (ExistVar (varTree) (oTA)) True = getUniqueState (oTA) (True)
-{-
-    rmDupVars :: VarTree -> [VarNode]
-    rmDupVars vTree = nub (varTreeToList(vTree))
--}
+
     varTreeToList :: VarTree -> [VarNode]
     varTreeToList (CommaNode (varNode) (restTree)) = [varNode] ++ varTreeToList restTree
     varTreeToList (SingleNode (varNode)) = [varNode]
-    varTreeToList (EmptyVT (emptyTree)) = [] 
 
     doesListExistInOpTree :: [VarNode] -> OpTree -> Bool
     doesListExistInOpTree (x:xs) oTree = ( doesExistInOpTree (x) (oTree) ) && ( doesListExistInOpTree (xs) (oTree) )
@@ -481,11 +375,9 @@ module Main where
     doesExistInVarTree :: VarNode -> VarTree -> Bool
     doesExistInVarTree (node) (CommaNode (varNode) (varTree)) = equateNodesDatAndName node varNode || doesExistInVarTree node varTree
     doesExistInVarTree (node) (SingleNode (varNode)) = equateNodesDatAndName node varNode
-    doesExistInVarTree (node) (EmptyVT (emptyTree)) = False
     
     getOrderOfVars :: ParseTree -> [VarNode]
     getOrderOfVars (Marker (list) (opTree)) = list
-    getOrderOfVars (EmptyPT (emptyTree)) = []
     
     filterTrue :: [(Bool, [VarNode])] -> [[VarNode]]
     filterTrue ((bool, vars):xs) | length xs == 0 = [[]]
@@ -559,15 +451,11 @@ module Main where
                                                                  | otherwise = executeQuery (remainingRows) (Marker ordVars oTree)
                                                                  where   assignedRow = getTreeState(assignedTree) -- : executeQuery (remainingRows) (pTree)
                                                                          assignedTree = popTree (sanitiseOpTree(oTree)) (row)
-{-
-    assignPTState :: ParseTree -> [VarNode] -> [VarNode]
-    assignPTState (Marker (vars) (oTree)) rList = getTreeState( popTree (sanitiseOpTree(oTree)) (rList) ) 
--}
-    --New ePT: (EXIS REFORMAT)
+
     evaluateParseTree :: ParseTree -> Bool --
     evaluateParseTree (Marker ordVars assignedTree) =  (evaluate (assignedTree))
 
-    --Are all nodes in list . NB ************* Not sure of ">", ">=" ie what combination *******************
+    --Are all nodes in list
     areRepeats :: [VarNode] -> Int -> Bool
     areRepeats [] _ = False --Is this ever called?? -> Nope
     areRepeats ( (Vari (loc) (dat) (name)) : xs) ind    | ind < length totalList =  checkAllDataSame (unwrap (totalList)) (dat)-- && (areRepeats (totalList) (ind+1))
@@ -580,7 +468,6 @@ module Main where
     checkRepeats :: [[VarNode]] -> Bool
     checkRepeats [] = True
     checkRepeats (x:xs) = isAllDataSame x && checkRepeats xs
-
 
     filterRepeats :: [[VarNode]] -> [[VarNode]]
     filterRepeats [] = []
@@ -601,7 +488,6 @@ module Main where
                             | (ind <= length(x:xs)) && (countInstancesInVarList (fromJust(getNthVNode (ind) (x:xs) )) (x:xs) == 1) = getRepeats (x:xs) (ind+1)
                             | otherwise = [] -- should never be called
   
-    --Current attempt, deleted other auxilary functions
     groupRepeats :: [VarNode] -> [[VarNode]]
     groupRepeats (v:vs) = groupWith (extractName) (v:vs) 
 
@@ -617,7 +503,6 @@ module Main where
     equateName :: VarNode -> VarNode -> Bool
     equateName (Vari (loc) (dat) (name)) (Vari (locB) (datB) (nameB)) = ( (dat == datB) && (name == nameB) )
  
-    --checkExis rewritten, popTree, all of propoganoate of big table removed trees through executeQuery to popNodes, 
     evaluate :: OpTree -> Bool --evaluate opTree freeVarList
     evaluate (EquateNode (l) (r))  =  ( checkEquality (EquateNode (l) (r))) 
     evaluate (RelationNode (loc) (varTr))  = checkRelation (RelationNode (loc) (varTr))
@@ -628,12 +513,9 @@ module Main where
     checkConjunction :: OpTree -> Bool
     checkConjunction  (ConjunctionNode (l) (r) ) = (evaluate(l)) && (evaluate(r))
     
-
-
     checkRelation :: OpTree -> Bool
     checkRelation (RelationNode (tbl) (vList)) = isTreePopulated(vList)
     
-    -- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
     checkEquality :: OpTree -> Bool
     --checkEquality (EquateNodes (VarOp (SingleNode(v))) (restN) ) = evaluate (VarOp (SingleNode(v))) && checkEquality(restN)
     checkEquality (EquateNode (l) (r)) = equateNodes left right
@@ -643,26 +525,6 @@ module Main where
     {-==============================================================================-}
     {-=========================== TREE & NODE OPERATIONS ===========================-}
     {-==============================================================================-}
-
-    -- highestOrder :: ParseTree -> ParseTree
-    -- highestOrder (Marker (vars) (oTree)) = secondOrder oTree (Marker (vars) (oTree)) 
-
-    -- secondOrder :: OpTree -> ParseTree -> OpTree
-    -- secondOrder opTree pTree =   renameTree opTree renamedTblNms
-    --                         where   renamedTblNms = renameTblName tblNms
-    --                                 tblNms = extractTableNames pTree
-    -- -- extract table names
-    -- gather dup table names
-    -- create new table names (depending on exis or nonexis maybe?)
-    -- parse list of table names with int flag and go through all OpTree first S leave it the same, second S when int flag is f
-    -- renameTree :: OpTree -> [String] -> OpTree
-    -- renameTree  (ConjunctionNode (opTree) (opTreeX)) = 
-    -- renameTree  (RelationNode (string) (varTree)) =
-    -- renameTree  (EquateNode (opTree) (opTreeX)) = 
-    -- renameTree  (BoolNode (bool)) = (BoolNode bool)
-    -- renameTree  (VarOp (varTree)) = 
-    -- renameTree  (EmptyOT (emptyTree)) = (EmptyOT emptyTree)
-    -- renameTree  (ExistVar (vTree) (oTree)) = 
 
     getOTree :: ParseTree -> OpTree
     getOTree (Marker (vars) (oTree)) = oTree
@@ -676,7 +538,6 @@ module Main where
     getTreeState (EquateNode (opTree) (opTreeX)) = getTreeState (opTree) ++ getTreeState (opTreeX)
     getTreeState (BoolNode (bool)) = []
     getTreeState (VarOp (varTree)) = traverseDFVar(varTree)
-    getTreeState (EmptyOT (emptyTree)) = []
     getTreeState (ExistVar (vTree) (oTree)) =  getTreeState (oTree) --Possibly not what we need (EXIS REFORMAT)
 
     getTreeStateNoEx :: OpTree -> [VarNode]
@@ -685,18 +546,11 @@ module Main where
     getTreeStateNoEx (EquateNode (opTree) (opTreeX)) = getTreeStateNoEx (opTree) ++ getTreeStateNoEx (opTreeX)
     getTreeStateNoEx (BoolNode (bool)) = []
     getTreeStateNoEx (VarOp (varTree)) = traverseDFVar(varTree)
-    getTreeStateNoEx (EmptyOT (emptyTree)) = []
     getTreeStateNoEx (ExistVar (vTree) (oTree)) = [] --Possibly not what we need (EXIS REFORMAT)
-
-    -- New checkExis below along with needed aux functions
-    -- checkExistential :: OpTree -> Bool --TODO: test failiure case cos probs wont show
-    -- checkExistential (ExistVar vTree oTree) = checkExisTInOpT (vTree) (oTree) 
 
     checkExistential :: OpTree -> Bool
     checkExistential (ExistVar vTree oTree) = isVListPop (getTreeState(oTree)) 
     checkExistential x = False
-
-
 
     isVListPop :: [VarNode] -> Bool
     isVListPop [] = True
@@ -707,36 +561,7 @@ module Main where
 
     repeatCheck :: OpTree -> Bool
     repeatCheck assignedTree = checkRepeats(filterRepeats(groupRepeats(getTreeState(assignedTree))))
-    -- checkExisTInOpT :: VarTree -> OpTree -> Bool
-    -- checkExisTInOpT (SingleNode (vNode)) oTree = checkExisInOpTree vNode oTree
-    -- checkExisTInOpT (CommaNode (vNode) (rem Tree)) oTree = (checkExisInOpTree (vNode) (oTree)) && (checkExisTInOpT (remTree) (oTree))
-    
-    -- checkExistential :: OpTree -> [[VarNode]] -> Bool --oTree -> ExisTable 
-    -- checkExistential _ [] = False
-    -- checkExistential (ExistVar vTree oTree) (ex:exs) = evaluateAssignTree (oTree) (ex) (ex:exs) || checkExistential (ExistVar vTree oTree) (exs)  
 
-    -- evaluateAssignTree :: OpTree -> [VarNode] -> [[VarNode]] -> Bool
-    -- evaluateAssignTree oTree rList exTable = evaluateTree (popTree (sanitiseOpTree(oTree)) (rList)) (exTable)
-    -- checkExisInOpTree :: VarNode -> OpTree -> Bool
-    -- checkExisInOpTree vNode oTree = checkExisInOpTreeList (vNode) (extractAssignedNodes(getUniqueState (oTree) (False)))
-
-    -- checkExisInOpTreeList :: VarNode -> [VarNode] -> Bool
-    -- checkExisInOpTreeList (Vari loc dat name) rList = existsExactNode (rList) (loc) (name)
-
--- ::::::::::::::::::::::::::::::::::::::::::::::populateTree attempt 4:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-{-
-General order of execution:
-pre pass check          : checkBounds rule applied + existential Scope rule potentially??
-                        : assign eqNode vNodes locations with assignEqLocation
-1st pass of population  : populates varnodes encapsulated within a relation eg R(x1,z2)
-2nd pass of population  : populated varnodes outside of relation eg x1 = x2, or (z1,z2)E.(..) data and location
-
-
---Consider case         : x1,x2 |- (R{x1,x2} ^ x1 = x2)
-                        : 
---unsolved problem: in case (z1,z2)E.(R{z1,z2} ^ z1 = z2) how do we specify scope of the exis variables -  as a different variable of same name could exist in query
-
--}
     popTree :: OpTree -> [VarNode] -> OpTree
     popTree oTree rList = popTreeNextPass postFstTree uniqueState
                         where   postFstTree = (popTreeFirstPass (oTree) (rList))
@@ -756,15 +581,6 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeNextPass (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (vTree)) --Already populated so left alone
     popTreeNextPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (oTree)) --popExistNode (ExistVar (vTree) (oTree)) rList
 
-        
-    popTreeEX :: OpTree -> [VarNode] -> OpTree
-    popTreeEX (VarOp (vTree)) rList   = (VarOp (vTree))
-    popTreeEX (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeEX querA rList) (popTreeEX querB rList)) 
-    popTreeEX (EquateNode (querX) (querY)) rList = (EquateNode (popTreeEX querX rList) (popTreeEX querY rList))
-    popTreeEX (RelationNode (tbl) (vTree)) rList = popRelation (RelationNode (tbl) (vTree)) (rList)
-    popTreeEX (ExistVar (vTree) (oTree)) rList = popExistNode (ExistVar (vTree) (oTree)) rList
-
-
     locPTree :: ParseTree -> [VarNode] -> ParseTree
     locPTree (Marker (ordVars) (oTree)) rList = Marker ordVars (locTree (oTree) (rList))
 
@@ -776,7 +592,6 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 
     locExistNode :: OpTree -> [VarNode] -> OpTree
     locExistNode (ExistVar (vTree) (oTree)) rList =  (ExistVar (assignLocationInTree (vTree) (getUniqueState(oTree) (False)) ) (locTree oTree rList)) 
-
 
     popExistNode :: OpTree -> [VarNode] -> OpTree
     popExistNode (ExistVar (vTree) (oTree)) rList = (ExistVar (popBoundVTree (scopeVTree) (rList)) (popTreeNextPass (oTree) (rList)))
@@ -795,8 +610,6 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
                                                                                                             where   lPopped = fromJust (extractExactNode rList lloc lname)
                                                                                                                     rPopped = fromJust (extractExactNode rList rloc rname)
 
-    
-
     --2nd pass only, for outside of a relation
     popBoundOTree :: OpTree -> [VarNode] -> OpTree
     popBoundOTree (VarOp (SingleNode (vNode))) (rList) = (VarOp(popBoundVTree (SingleNode(vNode)) (rList)))
@@ -810,13 +623,10 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popBoundVNode (Vari loc dat name) rList | isNothing (extractExactNode (rList) (loc) (name)) == True = (Vari loc dat name)
                                             | otherwise = fromJust(extractExactNode rList loc name)
 
-    --assignScope :: OpTree -> OpTree
-
     extractAssignedNodes :: [VarNode] -> [VarNode]
     extractAssignedNodes [] = []
     extractAssignedNodes (x:xs) | isNodeAssigned x == True = [x] ++ extractAssignedNodes xs
                                 | isNodeAssigned x == False = extractAssignedNodes xs
-
 
     getNodeLocation :: String -> [VarNode] -> String -- name -> rList -> location
     getNodeLocation _ [] = "*" -- Elliott : you can probably error check when this case occurs cos all varN's should have a location after population (need to implement that tho)
@@ -840,8 +650,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 
     matchLocName :: VarNode -> String -> String -> Bool 
     matchLocName (Vari thisLoc thisDat thisName) loc name = (thisLoc == loc) && (thisName == name)
-
-        
+     
     equateNodes :: VarNode -> VarNode -> Bool
     equateNodes (Vari (locA) (datA) (nameA)) (Vari (locB) (datB) (nameB))   | datA == datB = True
                                                                             | datA /= datB = False
@@ -878,24 +687,19 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
         --(RelationNode (tbl) (popBoundVTree vTree rList) )
 
     populateVarTree :: VarTree -> [String] -> Int -> VarTree
-    populateVarTree (EmptyVT e) _ _ = (EmptyVT e)
     populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) ind = (SingleNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name) ))
     --populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) ind | isNodePopulated (Vari (loc) (dat) (name)) == True = (SingleNode (Vari (loc) (dat) (name)))
     populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind = ( CommaNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name)) ( populateVarTree (remTree) (x:xs) (ind+1) ) )
     --populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind  | isNodePopulated (Vari (loc) (dat) (name)) == True = (CommaNode (Vari (loc) (dat) (name)) (remTree)) --add recursive call here
     populateVarTree e _ _ = e
 
-
     popVarTree :: VarTree -> [String] -> VarTree
     popVarTree x [] = x
     popVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs)            = (SingleNode (Vari (loc) (x) (name)))
     popVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) = ( CommaNode (Vari (loc) (x) (name)) (popVarTree (remTree) (xs)) ) 
 
-
-
     --REMEMBER: NON BOUND VARIABLES, eg (z1,z2 (E. (R(z1,z2)))), CAN BE DUPLICATED ELSEWHERE IN QUERY AND SHOULDNT BE REMOVED FROM THE LIST, AS THEYRE UNIQUE
     --Separate function populating vTree in ExistVar AFTER first round of population, so the relavant table names can be easily extracted:
-    --postPopTreePass :: OpTree -> [VarNode] -> OpTree
 
     existsTreeInRelation :: VarTree -> Bool
     existsTreeInRelation (SingleNode (Vari loc dat name))  = existsInRelation (Vari loc dat name)    
@@ -956,19 +760,9 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     varToOpTree :: VarTree -> OpTree
     varToOpTree (CommaNode varN varT) = (VarOp (CommaNode varN varT))
     varToOpTree (SingleNode varN) = (VarOp (SingleNode varN))
-    varToOpTree (EmptyVT emptyT) = (VarOp (EmptyVT emptyT))
 
     charToString :: Char -> String
     charToString = (:[])
-
-
-    -- Removes multiple instances of table names. Only need to read the file once. [Removed : Eq String => on type sig]
-    extractDups :: [String] -> [String]
-    extractDups = rdHelper []
-        where rdHelper seen [] = seen
-              rdHelper seen (x:xs)
-                  | x `elem` seen = rdHelper seen xs
-                  | otherwise = rdHelper (seen ++ [x]) xs
 
     extractPTableNames :: ParseTree -> [String]
     extractPTableNames (Marker (vars) (oTree)) = extractOTableNames(getOpRelationNodesOut(oTree))
@@ -978,7 +772,6 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     extractOTableNames [] = []
     extractOTableNames ( (RelationNode (tbl) (vTree)) :xs) = (tbl) : extractOTableNames xs
     extractOTableNames ((ExistVar vTree oTree):xs) = extractOTableNames (oTree:xs)
-    --Elliott: Pls add cases for all other oTrees, otherwise it wont traverse correctly
 
     assignVarTreeLoc :: VarTree -> String -> VarTree
     assignVarTreeLoc (SingleNode (Vari (loc) (dat) (name))) x = (SingleNode (Vari (x) (dat) (name)))
@@ -1001,7 +794,8 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     getOpRelationNodesOut (RelationNode (tbl) (vTree)) = [(RelationNode (tbl) (vTree))]
     getOpRelationNodesOut (ConjunctionNode (querA) (querB)) = getOpRelationNodesOut(querA) ++ getOpRelationNodesOut(querB)
     getOpRelationNodesOut (ExistVar (vTree) (oTree)) = getOpRelationNodesOut(oTree)
-    getOpRelationNodesOut _ = []                  
+    getOpRelationNodesOut _ = []       
+
     {-==============================================================================-}
     {-=============================== TREE TRAVERSAL ===============================-}
     {-==============================================================================-}

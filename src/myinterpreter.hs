@@ -819,7 +819,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     unwrapNodeLocation (Vari loc dat name) = loc 
 
     equateNodeToName :: VarNode -> String -> Bool
-    equateNodeToName (Vari locA datA nameA) nameB = nameA == nameB 
+    equateNodeToName (Vari locA datA nameA) nameB = (head nameA) == (head nameB)
 
     extractExactNode :: [VarNode] -> String -> String -> Maybe VarNode --rList -> loc -> name -> outputNode
     extractExactNode [] _  _ = Data.Maybe.Nothing

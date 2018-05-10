@@ -116,6 +116,11 @@ module Main where
         putStrLn("")
         print(pTree)
         putStr("_____________________")
+        let pTreeLoc = locTree (pTree) (getUniqueState (pTree))
+        putStr("________pTree___loc assigned_________")
+        putStrLn("")
+        print(pTreeLoc)
+        putStr("_____________________")
         allContents <- extractContents readContents tableNames
         let allTables = fmap buildTable allContents
         let noOfCols = getColumn (allTables)
@@ -137,7 +142,7 @@ module Main where
         --prettyPrintTable (noDoubles)
         print(noDoubles)
         putStr("_____________________")
-        let answer = executeQuery (noDoubles) (exisTable) (pTree) 
+        let answer = executeQuery (noDoubles) (exisTable) (pTreeLoc) 
         putStr("_______ANSWER______________")
         putStrLn("")
         prettyPrintTable(answer)
@@ -694,7 +699,7 @@ module Main where
     checkExistential (ExistVar vTree oTree) (ex:exs) = evaluateAssignTree (oTree) (ex) (ex:exs) || checkExistential (ExistVar vTree oTree) (exs)  
 
     evaluateAssignTree :: OpTree -> [VarNode] -> [[VarNode]] -> Bool
-    evaluateAssignTree oTree rList exTable = evaluateTree (popTree (sanitiseOpTree(oTree)) (rList)) (exTable)
+    evaluateAssignTree oTree rList exTable = evaluateTree (popTreeEX (sanitiseOpTree(oTree)) (rList)) (exTable)
 
     -- checkExisTInOpT :: VarTree -> OpTree -> Bool
     -- checkExisTInOpT (SingleNode (vNode)) oTree = checkExisInOpTree vNode oTree
@@ -748,10 +753,23 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeEX (RelationNode (tbl) (vTree)) rList = popRelation (RelationNode (tbl) (vTree)) (rList)
     popTreeEX (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeFirstPass oTree rList) )
 
+
+    locTree :: OpTree -> [VarNode] -> OpTree
+    locTree (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (locTree (querA) rList) (locTree (querB) rList))
+    locTree (EquateNode (querX) (querY)) rList = (EquateNode (assignLocationInOTree querX rList) (assignLocationInOTree querY rList))
+    locTree (ExistVar (vTree) (oTree)) rList = locExistNode (ExistVar (vTree) (oTree)) rList
+
+    locExistNode :: OpTree -> [VarNode] -> OpTree
+    locExistNode (ExistVar (vTree) (oTree)) rList =  (ExistVar (assignLocationInTree (vTree) (getUniqueState(oTree)) ) (locTree oTree rList)) 
+
+
     popExistNode :: OpTree -> [VarNode] -> OpTree
     popExistNode (ExistVar (vTree) (oTree)) rList = (ExistVar (popBoundVTree (scopeVTree) (rList)) (popTreeNextPass (oTree) (rList)))
                                                     where   scopeList = extractAssignedNodes(getUniqueState (oTree) (False))
                                                             scopeVTree = assignLocationInTree (vTree) (scopeList)
+
+    assignLocationInOTree :: OpTree -> [VarNode] -> OpTree
+    assignLocationInOTree (VarOp (vTree)) rList = assignLocationInTree (vTree) (rList)
 
     assignLocationInTree :: VarTree -> [VarNode] -> VarTree
     assignLocationInTree (SingleNode (Vari loc dat name)) rList = (SingleNode (Vari (getNodeLocation (name) (rList)) dat name))
@@ -759,8 +777,10 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     
     popEquateNode :: OpTree -> [VarNode] -> OpTree
     popEquateNode (EquateNode (VarOp (SingleNode(Vari (lloc) (ldat) (lname)))) (VarOp(SingleNode(Vari (rloc) (rdat) (rname))))) rList = (EquateNode (VarOp(SingleNode(lPopped))) (VarOp(SingleNode(rPopped))))
-                                                                                                            where   lPopped = fromJust (extractExactNode rList (getNodeLocation lname rList) lname)
-                                                                                                                    rPopped = fromJust (extractExactNode rList (getNodeLocation rname rList) rname)
+                                                                                                            where   lPopped = fromJust (extractExactNode rList lloc lname)
+                                                                                                                    rPopped = fromJust (extractExactNode rList rloc rname)
+
+    
 
     --2nd pass only, for outside of a relation
     popBoundOTree :: OpTree -> [VarNode] -> OpTree

@@ -142,7 +142,7 @@ module Main where
         --prettyPrintTable (noDoubles)
         print(noDoubles)
         putStr("_____________________")
-        let answer = executeQuery (noDoubles) (exisTable) (pTreeLoc) 
+        let answer = executeQuery (noDoubles) (pTreeLoc) 
         putStr("_______ANSWER______________")
         putStrLn("")
         prettyPrintTable(answer)
@@ -558,25 +558,20 @@ module Main where
     rowToString [a] = a
     rowToString [a,b] = a ++ "," ++ b
     rowToString (x:xs) = x ++ "," ++ rowToString xs 
-{- Pre- checkExis update
+
     executeQuery :: [[VarNode]] -> ParseTree -> [[VarNode]] 
     executeQuery [] _ = []
-    executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (Marker ordVars assignedTree) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (Marker ordVars oTree)
+    executeQuery (row:remainingRows) (Marker ordVars oTree)      | (evaluateParseTree (Marker ordVars assignedTree) ) && repeatCheckV assignedRow == True   = [assignedRow] ++ executeQuery (remainingRows) (Marker ordVars oTree)
                                                                  | (evaluateParseTree (Marker ordVars assignedTree) ) == False  = executeQuery (remainingRows) (Marker ordVars oTree)
                                                                  where   assignedRow = getTreeState(assignedTree) -- : executeQuery (remainingRows) (pTree)
                                                                          assignedTree = popTree (sanitiseOpTree(oTree)) (row)
--}
 
-    executeQuery :: [[VarNode]] -> [[VarNode]] -> ParseTree -> [[VarNode]] -- PopTable -> ExisTable -> pTree -> OutputRows
-    executeQuery [] _ _ = []
-    executeQuery (row:remainingRows) (exisTable) (Marker ordVars oTree)         | (evaluateParseTree (Marker ordVars assignedTree) (exisTable) ) == True   = [assignedRow] ++ executeQuery (remainingRows) (exisTable) (Marker ordVars oTree)
-                                                                                | (evaluateParseTree (Marker ordVars assignedTree) (exisTable) ) == False  = executeQuery (remainingRows) (exisTable) (Marker ordVars oTree)
-                                                                                where   assignedRow = getTreeState(assignedTree) -- : executeQuery (remainingRows) (pTree)
-                                                                                        assignedTree = popTree (sanitiseOpTree(oTree)) (row)
+    assignPTState :: ParseTree -> [VarNode] -> [VarNode]
+    assignPTState (Marker (vars) (oTree)) rList = getTreeState( popTree (sanitiseOpTree(oTree)) (rList) ) 
 
     --New ePT: (EXIS REFORMAT)
-    evaluateParseTree :: ParseTree -> [[VarNode]] -> Bool -- pTree -> ExisTable -> Boolean output
-    evaluateParseTree (Marker ordVars assignedTree) (exisTable) = (evaluate (assignedTree) (exisTable))
+    evaluateParseTree :: ParseTree -> Bool --
+    evaluateParseTree (Marker ordVars assignedTree) = repeatCheck assignedTree && (evaluate (assignedTree))
 
     --Are all nodes in list . NB ************* Not sure of ">", ">=" ie what combination *******************
     areRepeats :: [VarNode] -> Int -> Bool
@@ -628,15 +623,16 @@ module Main where
     equateName :: VarNode -> VarNode -> Bool
     equateName (Vari (loc) (dat) (name)) (Vari (locB) (datB) (nameB)) = ( (dat == datB) && (name == nameB) )
  
-    evaluate :: OpTree -> [[VarNode]] -> Bool --evaluate opTree exisTable output
-    evaluate (EquateNode (l) (r)) (exTable)   =  ( checkEquality (EquateNode (l) (r))) 
-    evaluate (RelationNode (loc) (varTr)) (exTable)  = checkRelation (RelationNode (loc) (varTr))
-    evaluate (ConjunctionNode (l) (r)) (exTable)  = checkConjunction (ConjunctionNode (l) (r)) (exTable)
-    evaluate (ExistVar vTree oTree) (exTable) = checkExistential (ExistVar vTree oTree) (exTable)
-    evaluate (VarOp v) (exTable) = True
+    --checkExis rewritten, popTree, all of propoganoate of big table removed trees through executeQuery to popNodes, 
+    evaluate :: OpTree -> Bool --evaluate opTree freeVarList
+    evaluate (EquateNode (l) (r))  =  ( checkEquality (EquateNode (l) (r))) 
+    evaluate (RelationNode (loc) (varTr))  = checkRelation (RelationNode (loc) (varTr))
+    evaluate (ConjunctionNode (l) (r))  = checkConjunction (ConjunctionNode (l) (r))
+    evaluate (ExistVar vTree oTree) = checkExistential (ExistVar vTree oTree) && evaluate (oTree)
+    evaluate (VarOp v) = True
 
-    checkConjunction :: OpTree -> [[VarNode]] -> Bool
-    checkConjunction  (ConjunctionNode (l) (r) ) (exTable)  = (evaluate (l) (exTable)) && (evaluate (r) (exTable))
+    checkConjunction :: OpTree -> Bool
+    checkConjunction  (ConjunctionNode (l) (r) ) = (evaluate(l)) && (evaluate(r))
     
 
 
@@ -699,15 +695,20 @@ module Main where
     getTreeStateNoEx (ExistVar (vTree) (oTree)) = [] --Possibly not what we need (EXIS REFORMAT)
 
     -- New checkExis below along with needed aux functions
-    checkExistential :: OpTree -> [[VarNode]] -> Bool --oTree -> ExisTable 
-    checkExistential _ [] = False
-    checkExistential (ExistVar vTree oTree) (ex:exs) = evaluateAssignTree (oTree) (ex) (ex:exs) || checkExistential (ExistVar vTree oTree) (exs)  
+    -- checkExistential :: OpTree -> Bool --TODO: test failiure case cos probs wont show
+    -- checkExistential (ExistVar vTree oTree) = checkExisTInOpT (vTree) (oTree) 
 
-    evaluateAssignTree :: OpTree -> [VarNode] -> [[VarNode]] -> Bool
-    evaluateAssignTree oTree rList exTable = evaluateTree (popTree (sanitiseOpTree(oTree)) (rList)) (exTable)
-    
-    evaluateTree :: OpTree -> [[VarNode]] -> Bool -- oTree -> ExisTable -> Boolean output
-    evaluateTree (assignedTree) (exisTable) = (evaluate (assignedTree) (exisTable))
+    checkExistential :: OpTree -> Bool
+    checkExistential (ExistVar vTree oTree) = isVListPop (getTreeState(oTree)) 
+    checkExistential x = False
+
+
+
+    isVListPop :: [VarNode] -> Bool
+    isVListPop (node:ns) = isNodePopulated node && isVListPop ns
+
+    repeatCheckV :: [VarNode] -> Bool
+    repeatCheckV assignedRow = True --checkRepeats(filterRepeats(groupRepeats(assignedRow)))
 
     repeatCheck :: OpTree -> Bool
     repeatCheck assignedTree = checkRepeats(filterRepeats(groupRepeats(getTreeState(assignedTree))))
@@ -715,7 +716,12 @@ module Main where
     -- checkExisTInOpT (SingleNode (vNode)) oTree = checkExisInOpTree vNode oTree
     -- checkExisTInOpT (CommaNode (vNode) (rem Tree)) oTree = (checkExisInOpTree (vNode) (oTree)) && (checkExisTInOpT (remTree) (oTree))
     
-    
+    -- checkExistential :: OpTree -> [[VarNode]] -> Bool --oTree -> ExisTable 
+    -- checkExistential _ [] = False
+    -- checkExistential (ExistVar vTree oTree) (ex:exs) = evaluateAssignTree (oTree) (ex) (ex:exs) || checkExistential (ExistVar vTree oTree) (exs)  
+
+    -- evaluateAssignTree :: OpTree -> [VarNode] -> [[VarNode]] -> Bool
+    -- evaluateAssignTree oTree rList exTable = evaluateTree (popTree (sanitiseOpTree(oTree)) (rList)) (exTable)
     -- checkExisInOpTree :: VarNode -> OpTree -> Bool
     -- checkExisInOpTree vNode oTree = checkExisInOpTreeList (vNode) (extractAssignedNodes(getUniqueState (oTree) (False)))
 
@@ -749,7 +755,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeFirstPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeFirstPass (oTree) (rList))) --(ExistVar (vTree) (popTreeFirstPass oTree rList) )
 
     popTreeNextPass :: OpTree -> [VarNode] -> OpTree
-    popTreeNextPass (VarOp (vTree)) rList   = (VarOp (SingleNode (Vari "***LINE672***" "ERROR CASE" "shouldnt be happening"))) -- Does this case ever occur
+    popTreeNextPass (VarOp (vTree)) rList   = (VarOp (SingleNode (Vari "***LINE758***" "ERROR CASE" "shouldnt be happening"))) -- Does this case ever occur
     popTreeNextPass (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeNextPass querA rList) (popTreeNextPass querB rList)) 
     popTreeNextPass (EquateNode (querX) (querY)) rList = popEquateNode (EquateNode (querX) (querY)) rList--popEquateNode
     popTreeNextPass (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (vTree)) --Already populated so left alone

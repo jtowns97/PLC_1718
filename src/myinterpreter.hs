@@ -121,18 +121,21 @@ module Main where
         let noOfCols = getColumn (allTables)
         putStr("__________allTables___________")
         putStrLn("")
-        prettyPrintTable(allTables)
+        --prettyPrintTable(allTables)
+        print(allTables)
         putStr("_____________________")
         -- For future implementation where contentA-N and allTables is built dynamically.
         let exisTable = crossMulti(toVarnodeTables allTables tableNames)
         putStr("__________ExisTables___________")
         putStrLn("")
-        prettyPrintTable (exisTable)
+       -- prettyPrintTable (exisTable)
+        print(exisTable)
         putStr("_____________________")
         let noDoubles = beGoneDbls exisTable noOfCols
         putStr("__________No Doubles___________")
         putStrLn("")
-        prettyPrintTable (noDoubles)
+        --prettyPrintTable (noDoubles)
+        print(noDoubles)
         putStr("_____________________")
         let answer = executeQuery (noDoubles) (exisTable) (pTree) 
         putStr("_______ANSWER______________")
@@ -337,6 +340,29 @@ module Main where
     {-==============================================================================-}
     {-====================== EXIS REFORMAT NEW TABLE OPERATIONS ====================-}
     {-==============================================================================-}
+
+    extractRNames :: OpTree -> [String] 
+    extractRNames (ConjunctionNode (oTA) (oTB)) = extractRNames (oTA) ++ extractRNames(oTB)
+    extractRNames (RelationNode (tbl) (varTree)) = [tbl]
+    extractRNames (EquateNode (oTA) (oTB)) = extractRNames (oTA) ++ extractRNames(oTB)
+    extractRNames (ExistVar (vTree) (oTree)) = []
+    extractRNames x = []
+
+    countRNames :: OpTree -> Int
+    countRNames oTree = length (extractRNames oTree)
+
+    extractRExisNames :: OpTree -> [String] 
+    extractRExisNames (ConjunctionNode (oTA) (oTB)) = extractRExisNames (oTA) ++ extractRExisNames(oTB)
+    extractRExisNames (RelationNode (tbl) (varTree)) = []
+    extractRExisNames (EquateNode (oTA) (oTB)) = extractRExisNames (oTA) ++ extractRExisNames(oTB)
+    extractRExisNames (ExistVar (vTree) (oTree)) = extractRNames (oTree)
+    extractRExisNames x = []
+
+    countRExisNames :: OpTree -> Int
+    countRExisNames oTree = length (extractRExisNames oTree)
+    
+    
+
 
 
     toVarnodeTables :: [[[String]]] -> [String] -> [[[VarNode]]]
@@ -661,14 +687,22 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeFirstPass (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeFirstPass querA rList) (popTreeFirstPass querB rList)) 
     popTreeFirstPass (EquateNode (querX) (querY)) rList = (EquateNode (popTreeFirstPass querX rList) (popTreeFirstPass querY rList))
     popTreeFirstPass (RelationNode (tbl) (vTree)) rList = popRelation (RelationNode (tbl) (vTree)) (rList)
-    popTreeFirstPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeFirstPass oTree rList) )
+    popTreeFirstPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (oTree)) --(ExistVar (vTree) (popTreeFirstPass oTree rList) )
 
     popTreeNextPass :: OpTree -> [VarNode] -> OpTree
     popTreeNextPass (VarOp (vTree)) rList   = (VarOp (SingleNode (Vari "***LINE672***" "ERROR CASE" "shouldnt be happening"))) -- Does this case ever occur
     popTreeNextPass (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeNextPass querA rList) (popTreeNextPass querB rList)) 
     popTreeNextPass (EquateNode (querX) (querY)) rList = popEquateNode (EquateNode (querX) (querY)) rList--popEquateNode
     popTreeNextPass (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (vTree)) --Already populated so left alone
-    popTreeNextPass (ExistVar (vTree) (oTree)) rList = popExistNode (ExistVar (vTree) (oTree)) rList
+    popTreeNextPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (oTree)) --popExistNode (ExistVar (vTree) (oTree)) rList
+
+        
+    popTreeEX :: OpTree -> [VarNode] -> OpTree
+    popTreeEX (VarOp (vTree)) rList   = (VarOp (vTree))
+    popTreeEX (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeEX querA rList) (popTreeEX querB rList)) 
+    popTreeEX (EquateNode (querX) (querY)) rList = (EquateNode (popTreeEX querX rList) (popTreeEX querY rList))
+    popTreeEX (RelationNode (tbl) (vTree)) rList = popRelation (RelationNode (tbl) (vTree)) (rList)
+    popTreeEX (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeFirstPass oTree rList) )
 
     popExistNode :: OpTree -> [VarNode] -> OpTree
     popExistNode (ExistVar (vTree) (oTree)) rList = (ExistVar (popBoundVTree (scopeVTree) (rList)) (popTreeNextPass (oTree) (rList)))

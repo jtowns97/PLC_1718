@@ -157,5 +157,52 @@ ConjunctionNode (ConjunctionNode (RelationNode "P" (SingleNode (Vari "P" "HI" "x
 
 (Marker [Vari "*" "*" "x1",Vari "*" "*" "x2"] (ExistVar (SingleNode (Vari "*" "*" "z1")) (RelationNode "R" (CommaNode (Vari "R" "*" "x1") (SingleNode (Vari "R" "*" "z1"))))))
 
+[[Vari "R" "Michelangelo" "*",Vari "R" "Buonarotti" "*"],[Vari "R" "Leonardo" "*",Vari "R" "Da Vinci" "*"],[Vari "R" "Antonello" "*",Vari "R" "Da Messina" "*"]]
+
+
+iteration 2:
+
+Marker [Vari "*" "*" "x1"] (ExistVar (SingleNode (Vari "*" "*" "z1")) (RelationNode "R" (CommaNode (Vari "R" "*" "x1") (SingleNode (Vari "R" "*" "z1")))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--PR10 PTree:
+
+
+Marker [Vari "*" "*" "x1",Vari "*" "*" "x2",Vari "*" "*" "x3"] (ConjunctionNode (RelationNode "S" (CommaNode (Vari "S" "*" "x1") (CommaNode (Vari "S" "*" "x2") (SingleNode (Vari "S" "*" "x3"))))) (ExistVar (CommaNode (Vari "*" "*" "z1") (SingleNode (Vari "*" "*" "z2"))) (RelationNode "S" (CommaNode (Vari "S" "*" "z1") (CommaNode (Vari "S" "*" "z1") (SingleNode (Vari "S" "*" "z2")))))))
+
+
+
+
+
+[[Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*",Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*"]]
+
+[[Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*",Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*"]]
+
+
+Marker [Vari "*" "*" "x1",Vari "*" "*" "x2",Vari "*" "*" "x3"] (ConjunctionNode (RelationNode "S" (CommaNode (Vari "S" "*" "x1") (CommaNode (Vari "S" "*" "x2") (SingleNode (Vari "S" "*" "x3"))))) (ExistVar (CommaNode (Vari "*" "*" "z1") (SingleNode (Vari "*" "*" "z2"))) (RelationNode "S" (CommaNode (Vari "S" "*" "z1") (CommaNode (Vari "S" "*" "z1") (SingleNode (Vari "S" "*" "z2")))))))
+
 
 

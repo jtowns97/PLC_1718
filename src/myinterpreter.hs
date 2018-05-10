@@ -116,7 +116,7 @@ module Main where
         putStrLn("")
         print(pTree)
         putStr("_____________________")
-        let pTreeLoc = locTree (pTree) (getUniqueState (pTree))
+        let pTreeLoc = locTree (pTree) (getUniqueState (getOTree(pTree) (False))
         putStr("________pTree___loc assigned_________")
         putStrLn("")
         print(pTreeLoc)
@@ -672,6 +672,9 @@ module Main where
     -- renameTree  (EmptyOT (emptyTree)) = (EmptyOT emptyTree)
     -- renameTree  (ExistVar (vTree) (oTree)) = 
 
+    getOTree :: ParseTree -> OpTree
+    getOTree (Markers (vars) (oTree)) = oTree
+
     getPTreeState :: ParseTree -> [VarNode]
     getPTreeState (Marker (vars) (oTree)) = getTreeState (oTree)
     
@@ -760,7 +763,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     locTree (ExistVar (vTree) (oTree)) rList = locExistNode (ExistVar (vTree) (oTree)) rList
 
     locExistNode :: OpTree -> [VarNode] -> OpTree
-    locExistNode (ExistVar (vTree) (oTree)) rList =  (ExistVar (assignLocationInTree (vTree) (getUniqueState(oTree)) ) (locTree oTree rList)) 
+    locExistNode (ExistVar (vTree) (oTree)) rList =  (ExistVar (assignLocationInTree (vTree) (getUniqueState(oTree) (False)) ) (locTree oTree rList)) 
 
 
     popExistNode :: OpTree -> [VarNode] -> OpTree
@@ -769,7 +772,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
                                                             scopeVTree = assignLocationInTree (vTree) (scopeList)
 
     assignLocationInOTree :: OpTree -> [VarNode] -> OpTree
-    assignLocationInOTree (VarOp (vTree)) rList = assignLocationInTree (vTree) (rList)
+    assignLocationInOTree (VarOp (vTree)) rList = VarOp (assignLocationInTree (vTree) (rList))
 
     assignLocationInTree :: VarTree -> [VarNode] -> VarTree
     assignLocationInTree (SingleNode (Vari loc dat name)) rList = (SingleNode (Vari (getNodeLocation (name) (rList)) dat name))

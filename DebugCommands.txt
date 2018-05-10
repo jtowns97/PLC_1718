@@ -195,7 +195,7 @@ Marker [Vari "*" "*" "x1",Vari "*" "*" "x2",Vari "*" "*" "x3"] (ConjunctionNode 
 
 
 
-
+executeQuery ([[Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*",Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*"]]) ([[Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*",Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*"]]) (Marker [Vari "*" "*" "x1",Vari "*" "*" "x2",Vari "*" "*" "x3"] (ConjunctionNode (RelationNode "S" (CommaNode (Vari "S" "*" "x1") (CommaNode (Vari "S" "*" "x2") (SingleNode (Vari "S" "*" "x3"))))) (ExistVar (CommaNode (Vari "*" "*" "z1") (SingleNode (Vari "*" "*" "z2"))) (RelationNode "S" (CommaNode (Vari "S" "*" "z1") (CommaNode (Vari "S" "*" "z1") (SingleNode (Vari "S" "*" "z2")))))))) 
 
 [[Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*",Vari "S" "A" "*",Vari "S" "A" "*",Vari "S" "B" "*"],[Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "C" "*",Vari "S" "A" "*",Vari "S" "B" "*",Vari "S" "B" "*"]]
 
@@ -204,5 +204,16 @@ Marker [Vari "*" "*" "x1",Vari "*" "*" "x2",Vari "*" "*" "x3"] (ConjunctionNode 
 
 Marker [Vari "*" "*" "x1",Vari "*" "*" "x2",Vari "*" "*" "x3"] (ConjunctionNode (RelationNode "S" (CommaNode (Vari "S" "*" "x1") (CommaNode (Vari "S" "*" "x2") (SingleNode (Vari "S" "*" "x3"))))) (ExistVar (CommaNode (Vari "*" "*" "z1") (SingleNode (Vari "*" "*" "z2"))) (RelationNode "S" (CommaNode (Vari "S" "*" "z1") (CommaNode (Vari "S" "*" "z1") (SingleNode (Vari "S" "*" "z2")))))))
 
+
+
+--PR9:
+
+
+
+Marker [Vari "*" "*" "x1",Vari "*" "*" "x2"] (ExistVar (CommaNode (Vari "A0" "*" "z1") (SingleNode (Vari "B0" "*" "z2"))) (ConjunctionNode (ConjunctionNode (RelationNode "A0" (CommaNode (Vari "A0" "*" "x1") (SingleNode (Vari "A0" "*" "z1")))) (RelationNode "B0" (CommaNode (Vari "B0" "*" "z1") (SingleNode (Vari "B0" "*" "z2"))))) (RelationNode "C0" (CommaNode (Vari "C0" "*" "z2") (SingleNode (Vari "C0" "*" "x2"))))))
+
+(ExistVar (CommaNode (Vari "A0" "*" "z1") (SingleNode (Vari "B0" "*" "z2"))) (ConjunctionNode (ConjunctionNode (RelationNode "A0" (CommaNode (Vari "A0" "*" "x1") (SingleNode (Vari "A0" "*" "z1")))) (RelationNode "B0" (CommaNode (Vari "B0" "*" "z1") (SingleNode (Vari "B0" "*" "z2"))))) (RelationNode "C0" (CommaNode (Vari "C0" "*" "z2") (SingleNode (Vari "C0" "*" "x2"))))))
+
+popTree (ExistVar (CommaNode (Vari "A0" "*" "z1") (SingleNode (Vari "B0" "*" "z2"))) (ConjunctionNode (ConjunctionNode (RelationNode "A0" (CommaNode (Vari "A0" "*" "x1") (SingleNode (Vari "A0" "*" "z1")))) (RelationNode "B0" (CommaNode (Vari "B0" "*" "z1") (SingleNode (Vari "B0" "*" "z2"))))) (RelationNode "C0" (CommaNode (Vari "C0" "*" "z2") (SingleNode (Vari "C0" "*" "x2")))))) ([Vari "A0" "A" "*",Vari "A0" "C" "*",Vari "B0" "C" "*",Vari "B0" "D" "*",Vari "C0" "D" "*",Vari "C0" "E" "*"]) 
 
 

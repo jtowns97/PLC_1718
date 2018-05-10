@@ -702,7 +702,7 @@ module Main where
     checkExistential (ExistVar vTree oTree) (ex:exs) = evaluateAssignTree (oTree) (ex) (ex:exs) || checkExistential (ExistVar vTree oTree) (exs)  
 
     evaluateAssignTree :: OpTree -> [VarNode] -> [[VarNode]] -> Bool
-    evaluateAssignTree oTree rList exTable = evaluateTree (popTreeEX (sanitiseOpTree(oTree)) (rList)) (exTable)
+    evaluateAssignTree oTree rList exTable = evaluateTree (popTree (sanitiseOpTree(oTree)) (rList)) (exTable)
 
     -- checkExisTInOpT :: VarTree -> OpTree -> Bool
     -- checkExisTInOpT (SingleNode (vNode)) oTree = checkExisInOpTree vNode oTree
@@ -739,7 +739,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeFirstPass (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeFirstPass querA rList) (popTreeFirstPass querB rList)) 
     popTreeFirstPass (EquateNode (querX) (querY)) rList = (EquateNode (popTreeFirstPass querX rList) (popTreeFirstPass querY rList))
     popTreeFirstPass (RelationNode (tbl) (vTree)) rList = popRelation (RelationNode (tbl) (vTree)) (rList)
-    popTreeFirstPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (oTree)) --(ExistVar (vTree) (popTreeFirstPass oTree rList) )
+    popTreeFirstPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeFirstPass (oTree) (rList))) --(ExistVar (vTree) (popTreeFirstPass oTree rList) )
 
     popTreeNextPass :: OpTree -> [VarNode] -> OpTree
     popTreeNextPass (VarOp (vTree)) rList   = (VarOp (SingleNode (Vari "***LINE672***" "ERROR CASE" "shouldnt be happening"))) -- Does this case ever occur
@@ -754,7 +754,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeEX (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeEX querA rList) (popTreeEX querB rList)) 
     popTreeEX (EquateNode (querX) (querY)) rList = (EquateNode (popTreeEX querX rList) (popTreeEX querY rList))
     popTreeEX (RelationNode (tbl) (vTree)) rList = popRelation (RelationNode (tbl) (vTree)) (rList)
-    popTreeEX (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeFirstPass oTree rList) )
+    popTreeEX (ExistVar (vTree) (oTree)) rList = popExistNode (ExistVar (vTree) (oTree)) rList
 
 
     locPTree :: ParseTree -> [VarNode] -> ParseTree
@@ -851,8 +851,8 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 
     filterNodesByTable :: [VarNode] -> String -> [VarNode]
     filterNodesByTable [] _ = []
-    filterNodesByTable ((Vari loc dat name):xs) tblName     | loc == tblName = [(Vari loc dat name)] ++ filterNodesByTable xs tblName
-                                                            | loc /= tblName = filterNodesByTable xs tblName
+    filterNodesByTable ((Vari loc dat name):xs) tblName     | (head loc) == (head tblName) = [(Vari loc dat name)] ++ filterNodesByTable xs tblName
+                                                            | (head loc) /= (head tblName) = filterNodesByTable xs tblName
 
     getNodeAtNameAndLoc :: [VarNode] -> String -> String -> Maybe VarNode
     getNodeAtNameAndLoc [] _ _ = Data.Maybe.Nothing

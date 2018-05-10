@@ -108,6 +108,7 @@ module Main where
         let pTree = buildParseTree (happy)
         let pTreeLoc = locPTree (pTree) (getUniqueState (getOTree(pTree)) (False))
         let lhsVar = getOrderOfVars (pTree)
+        print lhsVar
         let tableNames = extractTableNames (pTree)
         putStr("_________tab names____________")
         putStrLn("")
@@ -142,13 +143,11 @@ module Main where
         print(answer)
         putStr("_____________________")
         putStrLn("")
-        let output = readyOutput ( extractOutput (removeDups((orderTable (lhsVar) (answer))) ))
+        let output = readyOutput ( extractOutput (orderTable (lhsVar) (removeDups(answer))) )
         putStr("_____________________")
         putStrLn("")
         emptyFlag <- anyEmptyFile tableNames
         let printable = burnOutput output emptyFlag
-        --let output = ""
-        --if anyEmptyFile (tableNames) then output = "" else output = printable
         mapM_ putStrLn printable                                
     {-==============================================================================-}
     {-============================== SYNTAX CHECKER ================================-}

@@ -576,12 +576,7 @@ module Main where
 
     --New ePT: (EXIS REFORMAT)
     evaluateParseTree :: ParseTree -> [[VarNode]] -> Bool -- pTree -> ExisTable -> Boolean output
-    evaluateParseTree (Marker ordVars assignedTree) (exisTable) = checkRepeats(filterRepeats(groupRepeats(getTreeState(assignedTree)))) && (evaluate (assignedTree) (exisTable))
-
-
-    evaluateTree :: OpTree -> [[VarNode]] -> Bool -- oTree -> ExisTable -> Boolean output
-    evaluateTree (assignedTree) (exisTable) = checkRepeats(filterRepeats(groupRepeats(getTreeState(assignedTree)))) && (evaluate (assignedTree) (exisTable))
-
+    evaluateParseTree (Marker ordVars assignedTree) (exisTable) = (evaluate (assignedTree) (exisTable))
 
     --Are all nodes in list . NB ************* Not sure of ">", ">=" ie what combination *******************
     areRepeats :: [VarNode] -> Int -> Bool
@@ -710,7 +705,12 @@ module Main where
 
     evaluateAssignTree :: OpTree -> [VarNode] -> [[VarNode]] -> Bool
     evaluateAssignTree oTree rList exTable = evaluateTree (popTree (sanitiseOpTree(oTree)) (rList)) (exTable)
+    
+    evaluateTree :: OpTree -> [[VarNode]] -> Bool -- oTree -> ExisTable -> Boolean output
+    evaluateTree (assignedTree) (exisTable) = (evaluate (assignedTree) (exisTable))
 
+    repeatCheck :: OpTree -> Bool
+    repeatCheck assignedTree = checkRepeats(filterRepeats(groupRepeats(getTreeState(assignedTree))))
     -- checkExisTInOpT :: VarTree -> OpTree -> Bool
     -- checkExisTInOpT (SingleNode (vNode)) oTree = checkExisInOpTree vNode oTree
     -- checkExisTInOpT (CommaNode (vNode) (rem Tree)) oTree = (checkExisInOpTree (vNode) (oTree)) && (checkExisTInOpT (remTree) (oTree))

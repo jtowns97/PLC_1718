@@ -106,6 +106,7 @@ module Main where
         print(alex)
         putStr("_____________________")
         let pTree = buildParseTree (happy)
+        let pTreeLoc = locPTree (pTree) (getUniqueState (getOTree(pTree)) (False))
         let lhsVar = getOrderOfVars (pTree)
         let tableNames = extractTableNames (pTree)
         putStr("_________tab names____________")
@@ -116,7 +117,6 @@ module Main where
         putStrLn("")
         print(pTree)
         putStr("_____________________")
-        let pTreeLoc = locTree (pTree) (getUniqueState (getOTree(pTree) (False)))
         putStr("________pTree___loc assigned_________")
         putStrLn("")
         print(pTreeLoc)
@@ -758,7 +758,7 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 
 
     locPTree :: ParseTree -> [VarNode] -> ParseTree
-    locPTree (Marker (ordVars) (oTree)) rList = locTree (oTree) (rList)
+    locPTree (Marker (ordVars) (oTree)) rList = Marker ordVars (locTree (oTree) (rList))
 
     locTree :: OpTree -> [VarNode] -> OpTree
     locTree (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (locTree (querA) rList) (locTree (querB) rList))

@@ -157,7 +157,6 @@ module Main where
     {-==============================================================================-}
     {-============================== SYNTAX CHECKER ================================-}
     {-==============================================================================-}
-
     -- *** TODO ** IMPORTANT: Implement a rule ensuring the children of an equality is 2 var nodes. Do we need to do this in our grammar/tree? See next commenr
 {-
     --checkBounds
@@ -567,13 +566,13 @@ module Main where
                                                                                 where   assignedRow = getTreeState(assignedTree) -- : executeQuery (remainingRows) (pTree)
                                                                                         assignedTree = popTree (sanitiseOpTree(oTree)) (row)
 
-    --New ePT: (EXIS REFORMAT)
+    --New ePT: (EXIS REFORMAT) SEE HERE **** DEADLINE DAY *** : bottom comment shows checkrepeats syntax checker
     evaluateParseTree :: ParseTree -> [[VarNode]] -> Bool -- pTree -> ExisTable -> Boolean output
-    evaluateParseTree (Marker ordVars assignedTree) (exisTable) = checkRepeats(filterRepeats(groupRepeats(getTreeState(assignedTree)))) && (evaluate (assignedTree) (exisTable))
-
+    evaluateParseTree (Marker ordVars assignedTree) (exisTable) = checkRepeats(filterRepeats(groupRepeats(extractAssignedNodes(getTreeState(assignedTree))))) && (evaluate (assignedTree) (exisTable))
+        
 
     evaluateTree :: OpTree -> [[VarNode]] -> Bool -- oTree -> ExisTable -> Boolean output
-    evaluateTree (assignedTree) (exisTable) = checkRepeats(filterRepeats(groupRepeats(getTreeState(assignedTree)))) && (evaluate (assignedTree) (exisTable))
+    evaluateTree (assignedTree) (exisTable) = checkRepeats(filterRepeats(groupRepeats(extractAssignedNodes(getTreeState(assignedTree))))) && (evaluate (assignedTree) (exisTable))
 
 
     --Are all nodes in list . NB ************* Not sure of ">", ">=" ie what combination *******************
@@ -746,15 +745,15 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeNextPass (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeNextPass querA rList) (popTreeNextPass querB rList)) 
     popTreeNextPass (EquateNode (querX) (querY)) rList = popEquateNode (EquateNode (querX) (querY)) rList--popEquateNode
     popTreeNextPass (RelationNode (tbl) (vTree)) rList = (RelationNode (tbl) (vTree)) --Already populated so left alone
-    popTreeNextPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (oTree)) --popExistNode (ExistVar (vTree) (oTree)) rList
+    popTreeNextPass (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeNextPass (oTree) (rList))) --popExistNode (ExistVar (vTree) (oTree)) rList
 
         
     popTreeEX :: OpTree -> [VarNode] -> OpTree
-    popTreeEX (VarOp (vTree)) rList   = (VarOp (vTree))
-    popTreeEX (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (popTreeEX querA rList) (popTreeEX querB rList)) 
-    popTreeEX (EquateNode (querX) (querY)) rList = (EquateNode (popTreeEX querX rList) (popTreeEX querY rList))
-    popTreeEX (RelationNode (tbl) (vTree)) rList = popRelation (RelationNode (tbl) (vTree)) (rList)
-    popTreeEX (ExistVar (vTree) (oTree)) rList = popExistNode (ExistVar (vTree) (oTree)) rList
+    popTreeEX (VarOp (vTree)) rList = (VarOp (vTree))
+    popTreeEX (ConjunctionNode (querA) (querB)) rList = popTree (ConjunctionNode ( querA ) ( querB )) (rList)
+    popTreeEX (EquateNode (querX) (querY)) rList = popTree (EquateNode ( querX ) ( querY )) (rList)
+    popTreeEX (RelationNode (tbl) (vTree)) rList = popTree (RelationNode (tbl) (vTree)) (rList)
+    popTreeEX (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeEX (oTree) (rList))) --(ExistVar (vTree) (popTreeFirstPass oTree rList) )
 
 
     locPTree :: ParseTree -> [VarNode] -> ParseTree
@@ -769,12 +768,12 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     locExistNode :: OpTree -> [VarNode] -> OpTree
     locExistNode (ExistVar (vTree) (oTree)) rList =  (ExistVar (assignLocationInTree (vTree) (getUniqueState(oTree) (False)) ) (locTree oTree rList)) 
 
-
+{-
     popExistNode :: OpTree -> [VarNode] -> OpTree
     popExistNode (ExistVar (vTree) (oTree)) rList = (ExistVar (popBoundVTree (scopeVTree) (rList)) (popTreeNextPass (oTree) (rList)))
                                                     where   scopeList = extractAssignedNodes(getUniqueState (oTree) (False))
                                                             scopeVTree = assignLocationInTree (vTree) (scopeList)
-
+-}
     assignLocationInOTree :: OpTree -> [VarNode] -> OpTree
     assignLocationInOTree (VarOp (vTree)) rList = VarOp (assignLocationInTree (vTree) (rList))
 

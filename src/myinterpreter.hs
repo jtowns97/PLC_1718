@@ -566,10 +566,10 @@ module Main where
                                                                  | otherwise = executeQuery (remainingRows) (Marker ordVars oTree)
                                                                  where   assignedRow = getTreeState(assignedTree) -- : executeQuery (remainingRows) (pTree)
                                                                          assignedTree = popTree (sanitiseOpTree(oTree)) (row)
-
+{-
     assignPTState :: ParseTree -> [VarNode] -> [VarNode]
     assignPTState (Marker (vars) (oTree)) rList = getTreeState( popTree (sanitiseOpTree(oTree)) (rList) ) 
-
+-}
     --New ePT: (EXIS REFORMAT)
     evaluateParseTree :: ParseTree -> Bool --
     evaluateParseTree (Marker ordVars assignedTree) =  (evaluate (assignedTree))
@@ -577,8 +577,8 @@ module Main where
     --Are all nodes in list . NB ************* Not sure of ">", ">=" ie what combination *******************
     areRepeats :: [VarNode] -> Int -> Bool
     areRepeats [] _ = False --Is this ever called?? -> Nope
-    areRepeats ( (Vari (loc) (dat) (name)) : xs) ind    | ind < length totalList =  checkAllDataSame (totalList) (dat)-- && (areRepeats (totalList) (ind+1))
-                                                        | ind >= length totalList = checkAllDataSame (totalList) (dat)
+    areRepeats ( (Vari (loc) (dat) (name)) : xs) ind    | ind < length totalList =  checkAllDataSame (unwrap (totalList)) (dat)-- && (areRepeats (totalList) (ind+1))
+                                                        | ind >= length totalList = checkAllDataSame (unwrap (totalList)) (dat)
                                                         where   repeats = getRepeats (totalList) (1)
                                                                -- matches = matchNodeFromName repeats name   
                                                                 totalList = ( (Vari (loc) (dat) (name)) : xs)
@@ -595,12 +595,12 @@ module Main where
                             | length x == 1 = filterRepeats xs
 
     isAllDataSame :: [VarNode] -> Bool --New higher order for ease of use (fixes checkrepeats comp error)
-    isAllDataSame [] = checkAllDataSame [] "irrelevant"
-    isAllDataSame ((Vari (loc) (dat) (name)):xs) = checkAllDataSame ((Vari (loc) (dat) (name)):xs) dat
+    isAllDataSame [] = True
+    isAllDataSame ((Vari (loc) (dat) (name)):xs) = checkAllDataSame (unwrap(((Vari (loc) (dat) (name)):xs))) (dat)
 
-    checkAllDataSame :: [VarNode] -> String -> Bool
+    checkAllDataSame :: [String] -> String -> Bool
     checkAllDataSame [] _ = True
-    checkAllDataSame ((Vari (loc) (datA) (name)):xs) dat = ( dat == datA ) && ( checkAllDataSame xs dat)
+    checkAllDataSame (x:xs) dat = ( x == dat ) && ( checkAllDataSame xs dat)
     
     getRepeats :: [VarNode] -> Int ->  [VarNode] --return repeated namez
     getRepeats [] _ = []

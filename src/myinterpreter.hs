@@ -543,11 +543,6 @@ module Main where
                                                                                 where   assignedRow = getTreeState(assignedTree) -- : executeQuery (remainingRows) (pTree)
                                                                                         assignedTree = popTree (sanitiseOpTree(oTree)) (row)
 
-
-
-    assignPTState :: ParseTree -> [VarNode] -> [VarNode]
-    assignPTState (Marker (vars) (oTree)) rList = getTreeState( popTree (sanitiseOpTree(oTree)) (rList) ) 
-
     --New ePT: (EXIS REFORMAT)
     evaluateParseTree :: ParseTree -> [[VarNode]] -> Bool -- pTree -> ExisTable -> Boolean output
     evaluateParseTree (Marker ordVars assignedTree) (exisTable) = checkRepeats(filterRepeats(groupRepeats(getTreeState(assignedTree)))) && (evaluate (assignedTree) (exisTable))
@@ -644,6 +639,15 @@ module Main where
     getTreeState (EmptyOT (emptyTree)) = []
     getTreeState (ExistVar (vTree) (oTree)) = getTreeState(varToOpTree(vTree)) ++ getTreeState (oTree) --Possibly not what we need (EXIS REFORMAT)
 
+    getTreeStateNoEx :: OpTree -> [VarNode]
+    getTreeStateNoEx (ConjunctionNode (opTree) (opTreeX)) = getTreeStateNoEx(opTree) ++ getTreeStateNoEx (opTreeX)
+    getTreeStateNoEx (RelationNode (string) (varTree)) = getTreeStateNoEx(varToOpTree(varTree))
+    getTreeStateNoEx (EquateNode (opTree) (opTreeX)) = getTreeStateNoEx (opTree) ++ getTreeStateNoEx (opTreeX)
+    getTreeStateNoEx (BoolNode (bool)) = []
+    getTreeStateNoEx (VarOp (varTree)) = traverseDFVar(varTree)
+    getTreeStateNoEx (EmptyOT (emptyTree)) = []
+    getTreeStateNoEx (ExistVar (vTree) (oTree)) = [] --Possibly not what we need (EXIS REFORMAT)
+
     -- New checkExis below along with needed aux functions
     checkExistential :: OpTree -> [[VarNode]] -> Bool --oTree -> ExisTable 
     checkExistential _ [] = False
@@ -652,16 +656,16 @@ module Main where
     evaluateAssignTree :: OpTree -> [VarNode] -> [[VarNode]] -> Bool
     evaluateAssignTree oTree rList exTable = evaluateTree (popTree (sanitiseOpTree(oTree)) (rList)) (exTable)
 
-    checkExisTInOpT :: VarTree -> OpTree -> Bool
-    checkExisTInOpT (SingleNode (vNode)) oTree = checkExisInOpTree vNode oTree
-    checkExisTInOpT (CommaNode (vNode) (remTree)) oTree = (checkExisInOpTree (vNode) (oTree)) && (checkExisTInOpT (remTree) (oTree))
+    -- checkExisTInOpT :: VarTree -> OpTree -> Bool
+    -- checkExisTInOpT (SingleNode (vNode)) oTree = checkExisInOpTree vNode oTree
+    -- checkExisTInOpT (CommaNode (vNode) (rem Tree)) oTree = (checkExisInOpTree (vNode) (oTree)) && (checkExisTInOpT (remTree) (oTree))
     
     
-    checkExisInOpTree :: VarNode -> OpTree -> Bool
-    checkExisInOpTree vNode oTree = checkExisInOpTreeList (vNode) (extractAssignedNodes(getUniqueState (oTree) (False)))
+    -- checkExisInOpTree :: VarNode -> OpTree -> Bool
+    -- checkExisInOpTree vNode oTree = checkExisInOpTreeList (vNode) (extractAssignedNodes(getUniqueState (oTree) (False)))
 
-    checkExisInOpTreeList :: VarNode -> [VarNode] -> Bool
-    checkExisInOpTreeList (Vari loc dat name) rList = existsExactNode (rList) (loc) (name)
+    -- checkExisInOpTreeList :: VarNode -> [VarNode] -> Bool
+    -- checkExisInOpTreeList (Vari loc dat name) rList = existsExactNode (rList) (loc) (name)
 
 -- ::::::::::::::::::::::::::::::::::::::::::::::populateTree attempt 4:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 {-

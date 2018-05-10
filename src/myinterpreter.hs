@@ -133,14 +133,8 @@ module Main where
         let exisTable = crossMulti(toVarnodeTables allTables tableNames)
         putStr("__________ExisTables___________")
         putStrLn("")
-       -- prettyPrintTable (exisTable)
-        print(exisTable)
-        putStr("_____________________")
-        let noDoubles = beGoneDbls exisTable noOfCols
-        putStr("__________No Doubles___________")
-        putStrLn("")
-        --prettyPrintTable (noDoubles)
-        print(noDoubles)
+        prettyPrintTable (exisTable)
+        --print(noDoubles)
         putStr("_____________________")
         let answer = executeQuery (exisTable) (pTreeLoc) 
         putStr("_______ANSWER______________")
@@ -886,10 +880,10 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 
     populateVarTree :: VarTree -> [String] -> Int -> VarTree
     populateVarTree (EmptyVT e) _ _ = (EmptyVT e)
-    populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) ind | isNodePopulated (Vari (loc) (dat) (name)) == False = (SingleNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name) ))
-    populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) ind | isNodePopulated (Vari (loc) (dat) (name)) == True = (SingleNode (Vari (loc) (dat) (name)))
-    populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind  | isNodePopulated (Vari (loc) (dat) (name)) == False = ( CommaNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name)) ( populateVarTree (remTree) (x:xs) (ind+1) ) )
-    populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind  | isNodePopulated (Vari (loc) (dat) (name)) == True = (CommaNode (Vari (loc) (dat) (name)) (remTree)) --add recursive call here
+    populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) ind = (SingleNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name) ))
+    --populateVarTree (SingleNode (Vari (loc) (dat) (name))) (x:xs) ind | isNodePopulated (Vari (loc) (dat) (name)) == True = (SingleNode (Vari (loc) (dat) (name)))
+    populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind = ( CommaNode (Vari (loc) (generateNextVarData (x:xs) (ind)) (name)) ( populateVarTree (remTree) (x:xs) (ind+1) ) )
+    --populateVarTree ( CommaNode (Vari (loc) (dat) (name)) (remTree) ) (x:xs) ind  | isNodePopulated (Vari (loc) (dat) (name)) == True = (CommaNode (Vari (loc) (dat) (name)) (remTree)) --add recursive call here
     populateVarTree e _ _ = e
 
     --REMEMBER: NON BOUND VARIABLES, eg (z1,z2 (E. (R(z1,z2)))), CAN BE DUPLICATED ELSEWHERE IN QUERY AND SHOULDNT BE REMOVED FROM THE LIST, AS THEYRE UNIQUE

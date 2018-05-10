@@ -757,6 +757,9 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
     popTreeEX (ExistVar (vTree) (oTree)) rList = (ExistVar (vTree) (popTreeFirstPass oTree rList) )
 
 
+    locPTree :: ParseTree -> [VarNode] -> ParseTree
+    locPTree (Marker (ordVars) (oTree)) rList = locTree (oTree) (rList)
+
     locTree :: OpTree -> [VarNode] -> OpTree
     locTree (ConjunctionNode (querA) (querB)) rList = (ConjunctionNode (locTree (querA) rList) (locTree (querB) rList))
     locTree (EquateNode (querX) (querY)) rList = (EquateNode (assignLocationInOTree querX rList) (assignLocationInOTree querY rList))

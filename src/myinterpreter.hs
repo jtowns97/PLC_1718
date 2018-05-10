@@ -858,8 +858,8 @@ pre pass check          : checkBounds rule applied + existential Scope rule pote
 
     filterNodesByTable :: [VarNode] -> String -> [VarNode]
     filterNodesByTable [] _ = []
-    filterNodesByTable ((Vari loc dat name):xs) tblName     | (head loc) == (head tblName) = [(Vari loc dat name)] ++ filterNodesByTable xs tblName
-                                                            | (head loc) /= (head tblName) = filterNodesByTable xs tblName
+    filterNodesByTable ((Vari loc dat name):xs) tblName     | (loc) == (tblName) = [(Vari loc dat name)] ++ filterNodesByTable xs tblName
+                                                            | (loc) /= (tblName) = filterNodesByTable xs tblName
 
     getNodeAtNameAndLoc :: [VarNode] -> String -> String -> Maybe VarNode
     getNodeAtNameAndLoc [] _ _ = Data.Maybe.Nothing

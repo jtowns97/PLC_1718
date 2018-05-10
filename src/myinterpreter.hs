@@ -116,7 +116,7 @@ module Main where
         putStrLn("")
         print(pTree)
         putStr("_____________________")
-        let pTreeLoc = locTree (pTree) (getUniqueState (getOTree(pTree) (False))
+        let pTreeLoc = locTree (pTree) (getUniqueState (getOTree(pTree) (False)))
         putStr("________pTree___loc assigned_________")
         putStrLn("")
         print(pTreeLoc)
@@ -673,7 +673,7 @@ module Main where
     -- renameTree  (ExistVar (vTree) (oTree)) = 
 
     getOTree :: ParseTree -> OpTree
-    getOTree (Markers (vars) (oTree)) = oTree
+    getOTree (Marker (vars) (oTree)) = oTree
 
     getPTreeState :: ParseTree -> [VarNode]
     getPTreeState (Marker (vars) (oTree)) = getTreeState (oTree)
